@@ -24,6 +24,9 @@ public class Main {
   }
 
   private def execute( table: Tables, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcBerBuf: Long ) {
+    if( Place.numPlaces() == 1 ) {
+      throw new Exception("Number of places must be larger than 1");
+    }
     val modBuf = numProcBerBuf;
     val numBuffers = Place.numPlaces() / modBuf;
 
