@@ -7,5 +7,5 @@ cd ${SCRIPTDIR}/simulator
 make
 cp libwsn.a ${BUILD}
 cd -
-x10c++ -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/WSNSearch.x10 -VERBOSE_CHECKS -post '# # libwsn.a -fopenmp'
+x10c++ -v -O -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/WSNSearch.x10 -VERBOSE_CHECKS -post '# # libwsn.a -fopenmp'
 

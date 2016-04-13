@@ -7,5 +7,5 @@ cd ${SCRIPTDIR}/simulator
 make
 cp libmain.a ${BUILD}
 cd -
-x10c++ -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/MyMain.x10 -VERBOSE_CHECKS -cxx-postarg libmain.a
+x10c++ -v -O -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/MyMain.x10 -VERBOSE_CHECKS -cxx-postarg libmain.a
 
