@@ -3,7 +3,7 @@ OPT=-O3 -Wall -DNDEBUG
 INCLUDE=
 LIBS=
 
-libmain.a: *.cpp *.hpp Makefile
+libmain.a: *.cpp Makefile
 	$(CPP) $(OPT) $(INCLUDE) -c main.cpp $(LIBS) -o main.o
 	ar rcs libmain.a main.o
 

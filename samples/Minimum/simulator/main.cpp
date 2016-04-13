@@ -1,5 +1,4 @@
 #include <cstdlib>
-#include "main.hpp"
 
 double RunSimulator( long p1, long p2, double p3, long seed ) {
   srand(seed);
