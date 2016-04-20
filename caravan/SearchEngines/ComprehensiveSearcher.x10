@@ -5,9 +5,10 @@ import x10.regionarray.Region;
 
 public class ComprehensiveSearcher implements SearchEngineI {
 
-  val targetNumRuns = 1;
+  val targetNumRuns: Long;
 
-  def this() {
+  def this( _targetNumRuns: Long ) {
+    targetNumRuns = _targetNumRuns;
   }
 
   public def createInitialTask( table: Tables, searchRegion: Region{self.rank==Simulator.numParams} ): ArrayList[Task] {

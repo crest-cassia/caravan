@@ -7,11 +7,13 @@ import caravan.*;
 public class GridSearcher implements SearchEngineI {
 
   val boxes: ArrayList[Box];
-  val targetNumRuns = 1;
-  val expectedResultDiff = 0.1;
+  val expectedResultDiff: Double;
+  val targetNumRuns: Long;
 
-  public def this() {
+  public def this( _expectedResultDiff:Double, _targetNumRuns:Long ) {
     boxes = new ArrayList[Box]();
+    expectedResultDiff = _expectedResultDiff;
+    targetNumRuns = _targetNumRuns;
   }
 
   def d( o: Any ): void {

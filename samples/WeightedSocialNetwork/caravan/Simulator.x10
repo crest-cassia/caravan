@@ -34,7 +34,7 @@ public class Simulator {
 
     public def normalize(): Rail[Double]{self.size==numOutputs} {
       val r = new Rail[Double](numOutputs);
-      r(0) = (degree as Double) * 0.1;
+      r(0) = degree as Double;
       return r;
     }
   }
