@@ -1,0 +1,12 @@
+> ComprehensiveSearcherTest
+>>> #testConstructor
+constructor accepts numRuns: 1 = 1
+constructor accepts expectedResultDiff: 4.0 = 4.0
+>>> #testCreateInitialTask
+#createInitialTask creates tasks: 8 = 8
+  PS are created on vertices of searchRegion: 8 = 8
+>>> #testOnParameterSetFinished
+#onParameterSetFinished does not create tasks: [] = []
+#onParameterSetFinished creates tasks when Box is finished
+  : 4 tasks = 4
+  4 ps are created on p(2)=5 : 4 = 4
