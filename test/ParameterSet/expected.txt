@@ -33,3 +33,4 @@ when matched PS is not found, it should return null : null
 when identical PS exists, findOrCreateParameterSet does not create a new PS
   ps4.id should be 2: 2
   ParameterSet.count should be 3: 3
+findOrCreateParameterSet creates PS with sequential ids like 0,1,2 : 0,1,2

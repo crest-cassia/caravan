@@ -155,7 +155,7 @@ class ParameterSetTest {
     p("when identical PS exists, findOrCreateParameterSet does not create a new PS");
     p("  ps4.id should be 2: " + ps4.id);
     p("  ParameterSet.count should be 3: " + ParameterSet.count( table) );
-
+    p("findOrCreateParameterSet creates PS with sequential ids like 0,1,2 : " + ps1.id+","+ps2.id+","+ps3.id);
   }
 }
 
