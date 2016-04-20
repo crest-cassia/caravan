@@ -1,13 +1,20 @@
 package caravan.SearchEngines;
 
+import caravan.SearchEngineI;
+import caravan.Tables;
+import caravan.Simulator;
+import caravan.ParameterSet;
+import caravan.Run;
+import caravan.Task;
+
 import x10.util.ArrayList;
 import x10.regionarray.Region;
 
 public class ComprehensiveSearcher implements SearchEngineI {
 
-  val targetNumRuns: Long;
+  public val targetNumRuns: Long;
 
-  def this( _targetNumRuns: Long ) {
+  public def this( _targetNumRuns: Long ) {
     targetNumRuns = _targetNumRuns;
   }
 
