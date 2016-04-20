@@ -47,7 +47,7 @@ public class Simulator {
   static def deregularize( point: Point{self.rank==numParams} ): InputParameters {
     val p1 = point(0) * 1;
     val p2 = point(1) * 0.01;
-    val p3 = point(1) * 0.1;
+    val p3 = point(2) * 0.1;
     return InputParameters( p1, p2, p3 );
   }
 
