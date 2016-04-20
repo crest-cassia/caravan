@@ -16,10 +16,13 @@ public class Tables {
     psTable = new HashMap[Long, ParameterSet]();
   }
 
-  def load( psJsonFile: String, runJsonFile: String ) {
+  def load( psJsonFile: String, runJsonFile: String ):void {
     val psJson = JSON.parse( new File(psJsonFile) );
     val runJson = JSON.parse( new File(runJsonFile) );
+    loadFromJsonValue( psJson, runJson );
+  }
 
+  def loadFromJsonValue( psJson: JSON.Value, runJson:JSON.Value ):void {
     for( i in 0..(psJson.size()-1) ) {
       val ps = ParameterSet.loadJSON( psJson(i) );
       psTable.put( ps.id, ps );
@@ -35,8 +38,6 @@ public class Tables {
       }
       run.parameterSet( this ).runIds.add( run.id );
     }
-
-    Console.OUT.println( runsJson() );
   }
 
   def empty(): Boolean {
