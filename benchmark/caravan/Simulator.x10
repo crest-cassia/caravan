@@ -7,9 +7,9 @@ import caravan.util.JSON;
 
 public class Simulator {
 
-  public static struct InputParameters( mu: Double, sigma: Double ) {
+  public static struct InputParameters( mu: Double, sigma: Double, p3: Long ) {
     public def toString(): String {
-      return "{ \"mu\": " + mu + ", \"sigma\": " + sigma + " }";
+      return "{ \"mu\": " + mu + ", \"sigma\": " + sigma + ", \"p3\": " + p3 + " }";
     }
 
     public def toJson(): String {
@@ -43,17 +43,17 @@ public class Simulator {
     return OutputParameters( t );
   }
 
-  public static val numParams = 2;
+  public static val numParams = 3;
   public static val numOutputs = 1;
 
   static def deregularize( point: Point{self.rank==numParams} ): InputParameters {
     val mu   = point(0) * 0.1;
     val sigma= point(1) * 0.1;
-    return InputParameters( mu, sigma );
+    return InputParameters( mu, sigma , point(2) );
   }
 
   static def searchRegion(): Region{self.rank==numParams} {
-    return Region.makeRectangular( 10..1000, 0..100 );
+    return Region.makeRectangular( 0..1000, 0..1000, 0..65536);
   }
 
 }

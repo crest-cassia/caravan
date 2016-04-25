@@ -9,7 +9,7 @@ import caravan.ParameterSet;
 import caravan.Run;
 import caravan.Simulator;
 
-public class DummySearchEngine implements SearchEngineI {
+public class BenchSearchEngine implements SearchEngineI {
 
   val numStaticJobs: Long;
   val numDynamicJobs: Long;
