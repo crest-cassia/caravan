@@ -43,7 +43,7 @@ public class Simulator {
     return OutputParameters( t );
   }
 
-  public static val numParams = 3;
+  public static val numParams = 2;
   public static val numOutputs = 1;
 
   static def deregularize( point: Point{self.rank==numParams} ): InputParameters {
@@ -53,7 +53,7 @@ public class Simulator {
   }
 
   static def searchRegion(): Region{self.rank==numParams} {
-    return Region.makeRectangular( 10..1000, 0..100, 0..10000 );
+    return Region.makeRectangular( 10..1000, 0..100 );
   }
 
 }
