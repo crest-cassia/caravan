@@ -109,6 +109,41 @@ public class Deque[T] {
     }
   }
 
+  public def popFirst( n:Long ): Rail[T] {
+    val numPop = ( n < size() ) ? n : size();
+    val ret = Unsafe.allocRailUninitialized[T]( numPop );
+
+    if( begin + numPop < capacity ) {
+      Rail.copy( buffer, begin, ret, 0, numPop );
+      begin = index( begin + numPop );
+    }
+    else {
+      val s = capacity - begin;
+      Rail.copy( buffer, begin, ret, 0, s );
+      Rail.copy( buffer, 0, ret, s, numPop-s );
+      begin = index( begin + numPop );
+    }
+    return ret;
+  }
+
+  public def popLast( n:Long ): Rail[T] {
+    val numPop = ( n < size() ) ? n : size();
+    val ret = Unsafe.allocRailUninitialized[T]( numPop );
+
+    if( end - numPop >= 0 ) {
+      Rail.copy( buffer, end-numPop, ret, 0, numPop );
+      end = end - numPop;
+    }
+    else {
+      val newEnd = index( end-numPop );
+      val s = capacity - newEnd;
+      Rail.copy( buffer, newEnd, ret, 0, s );
+      Rail.copy( buffer, 0, ret, s, numPop-s );
+      end = newEnd;
+    }
+    return ret;
+  }
+
   public def toRail(): Rail[T] {
     val size = size();
     val ans = Unsafe.allocRailUninitialized[T](size);
@@ -241,14 +276,56 @@ public class Deque[T] {
     p( q3 );
   }
 
+  static public def testPopFirstMultiple(): void {
+    val q = new Deque[Long](4);
+    q.pushLast( [1,2,3] );
+    val ret = q.popFirst( 2 );
+    p( ret );
+    p( q );
+
+    q.pushFirst( ret );
+    val ret2 = q.popFirst( 5 );
+    p( ret2 );
+    p( q );
+
+    val q2 = new Deque[Long](4);
+    q2.pushFirst( [1,2] ); q2.pushLast(3);
+    val ret3 = q2.popFirst( 3 );
+    p( ret3 );
+    p( q2 );
+  }
+
+  static public def testPopLastMultiple(): void {
+    val q = new Deque[Long](4);
+    q.pushLast( [1,2,3] );
+    val ret = q.popLast( 2 );
+    p( ret );
+    p( q );
+
+    q.pushLast( ret );
+    val ret2 = q.popLast( 5 );
+    p( ret2 );
+    p( q );
+
+    val q2 = new Deque[Long](4);
+    q2.pushFirst( [1,2] ); q2.pushLast(3);
+    val ret3 = q2.popLast( 3 );
+    p( ret3 );
+    p( q2 );
+  }
+
   static public def main( args: Rail[String] ) {
     p("testGrow1 ---");
     testGrow1();
     p("testGrow2 ---");
     testGrow2();
-    p("testPushFirst multiple ---");
+    p("testPushFirstMultiple ---");
     testPushFirstMultiple();
-    p("testPushLast multiple ---");
+    p("testPushLastMultiple ---");
     testPushLastMultiple();
+    p("testPopFirstMultiple ---");
+    testPopFirstMultiple();
+    p("testPopLastMultiple ---");
+    testPopLastMultiple();
   }
 }
