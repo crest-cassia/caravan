@@ -76,6 +76,39 @@ public class Deque[T] {
     return buffer(end);
   }
 
+  public def pushFirst( items: Rail[T] ): void {
+    val newSize = size() + items.size;
+    growBufferIfNecessary( newSize );
+
+    if( begin - items.size >= 0 ) {
+      val newBegin = begin - items.size;
+      Rail.copy( items, 0, buffer, newBegin, items.size );
+      begin = newBegin;
+    }
+    else {
+      val newBegin = index( begin - items.size );
+      Rail.copy( items, items.size-begin, buffer, 0, begin );
+      Rail.copy( items, 0, buffer, newBegin, items.size-begin );
+      begin = newBegin;
+    }
+  }
+
+  public def pushLast( items: Rail[T] ): void {
+    val newSize = size() + items.size;
+    growBufferIfNecessary( newSize );
+
+    if( end + items.size < capacity ) {
+      Rail.copy( items, 0, buffer, end, items.size );
+      end = index( end + items.size );
+    }
+    else {
+      val s = capacity - end;
+      Rail.copy( items, 0, buffer, end, s );
+      Rail.copy( items, s, buffer, 0, items.size - s );
+      end = index( end + items.size );
+    }
+  }
+
   public def toRail(): Rail[T] {
     val size = size();
     val ans = Unsafe.allocRailUninitialized[T](size);
@@ -93,6 +126,16 @@ public class Deque[T] {
 
   private def index( n:Long ): Long {
     return (n + capacity) % capacity;
+  }
+
+  private def growBufferIfNecessary( newSize: Long ): void {
+    if( capacity <= newSize ) {
+      var newCapacity:Long = capacity * 2;
+      while( newCapacity <= newSize ) {
+        newCapacity *= 2;
+      }
+      grow( newCapacity );
+    }
   }
 
   private def grow( newCapacity: Long ):void {
@@ -168,10 +211,44 @@ public class Deque[T] {
     p( q );
   }
 
+  static public def testPushFirstMultiple(): void {
+    val q = new Deque[Long](4);
+    q.pushFirst( [1,2,3] );
+    p( q );
+    q.pushFirst( [4,5,6] );
+    p( q );
+
+    val q2 = new Deque[Long](4);
+    q2.pushFirst( [1,2,3,4,5,6,7,8,9,10] );
+    p( q2 );
+  }
+
+  static public def testPushLastMultiple(): void {
+    val q = new Deque[Long](4);
+    q.pushLast( [1,2,3] );
+    p( q );
+    q.pushLast( [4,5,6] );
+    p( q );
+
+    val q2 = new Deque[Long](4);
+    q2.pushLast( [1,2,3,4,5,6,7,8,9,10] );
+    p( q2 );
+
+    val q3 = new Deque[Long](4);
+    q3.pushFirst( [1,2,3] );
+    q3.popLast(); q3.popLast();
+    q3.pushLast( [2,3] );
+    p( q3 );
+  }
+
   static public def main( args: Rail[String] ) {
     p("testGrow1 ---");
     testGrow1();
     p("testGrow2 ---");
     testGrow2();
+    p("testPushFirst multiple ---");
+    testPushFirstMultiple();
+    p("testPushLast multiple ---");
+    testPushLastMultiple();
   }
 }
