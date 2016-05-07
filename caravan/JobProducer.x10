@@ -5,12 +5,13 @@ import x10.io.File;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicBoolean;
 import caravan.util.MyLogger;
+import caravan.util.Deque;
 
 class JobProducer {
 
   val m_tables: Tables;
   val m_engine: SearchEngineI;
-  val m_taskQueue: ArrayList[Task];
+  val m_taskQueue: Deque[Task];
   val m_freeBuffers: ArrayList[GlobalRef[JobBuffer]];
   val m_numBuffers: Long;
   val m_timer = new Timer();
@@ -25,7 +26,7 @@ class JobProducer {
   def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long ) {
     m_tables = _tables;
     m_engine = _engine;
-    m_taskQueue = new ArrayList[Task]();
+    m_taskQueue = new Deque[Task]();
     if( m_tables.empty() ) {
       enqueueInitialTasks();
     } else {
@@ -44,16 +45,12 @@ class JobProducer {
 
   private def enqueueInitialTasks() {
     val tasks = m_engine.createInitialTask( m_tables, Simulator.searchRegion() );
-    for( task in tasks ) {
-      m_taskQueue.add( task );
-    }
+    m_taskQueue.pushLast( tasks.toRail() );
   }
 
   private def enqueueUnfinishedTasks() {
     val tasks = m_tables.createTasksForUnfinishedRuns();
-    for( task in tasks ) {
-      m_taskQueue.add( task );
-    }
+    m_taskQueue.pushLast( tasks.toRail() );
   }
 
   public def registerFreeBuffer( refBuffer: GlobalRef[JobBuffer] ) {
@@ -83,9 +80,7 @@ class JobProducer {
     m_isLockResults.set(false);
 
     when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
-    for( task in tasks ) {
-      m_taskQueue.add( task );
-    }
+    m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
     m_isLockQueue.set(false);
 
@@ -124,17 +119,12 @@ class JobProducer {
     d("Producer notified free buffers");
   }
 
-  public def popTasks(): ArrayList[Task] {
+  public def popTasks(): Rail[Task] {
     when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
     d("Producer popTasks is called");
-    val tasks = new ArrayList[Task]();
     val n = calcNumTasksToPop();
-    for( i in 1..n ) {
-      if( m_taskQueue.size() == 0 ) break;
-      val task = m_taskQueue.removeFirst();
-      tasks.add( task );
-    }
-    d("Producer sending " + tasks.size() + " tasks to buffer");
+    val tasks = m_taskQueue.popFirst( n );
+    d("Producer sending " + tasks.size + " tasks to buffer");
     m_isLockQueue.set(false);
     return tasks;
   }

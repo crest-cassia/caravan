@@ -3,6 +3,7 @@ package caravan;
 import x10.util.ArrayList;
 import x10.util.Timer;
 import caravan.util.MyLogger;
+import caravan.util.Deque;
 
 class JobConsumer {
 
@@ -37,7 +38,7 @@ class JobConsumer {
 
     val tasks = getTasksFromBuffer();
     while( tasks.size() > 0 ) {
-      val task = tasks.removeFirst();
+      val task = tasks.popFirst();
       val result = runTask( task );
 
       at( refBuf ) {
@@ -48,9 +49,7 @@ class JobConsumer {
       if( tasks.size() == 0 ) {
         d("Consumer task queue is empty. getting tasks");
         val newTasks = getTasksFromBuffer();
-        for( newTask in newTasks ) {
-          tasks.add( newTask );
-        }
+        tasks.pushLast( newTasks.toRail() );
         d("Consumer got tasks from buffer");
       }
     }
@@ -75,12 +74,14 @@ class JobConsumer {
     return result;
   }
 
-  def getTasksFromBuffer(): ArrayList[Task] {
+  def getTasksFromBuffer(): Deque[Task] {
     val refBuf = m_refBuffer;
     val tasks = at( refBuf ) {
       return refBuf().popTasks();
     };
-    return tasks;
+    val q = new Deque[Task]();
+    q.pushLast( tasks );
+    return q;
   }
 
   private def isExpired(): Boolean {

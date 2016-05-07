@@ -112,6 +112,7 @@ public class Deque[T] {
   public def popFirst( n:Long ): Rail[T] {
     val numPop = ( n < size() ) ? n : size();
     val ret = Unsafe.allocRailUninitialized[T]( numPop );
+    if( n == 0 ) { return ret; }
 
     if( begin + numPop < capacity ) {
       Rail.copy( buffer, begin, ret, 0, numPop );
@@ -129,6 +130,7 @@ public class Deque[T] {
   public def popLast( n:Long ): Rail[T] {
     val numPop = ( n < size() ) ? n : size();
     val ret = Unsafe.allocRailUninitialized[T]( numPop );
+    if( n == 0 ) { return ret; }
 
     if( end - numPop >= 0 ) {
       Rail.copy( buffer, end-numPop, ret, 0, numPop );
