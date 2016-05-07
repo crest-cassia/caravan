@@ -27,6 +27,9 @@ public class Main {
     if( Place.numPlaces() == 1 ) {
       throw new Exception("Number of places must be larger than 1");
     }
+    if( Place.numPlaces() < numProcBerBuf ) {
+      throw new Exception("Number of places cannot be smaller than numProcPerBuffer");
+    }
     val modBuf = numProcBerBuf;
     val numBuffers = Place.numPlaces() / modBuf;
 
