@@ -23,24 +23,23 @@ public class Main {
     execute( table, engine, saveInterval, timeOut, numProcBerBuf );
   }
 
-  private def execute( table: Tables, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcBerBuf: Long ) {
+  private def execute( table: Tables, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ) {
     if( Place.numPlaces() == 1 ) {
       throw new Exception("Number of places must be larger than 1");
     }
-    if( Place.numPlaces() < numProcBerBuf ) {
+    if( Place.numPlaces() < numProcPerBuf ) {
       throw new Exception("Number of places cannot be smaller than numProcPerBuffer");
     }
-    val modBuf = numProcBerBuf;
-    val numBuffers = Place.numPlaces() / modBuf;
+    val numBuffers = Place.numPlaces() / numProcPerBuf;
 
     val refJobProducer = new GlobalRef[JobProducer](
       new JobProducer( new Tables(), engine, numBuffers, saveInterval )
     );
 
-    finish for( i in 0..((Place.numPlaces()-1)/modBuf) ) {
-      async at( Place(i*modBuf) ) {
+    finish for( i in 0..((Place.numPlaces()-1)/numProcPerBuf) ) {
+      async at( Place(i*numProcPerBuf) ) {
         val min = Runtime.hereLong();
-        val max = Math.min( min+modBuf, Place.numPlaces() );
+        val max = Math.min( min+numProcPerBuf, Place.numPlaces() );
         val buffer = new JobBuffer( refJobProducer, (max-1-min) );
         buffer.getInitialTasks();
         val refBuffer = new GlobalRef[JobBuffer]( buffer );
