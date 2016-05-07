@@ -4,12 +4,13 @@ import x10.util.ArrayList;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicBoolean;
 import caravan.util.MyLogger;
+import caravan.util.Deque;
 
 class JobBuffer {
 
   val m_refProducer: GlobalRef[JobProducer];
   val m_logger = new MyLogger();
-  val m_taskQueue = new ArrayList[Task]();
+  val m_taskQueue = new Deque[Task]();
   val m_resultsBuffer = new ArrayList[JobConsumer.RunResult]();
   var m_numRunning: Long = 0;
   val m_freePlaces = new ArrayList[Place]();
@@ -40,30 +41,21 @@ class JobBuffer {
       val tasks = at( refProd ) {
         return refProd().popTasks();
       };
-      d("Buffer got " + tasks.size() + " tasks from producer");
-      for( task in tasks ) {
-        m_taskQueue.add( task );
-      }
+      d("Buffer got " + tasks.size + " tasks from producer");
+      m_taskQueue.pushLast( tasks );
     }
   }
 
-  def popTasks(): ArrayList[Task] {
+  def popTasks(): Rail[Task] {
     when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
     d("Buffer popTasks " + m_numRunning + "/" + m_taskQueue.size() );
-    val tasks = new ArrayList[Task]();
     fillTaskQueueIfEmpty();
 
     val n = calcNumTasksToPop();
-    for( i in 1..n ) {
-      if( m_taskQueue.size() == 0 ) {
-        break;
-      }
-      val task = m_taskQueue.removeFirst();
-      tasks.add( task );
-      m_numRunning += 1;
-    }
+    val tasks = m_taskQueue.popFirst( n );
+    m_numRunning += tasks.size;
 
-    d("Buffer sending " + tasks.size() + " tasks to consumer" );
+    d("Buffer sending " + tasks.size + " tasks to consumer" );
     m_isLockQueue.set(false);
     return tasks;
   }
