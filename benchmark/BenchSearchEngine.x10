@@ -23,6 +23,7 @@ public class BenchSearchEngine implements SearchEngineI {
   val rnd: Random;
 
   var psCount: Long = 0;
+  var finishedPSCount: Long = 0;
 
   def this( _numStaticJobs: Long, _numDynamicJobs: Long, _jobGenProb: Double, _numJobsPerGen: Long,
             _mu: Double, _sigma: Double ) {
@@ -57,10 +58,11 @@ public class BenchSearchEngine implements SearchEngineI {
   }
 
   public def onParameterSetFinished( table: Tables, finishedPS: ParameterSet ): ArrayList[Task] {
-    val numRunningPS = ParameterSet.countWhere( table, (ps:ParameterSet):Boolean => { return !ps.isFinished(table); } );
-    Console.ERR.println("on PS finished: " + numRunningPS);
-    if( rnd.nextDouble() < jobGenProb || numRunningPS == 0 ) {
-      val numTodo = numStaticJobs + numDynamicJobs - ParameterSet.count( table );
+    finishedPSCount += 1;
+    val nonFinishedPS = psCount - finishedPSCount;
+    Console.ERR.println("on PS finished: " + nonFinishedPS);
+    if( rnd.nextDouble() < jobGenProb || nonFinishedPS == 0 ) {
+      val numTodo = numStaticJobs + numDynamicJobs - psCount;
       val numTasks = numTodo > numJobsPerGen ? numJobsPerGen : numTodo;
       return createNewTask( table, numTasks );
     }
