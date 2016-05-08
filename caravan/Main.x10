@@ -25,18 +25,21 @@ public class Main {
 
   private def execute( table: Tables, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ) {
     if( Place.numPlaces() == 1 ) {
+      Console.ERR.println("NumPlaces: " + Place.numPlaces() );
       throw new Exception("Number of places must be larger than 1");
     }
-    if( Place.numPlaces() < numProcPerBuf ) {
-      throw new Exception("Number of places cannot be smaller than numProcPerBuffer");
+    if( Place.numPlaces() % numProcPerBuf == 1 ) {
+      Console.ERR.println("NumPlaces: " + Place.numPlaces() );
+      Console.ERR.println("numProcPerBuf: " + numProcPerBuf );
+      throw new Exception("NumPlaces % numProcPerBuf cannot be 1 since buffer must have at least one consumer.");
     }
-    val numBuffers = Place.numPlaces() / numProcPerBuf;
+    val numBuffers = Math.ceil( Place.numPlaces() as Double / numProcPerBuf ) as Long;
 
     val refJobProducer = new GlobalRef[JobProducer](
       new JobProducer( new Tables(), engine, numBuffers, saveInterval )
     );
 
-    finish for( i in 0..((Place.numPlaces()-1)/numProcPerBuf) ) {
+    finish for( i in 0..(numBuffers-1) ) {
       async at( Place(i*numProcPerBuf) ) {
         val min = Runtime.hereLong();
         val max = Math.min( min+numProcPerBuf, Place.numPlaces() );
