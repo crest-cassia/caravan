@@ -21,7 +21,7 @@ def print_profile(runs)
   $stdout.puts "Elapsed Time        : #{max_finish_at - min_start_at} ms"
   $stdout.puts "Total Job Duration  : #{duration} ms"
   $stdout.puts "Total Num Runs      : #{runs.size}"
-  $stdout.puts "Job Filling Rate    : #{filling_rate}"
+  $stdout.puts "Job Filling Rate    : #{sprintf("%.1f", filling_rate*100)} %"
 end
 
 runs = load_json(ARGV[0])
