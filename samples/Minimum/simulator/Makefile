@@ -1,7 +1,12 @@
-CPP=$(shell (which icpc 2>/dev/null || which g++-4.9 || which g++) | tail -n 1)
+CPP=$(shell (which icpc 2>/dev/null || which FCCpx || which g++-5 || which g++) | tail -n 1)
 OPT=-O3 -Wall -DNDEBUG
 INCLUDE=
 LIBS=
+
+ifeq ($(CPP), FCCpx)
+	CPP=FCCpx
+	OPT=-Kfast -Xg
+endif
 
 libmain.a: *.cpp Makefile
 	$(CPP) $(OPT) $(INCLUDE) -c main.cpp $(LIBS) -o main.o

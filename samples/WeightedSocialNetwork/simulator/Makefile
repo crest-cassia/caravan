@@ -1,5 +1,5 @@
 UNAME = ${shell uname}
-CPP=$(shell (which icpc 2>/dev/null || which FCCpx || which g++-4.9 || which g++) | tail -n 1)
+CPP=$(shell (which icpc 2>/dev/null || which FCCpx || which g++-5 || which g++) | tail -n 1)
 OPT=-O3 -Wall -DNDEBUG -fopenmp
 INCLUDE=
 LIBS=
