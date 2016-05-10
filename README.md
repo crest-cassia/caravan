@@ -5,32 +5,96 @@ A framework for large scale parameter-space exploration.
 
 ## Prerequisites
 
-- x10 2.5.0 or later
-    - tested against native x10 2.5.0 with MPI backend
+- x10 2.5.4 or later
+    - tested against native x10 2.5.4 with MPI backend
 
 ## Compiling a sample project
 
 To build an executable, you have to combine the framework and your own codes.
 The combination of the framework and the user-specific codes is called "project".
 
-You can find samples of projects in `samples` directory.
+You can find sample projects in `samples` directory.
 
-Let us compile a sample project "dummy". Run the following script in the top directory
-
-```
-./samples/dummy/build.sh
-```
-
-The executables are built in the `build/` directory. To run the sample project, cd to `build/` and then run
+Let us compile a sample project "Minimum".
 
 ```
-X10_NPLACES=8 ./a.out 100 0.1 0.01 5 4
+cd samples/Minimum
+./build.sh
 ```
 
-The variable `X10_NPLACES` specifies the number of places (i.e. processes).
-The number of places must be larger than 1 to run caravan appropriately.
+By default, "Socket" is selected as X10RT. If you are going to build an MPI-backed program, set environment variable "IS\_MPI" to "1" when building it.
 
-The results are stored in `runs.json` and `parameter_sets.json` files.
+```
+cd samples/Minimum
+env IS_MPI=1 ./build.sh
+```
+
+The executables are built in the `build/` directory. To run the sample project, cd to `build/` and then run the program.
+
+```
+cd build
+env X10_NPLACES=8 ./a.out 1234
+```
+
+or, for MPI-backed program,
+
+```
+cd build
+mpiexec -n 8 ./a.out 1234
+```
+
+Here the argument is the random number seed.
+Specification of the arguments depends on each project.
+
+The environment variable `X10_NPLACES` specifies the number of places (i.e. processes) for socket-backed programs.
+The number of places must be larger than 1 because CARAVAN needs at least one job-producer and one job-consumer processes.
+
+After running the command, you'll find `runs.json` and `parameter_sets.json` files, where the simulation results are stored.
+
+## Building a benchmark project
+
+In order to test the performance of the framework, we prepared a project for benchmark, which are found in `benchmark` directory.
+Thie benchmark test the performance of the task-queue handlnig.
+
+To build the benchmark project,
+
+```
+cd benchmark
+./build.sh
+```
+
+To run the program,
+
+```
+env X10_NPLACES=8 ./a.out 10 90 0.25 4 0.5 0.1 30 4
+```
+
+If you use MPI, set `IS_MPI=1` when building it and use `mpiexec` when running the program, as in the sample project.
+Specification of the arguments are described in the following.
+
+### Specification of the benchmark
+
+This benchmark is designed to test the performance of the job distribution in massive parallel environments.
+The simulation program is "sleep", which eliminates the performance of the job execution.
+
+This program has the following parameters.
+
+- `numStaticJobs`
+- `numDynamicJobs`
+- `numJobsPerGen`
+- `jobGenProb`
+- `sleepMu`
+- `sleepSigma`
+- `timeOut`
+- `numProcPerBuf`
+
+Initially a given number of jobs, which we call static jobs, are created. The number of initial jobs is `numStaticJobs`.
+After each job is finished, `numJobsPerGen` jobs are generated with probability `jobGenProb` until the total number of such dynamically generated jobs are less than `numDynamicJobs`.
+Each job sleeps for a duration which is randomly drawn from a uniform distribution [`sleepMu`-`sleepSigma`, `sleepMu`+`sleepSigma`].
+
+The `timeOut` limits the elapsed time of the program.
+
+`numProcPerBuf` is a parameter for the job distribution. It specifies the number of consumer-processes for each buffer process.
 
 ## Preparing your own project
 
