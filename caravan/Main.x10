@@ -7,6 +7,7 @@ import x10.glb.GLB;
 import x10.util.Pair;
 import x10.util.HashMap;
 import x10.util.ArrayList;
+import x10.util.Timer;
 import x10.io.File;
 import x10.xrx.Runtime;
 
@@ -35,9 +36,12 @@ public class Main {
     }
     val numBuffers = Math.ceil( Place.numPlaces() as Double / numProcPerBuf ) as Long;
 
+    val timer = new Timer();
+    val initializationBegin = timer.milliTime();
     val refJobProducer = new GlobalRef[JobProducer](
       new JobProducer( new Tables(), engine, numBuffers, saveInterval )
     );
+    val jobExecutionBegin = timer.milliTime();
 
     finish for( i in 0..(numBuffers-1) ) {
       async at( Place(i*numProcPerBuf) ) {
@@ -57,8 +61,15 @@ public class Main {
       }
     }
 
+    val terminationBegin = timer.milliTime();
+
     at( refJobProducer ) {
       refJobProducer().printJSON("parameter_sets.json", "runs.json");
     }
+
+    Console.ERR.println("Elapsed times ---");
+    Console.ERR.println("  Initialization:" + (jobExecutionBegin-initializationBegin) + " ms");
+    Console.ERR.println("  Job Execution :" + (terminationBegin-jobExecutionBegin) + " ms");
+    Console.ERR.println("  Termination   :" + (timer.milliTime()-terminationBegin) + " ms");
   }
 }
