@@ -1,4 +1,4 @@
-CPP=$(shell (which icpc 2>/dev/null || which FCCpx || which g++-5 || which g++) | tail -n 1)
+CPP=$(shell (which FCCpx 2>/dev/null || which g++-5 || which g++) | tail -n 1)
 OPT=-O3 -Wall -DNDEBUG
 INCLUDE=
 LIBS=
