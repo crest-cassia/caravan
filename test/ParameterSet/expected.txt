@@ -1,10 +1,10 @@
 > ParameterSetTest
 >>> #testFields
-{ id: 10, point: [3,500,10], params: { "p1": 3, "p2": 5.0, "p3": 50.0 } }
+{ id: 10, point: [3,500,10], params: { "p1": 3, "p2": 5.0, "p3": 1.0 } }
 >>> #testToJSON
-{ "id": 10, "point": [3,500,10], "params": { "p1": 3, "p2": 5.0, "p3": 50.0 } }
+{ "id": 10, "point": [3,500,10], "params": { "p1": 3, "p2": 5.0, "p3": 1.0 } }
 >>> #testLoadJSON
-{ id: 1234, point: [2,120,10], params: { "p1": 2, "p2": 1.2, "p3": 12.0 } }
+{ id: 1234, point: [2,120,10], params: { "p1": 2, "p2": 1.2, "p3": 1.0 } }
 >>> #testRuns
 numRuns should be 3 : 3
 there are three runs: 
