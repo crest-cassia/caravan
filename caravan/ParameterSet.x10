@@ -106,13 +106,7 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
   }
 
   static public def find( table: Tables, p: Point{self.rank==Simulator.numParams} ): ParameterSet {
-    for( entry in table.psTable.entries() ) {
-      val ps = entry.getValue();
-      if( ps.point.equals( p ) ) {
-        return ps;
-      }
-    }
-    return null;
+    return table.psPointTable( p );
   }
 
   static public def findOrCreateParameterSet( table: Tables, p: Point{self.rank==Simulator.numParams} ): ParameterSet {
@@ -121,6 +115,7 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
       ps = new ParameterSet( table.maxPSId, p );
       table.maxPSId += 1;
       table.psTable.put( ps.id, ps );
+      table.psPointTable.put( ps.point, ps );
     }
     return ps;
   }

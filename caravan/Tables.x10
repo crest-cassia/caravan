@@ -8,12 +8,14 @@ import caravan.util.JSON;
 public class Tables {
   public val runsTable: HashMap[Long,Run];
   public val psTable: HashMap[Long,ParameterSet];
+  public val psPointTable: HashMap[ Point{self.rank==Simulator.numParams}, ParameterSet];
   var maxRunId: Long = 0;
   var maxPSId: Long = 0;
 
   def this() {
     runsTable = new HashMap[Long, Run]();
     psTable = new HashMap[Long, ParameterSet]();
+    psPointTable = new HashMap[ Point{self.rank==Simulator.numParams}, ParameterSet]();
   }
 
   def load( psJsonFile: String, runJsonFile: String ):void {
@@ -26,6 +28,7 @@ public class Tables {
     for( i in 0..(psJson.size()-1) ) {
       val ps = ParameterSet.loadJSON( psJson(i) );
       psTable.put( ps.id, ps );
+      psPointTable.put( ps.point, ps );
       if( ps.id+1 > maxPSId ) {
         maxPSId = ps.id + 1;
       }
