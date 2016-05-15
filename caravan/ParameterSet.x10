@@ -31,6 +31,14 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
     return str;
   }
 
+  public def writeBinary( w: Writer ): void {
+    val marshal_long = new LongMarshal();
+    marshal_long.write( w, id );
+    for( i in 0..(point.rank-1) ) {
+      marshal_long.write( w, point(i) );
+    }
+  }
+
   public def numRuns(): Long {
     return runIds.size();
   }

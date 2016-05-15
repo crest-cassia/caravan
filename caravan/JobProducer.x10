@@ -143,5 +143,12 @@ class JobProducer {
     p2.println( m_tables.parameterSetsJson() );
     p2.flush();
   }
+
+  public def dumpTables( filename: String ): void {
+    val f = new File(filename);
+    val p = f.printer();
+    m_tables.writeBinary(p);
+    p.flush();
+  }
 }
 

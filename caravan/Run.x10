@@ -76,4 +76,21 @@ public class Run {
               ", \"placeId\": " + placeId + ", \"startAt\": " + startAt + ", \"finishAt\": " + finishAt + " }";
     return str;
   }
+
+  public def writeBinary( w: Writer ): void {
+    val marshal_long = new LongMarshal();
+    val marshal_double = new DoubleMarshal();
+    marshal_long.write( w, id );
+    marshal_long.write( w, parentPSId );
+    marshal_long.write( w, seed );
+
+    val results = result.normalize();
+    for( i in 0..(Simulator.numOutputs-1) ) {
+      marshal_double.write( w, results(i) );
+    }
+
+    marshal_long.write( w, placeId );
+    marshal_long.write( w, startAt );
+    marshal_long.write( w, finishAt );
+  }
 }

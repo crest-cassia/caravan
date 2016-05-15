@@ -67,6 +67,28 @@ public class Tables {
     return s;
   }
 
+  def writeBinary( w: Writer ): void {
+    val marshal_long = new LongMarshal();
+
+    // writing Simulator info
+    marshal_long.write( w, Simulator.numParams );
+    marshal_long.write( w, Simulator.numOutputs );
+
+    // writing PS
+    marshal_long.write( w, psTable.size() );
+    for( entry in psTable.entries() ) {
+      val ps = entry.getValue();
+      ps.writeBinary( w );
+    }
+
+    // writing Runs
+    marshal_long.write( w, runsTable.size() );
+    for( entry in runsTable.entries() ) {
+      val run = entry.getValue();
+      run.writeBinary( w );
+    }
+  }
+
   def createTasksForUnfinishedRuns(): ArrayList[Task] {
     val tasks = new ArrayList[Task]();
     for( entry in runsTable.entries() ) {
