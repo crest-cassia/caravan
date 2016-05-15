@@ -64,7 +64,7 @@ public class Main {
     val terminationBegin = timer.milliTime();
 
     at( refJobProducer ) {
-      refJobProducer().printJSON("parameter_sets.json", "runs.json");
+      refJobProducer().dumpTables("dump.bin");
     }
 
     Console.ERR.println("Elapsed times ---");
