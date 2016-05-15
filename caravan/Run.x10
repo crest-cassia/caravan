@@ -2,8 +2,8 @@ package caravan;
 
 import x10.util.ArrayList;
 import x10.io.Printer;
+import x10.io.FileReader;
 import x10.io.Marshal.LongMarshal;
-import x10.io.Marshal.DoubleMarshal;
 import caravan.util.JSON;
 import caravan.ParameterSet;
 
@@ -83,17 +83,34 @@ public class Run {
 
   public def writeBinary( w: Printer ): void {
     val marshal_long = new LongMarshal();
-    val marshal_double = new DoubleMarshal();
     marshal_long.write( w, id );
     marshal_long.write( w, parentPSId );
     marshal_long.write( w, seed );
 
-    for( x in result.values ) {
-      marshal_double.write( w, x );
-    }
+    result.writeBinary( w );
 
     marshal_long.write( w, placeId );
     marshal_long.write( w, startAt );
     marshal_long.write( w, finishAt );
+  }
+
+  public static def loadFromBinary( r: FileReader, table: Tables ): Run {
+    val marshalLong = new LongMarshal();
+
+    val id = marshalLong.read( r );
+    val parentPSId = marshalLong.read( r );
+    val ps = table.psTable.get( parentPSId );
+    val seed = marshalLong.read( r );
+
+    val run = new Run( id, ps, seed );
+
+    val result = SimulationOutput.loadFromBinary( r );
+    val placeId = marshalLong.read( r );
+    val startAt = marshalLong.read( r );
+    val finishAt = marshalLong.read( r );
+    if( startAt != -1 ) {
+      run.storeResult( result, placeId, startAt, finishAt );
+    }
+    return run;
   }
 }

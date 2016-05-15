@@ -18,9 +18,10 @@ public class Main {
     execute( table, engine, saveInterval, timeOut, numProcBerBuf );
   }
 
-  public def restart( psJson: String, runJson: String, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcBerBuf: Long ) {
-    val table = new Tables();
-    table.load( psJson, runJson );
+  public def restart( dumpFile: String, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcBerBuf: Long ) {
+    val infile = new File( dumpFile );
+    val reader = infile.openRead();
+    val table = Tables.loadFromBinary( reader );
     execute( table, engine, saveInterval, timeOut, numProcBerBuf );
   }
 

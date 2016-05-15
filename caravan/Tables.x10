@@ -4,6 +4,7 @@ import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.io.File;
 import x10.io.Printer;
+import x10.io.FileReader;
 import x10.io.Marshal.LongMarshal;
 
 import caravan.util.JSON;
@@ -90,6 +91,43 @@ public class Tables {
       val run = entry.getValue();
       run.writeBinary( w );
     }
+  }
+
+  private def readBinary( r: FileReader ): void {
+    val marshalLong = new LongMarshal();
+
+    val numParams = marshalLong.read( r );
+    assert (numParams == Simulator.numParams);
+    val numOutputs = marshalLong.read( r );
+    assert (numOutputs == Simulator.numOutputs);
+
+    // loading PS
+    val psSize = marshalLong.read( r );
+    for( i in 0..(psSize-1) ) {
+      val ps = ParameterSet.loadFromBinary( r );
+      psTable.put( ps.id, ps );
+      psPointTable.put( ps.point, ps );
+      if( ps.id+1 > maxPSId ) {
+        maxPSId = ps.id + 1;
+      }
+    }
+
+    // loading Runs
+    val runSize = marshalLong.read( r );
+    for( i in 0..(runSize-1) ) {
+      val run = Run.loadFromBinary( r, this );
+      runsTable( run.id ) = run;
+      if( run.id+1 > maxRunId ) {
+        maxRunId = run.id + 1;
+      }
+      run.parameterSet( this ).runIds.add( run.id );
+    }
+  }
+
+  public static def loadFromBinary( r: FileReader ): Tables {
+    val table = new Tables();
+    table.readBinary( r );
+    return table;
   }
 
   def createTasksForUnfinishedRuns(): ArrayList[Task] {
