@@ -34,7 +34,7 @@ class RunTest {
     val ps = new ParameterSet( 10, Point.make([3, 500, 10]) );
 
     val run = new Run( 1, ps, 1234 );
-    val result = Simulator.OutputParameters( 3.5 );
+    val result = SimulationOutput( [3.5 as Double] );
     run.storeResult( result, 3, 1000, 2000 );
 
     p( run );

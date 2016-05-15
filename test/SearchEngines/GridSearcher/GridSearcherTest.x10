@@ -83,7 +83,7 @@ class GridSearcherTest {
     val ps = ParameterSet.find( table, Point.make(p1,p2,p3) );
     for( run in ps.runs(table) ) {
       if( run.finished == false ) {
-        val result = Simulator.OutputParameters( p1 + p2 + 2*p3 );
+        val result = SimulationOutput( [p1 + p2 + 2*p3 as Double] );
         val placeId = 0;
         val startAt = 100;
         val finishAt = 200;

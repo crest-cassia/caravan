@@ -81,12 +81,12 @@ class ParameterSetTest {
 
     p("isFinished is false initially: " + ps1.isFinished( table ) );
 
-    runs(0).storeResult( Simulator.OutputParameters(0.5), 3, 1000, 2000 );
-    runs(1).storeResult( Simulator.OutputParameters(0.5), 3, 1000, 2000 );
+    runs(0).storeResult( SimulationOutput( [0.5 as Double] ), 3, 1000, 2000 );
+    runs(1).storeResult( SimulationOutput( [0.5 as Double] ), 3, 1000, 2000 );
 
     p("isFinished is false if there remains unfinished run: " + ps1.isFinished( table ) );
 
-    runs(2).storeResult( Simulator.OutputParameters(0.5), 3, 1000, 2000 );
+    runs(2).storeResult( SimulationOutput( [0.5 as Double] ), 3, 1000, 2000 );
 
     p("isFinished is true when all runs are finished: " + ps1.isFinished( table ) );
   }
@@ -96,9 +96,9 @@ class ParameterSetTest {
     val ps = ParameterSet.findOrCreateParameterSet( table, Point.make([3, 500, 10]) );
     val runs = ps.createRuns( table, 3 );
 
-    runs(0).storeResult( Simulator.OutputParameters(1.0), 3, 1000, 2000 );
-    runs(1).storeResult( Simulator.OutputParameters(1.5), 3, 1000, 2000 );
-    runs(2).storeResult( Simulator.OutputParameters(2.0), 3, 1000, 2000 );
+    runs(0).storeResult( SimulationOutput( [1.0 as Double ] ), 3, 1000, 2000 );
+    runs(1).storeResult( SimulationOutput( [1.5 as Double ] ), 3, 1000, 2000 );
+    runs(2).storeResult( SimulationOutput( [2.0 as Double ] ), 3, 1000, 2000 );
 
     p("averagedResult should be 1.5: "+ ps.averagedResult( table ) );
   }

@@ -23,6 +23,7 @@ public class Run {
     parentPSId = _ps.id;
     seed = _seed;
     params = Simulator.deregularize( _ps.point );
+    result = SimulationOutput( new Rail[Double](Simulator.numOutputs) );
     finished = false;
   }
 

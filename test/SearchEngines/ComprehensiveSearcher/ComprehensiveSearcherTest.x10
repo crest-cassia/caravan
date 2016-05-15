@@ -50,7 +50,7 @@ class ComprehensiveSearcherTest {
     
     val ps = ParameterSet.find( table, Point.make(0,0,10) );
     for( run in ps.runs(table) ) {
-      run.storeResult( Simulator.OutputParameters(0.0), 0, 100, 200 );
+      run.storeResult( SimulationOutput([0.0 as Double]), 0, 100, 200 );
     }
 
     val tasks = engine.onParameterSetFinished( table, ps );
