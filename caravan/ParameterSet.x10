@@ -2,6 +2,8 @@ package caravan;
 
 import x10.util.ArrayList;
 import x10.util.Pair;
+import x10.io.Printer;
+import x10.io.Marshal.LongMarshal;
 import caravan.util.JSON;
 
 public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams} ) {
@@ -31,7 +33,7 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
     return str;
   }
 
-  public def writeBinary( w: Writer ): void {
+  public def writeBinary( w: Printer ): void {
     val marshal_long = new LongMarshal();
     marshal_long.write( w, id );
     for( i in 0..(point.rank-1) ) {
@@ -83,7 +85,7 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
     var sum: Double = 0.0;
     val runs = runs( table );
     for( run in runs ) {
-      sum += run.result.normalize()(0);  // TODO: check other results
+      sum += run.result.values(0);  // TODO: check other results
     }
     return sum / runs.size();
   }

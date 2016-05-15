@@ -2,6 +2,7 @@ package caravan;
 
 import x10.util.ArrayList;
 import x10.util.Timer;
+import caravan.SimulationOutput;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -26,7 +27,7 @@ class JobConsumer {
 
   static struct RunResult(
     runId: Long,
-    result: Simulator.OutputParameters,
+    result: SimulationOutput,
     placeId: Long,
     startAt: Long,
     finishAt: Long

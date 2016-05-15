@@ -1,6 +1,9 @@
 package caravan;
 
 import x10.util.ArrayList;
+import x10.io.Printer;
+import x10.io.Marshal.LongMarshal;
+import x10.io.Marshal.DoubleMarshal;
 import caravan.util.JSON;
 import caravan.ParameterSet;
 
@@ -11,7 +14,7 @@ public class Run {
   public var finishAt: Long = -1;
   val params: Simulator.InputParameters;
   val seed: Long;
-  public var result: Simulator.OutputParameters;
+  public var result: SimulationOutput;
   public var finished: Boolean;
   val parentPSId: Long;
 
@@ -32,11 +35,11 @@ public class Run {
     val run = new Run( id, ps, seed );
 
     if( json("startAt").toLong() != -1 ) {
-      val result = Simulator.OutputParameters.loadJSON( json("result") );
+      val res = SimulationOutput.loadJSON( json("result") );
       val placeId = json("placeId").toLong();
       val startAt = json("startAt").toLong();
       val finishAt = json("finishAt").toLong();
-      run.storeResult( result, placeId, startAt, finishAt );
+      run.storeResult( res, placeId, startAt, finishAt );
     }
 
     return run;
@@ -55,7 +58,7 @@ public class Run {
     return table.psTable.get( parentPSId );
   }
 
-  def storeResult( _result: Simulator.OutputParameters, _placeId: Long, _startAt: Long, _finishAt: Long ) {
+  def storeResult( _result: SimulationOutput, _placeId: Long, _startAt: Long, _finishAt: Long ) {
     result = _result;
     placeId = _placeId;
     startAt = _startAt;
@@ -77,16 +80,15 @@ public class Run {
     return str;
   }
 
-  public def writeBinary( w: Writer ): void {
+  public def writeBinary( w: Printer ): void {
     val marshal_long = new LongMarshal();
     val marshal_double = new DoubleMarshal();
     marshal_long.write( w, id );
     marshal_long.write( w, parentPSId );
     marshal_long.write( w, seed );
 
-    val results = result.normalize();
-    for( i in 0..(Simulator.numOutputs-1) ) {
-      marshal_double.write( w, results(i) );
+    for( x in result.values ) {
+      marshal_double.write( w, x );
     }
 
     marshal_long.write( w, placeId );

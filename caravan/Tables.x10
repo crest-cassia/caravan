@@ -3,6 +3,9 @@ package caravan;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.io.File;
+import x10.io.Printer;
+import x10.io.Marshal.LongMarshal;
+
 import caravan.util.JSON;
 
 public class Tables {
@@ -67,7 +70,7 @@ public class Tables {
     return s;
   }
 
-  def writeBinary( w: Writer ): void {
+  public def writeBinary( w: Printer ): void {
     val marshal_long = new LongMarshal();
 
     // writing Simulator info
