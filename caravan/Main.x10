@@ -13,16 +13,16 @@ import x10.xrx.Runtime;
 
 public class Main {
 
-  public def run( engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcBerBuf: Long ): void {
+  public def run( engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ): void {
     val table = new Tables();
-    execute( table, engine, saveInterval, timeOut, numProcBerBuf );
+    execute( table, engine, saveInterval, timeOut, numProcPerBuf );
   }
 
-  public def restart( dumpFile: String, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcBerBuf: Long ) {
+  public def restart( dumpFile: String, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ) {
     val infile = new File( dumpFile );
     val reader = infile.openRead();
     val table = Tables.loadFromBinary( reader );
-    execute( table, engine, saveInterval, timeOut, numProcBerBuf );
+    execute( table, engine, saveInterval, timeOut, numProcPerBuf );
   }
 
   private def execute( table: Tables, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ) {
