@@ -72,21 +72,21 @@ public class Tables {
   }
 
   public def writeBinary( w: Printer ): void {
-    val marshal_long = new LongMarshal();
+    val marshalLong = new LongMarshal();
 
     // writing Simulator info
-    marshal_long.write( w, Simulator.numParams );
-    marshal_long.write( w, Simulator.numOutputs );
+    marshalLong.write( w, Simulator.numParams );
+    marshalLong.write( w, Simulator.numOutputs );
 
     // writing PS
-    marshal_long.write( w, psTable.size() );
+    marshalLong.write( w, psTable.size() );
     for( entry in psTable.entries() ) {
       val ps = entry.getValue();
       ps.writeBinary( w );
     }
 
     // writing Runs
-    marshal_long.write( w, runsTable.size() );
+    marshalLong.write( w, runsTable.size() );
     for( entry in runsTable.entries() ) {
       val run = entry.getValue();
       run.writeBinary( w );
