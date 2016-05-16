@@ -2,6 +2,9 @@ package caravan;
 
 import x10.util.ArrayList;
 import x10.util.Pair;
+import x10.io.Printer;
+import x10.io.FileReader;
+import x10.io.Marshal.LongMarshal;
 import caravan.util.JSON;
 
 public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams} ) {
@@ -29,6 +32,25 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
                 ", \"params\": " + Simulator.deregularize(point).toJson() +
               " }";
     return str;
+  }
+
+  public def writeBinary( w: Printer ): void {
+    val marshalLong = new LongMarshal();
+    marshalLong.write( w, id );
+    for( i in 0..(point.rank-1) ) {
+      marshalLong.write( w, point(i) );
+    }
+  }
+
+  static public def loadFromBinary( r: FileReader ): ParameterSet {
+    val marshalLong = new LongMarshal();
+    val id = marshalLong.read( r );
+    val coordinates = new Rail[Long](Simulator.numParams);
+    for( i in 0..(Simulator.numParams-1) ) {
+      coordinates(i) = marshalLong.read( r );
+    }
+    val point = Point.make( coordinates );
+    return new ParameterSet( id, point );
   }
 
   public def numRuns(): Long {
@@ -75,7 +97,7 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
     var sum: Double = 0.0;
     val runs = runs( table );
     for( run in runs ) {
-      sum += run.result.normalize()(0);  // TODO: check other results
+      sum += run.result.values(0);  // TODO: check other results
     }
     return sum / runs.size();
   }

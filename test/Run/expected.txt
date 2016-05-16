@@ -2,6 +2,6 @@
 >>> #testFields
 { id: 1, parentPSId: 10, seed: 1234, result: [0.0], placeId: 0, startAt: -1, finishAt: -1 }
 >>> #testParameterSet
-{ id: 0, point: [3,500,10], params: { "p1": 3, "p2": 5.0, "p3": 50.0 } }
+{ id: 0, point: [3,500,10], params: { "p1": 3, "p2": 5.0, "p3": 1.0 } }
 >>> #testStoreResult
 { id: 1, parentPSId: 10, seed: 1234, result: [3.5], placeId: 3, startAt: 1000, finishAt: 2000 }

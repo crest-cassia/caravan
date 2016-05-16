@@ -1,6 +1,9 @@
 package caravan;
 
 import x10.util.ArrayList;
+import x10.io.Printer;
+import x10.io.FileReader;
+import x10.io.Marshal.LongMarshal;
 import caravan.util.JSON;
 import caravan.ParameterSet;
 
@@ -11,7 +14,7 @@ public class Run {
   public var finishAt: Long = -1;
   val params: Simulator.InputParameters;
   val seed: Long;
-  public var result: Simulator.OutputParameters;
+  public var result: SimulationOutput;
   public var finished: Boolean;
   val parentPSId: Long;
 
@@ -20,6 +23,7 @@ public class Run {
     parentPSId = _ps.id;
     seed = _seed;
     params = Simulator.deregularize( _ps.point );
+    result = SimulationOutput( new Rail[Double](Simulator.numOutputs) );
     finished = false;
   }
 
@@ -32,11 +36,11 @@ public class Run {
     val run = new Run( id, ps, seed );
 
     if( json("startAt").toLong() != -1 ) {
-      val result = Simulator.OutputParameters.loadJSON( json("result") );
+      val res = SimulationOutput.loadJSON( json("result") );
       val placeId = json("placeId").toLong();
       val startAt = json("startAt").toLong();
       val finishAt = json("finishAt").toLong();
-      run.storeResult( result, placeId, startAt, finishAt );
+      run.storeResult( res, placeId, startAt, finishAt );
     }
 
     return run;
@@ -55,7 +59,7 @@ public class Run {
     return table.psTable.get( parentPSId );
   }
 
-  def storeResult( _result: Simulator.OutputParameters, _placeId: Long, _startAt: Long, _finishAt: Long ) {
+  def storeResult( _result: SimulationOutput, _placeId: Long, _startAt: Long, _finishAt: Long ) {
     result = _result;
     placeId = _placeId;
     startAt = _startAt;
@@ -75,5 +79,38 @@ public class Run {
               ", \"result\": " + result +
               ", \"placeId\": " + placeId + ", \"startAt\": " + startAt + ", \"finishAt\": " + finishAt + " }";
     return str;
+  }
+
+  public def writeBinary( w: Printer ): void {
+    val marshalLong = new LongMarshal();
+    marshalLong.write( w, id );
+    marshalLong.write( w, parentPSId );
+    marshalLong.write( w, seed );
+
+    result.writeBinary( w );
+
+    marshalLong.write( w, placeId );
+    marshalLong.write( w, startAt );
+    marshalLong.write( w, finishAt );
+  }
+
+  public static def loadFromBinary( r: FileReader, table: Tables ): Run {
+    val marshalLong = new LongMarshal();
+
+    val id = marshalLong.read( r );
+    val parentPSId = marshalLong.read( r );
+    val ps = table.psTable.get( parentPSId );
+    val seed = marshalLong.read( r );
+
+    val run = new Run( id, ps, seed );
+
+    val result = SimulationOutput.loadFromBinary( r );
+    val placeId = marshalLong.read( r );
+    val startAt = marshalLong.read( r );
+    val finishAt = marshalLong.read( r );
+    if( startAt != -1 ) {
+      run.storeResult( result, placeId, startAt, finishAt );
+    }
+    return run;
   }
 }

@@ -17,28 +17,10 @@ public class Simulator {
     }
   }
 
-  public static struct OutputParameters( r1: Long ) {
-
-    static def loadJSON( json: JSON.Value ): OutputParameters {
-      val r1 = json(0).toLong();
-      return OutputParameters( r1 );
-    }
-
-    public def toString(): String {
-      return "[" + r1 + "]";
-    }
-
-    public def normalize(): Rail[Double]{self.size==numOutputs} {
-      val r = new Rail[Double](numOutputs);
-      r(0) = r1 as Double;
-      return r;
-    }
-  }
-
-  static def run( params: InputParameters, seed: Long ): OutputParameters {
+  static def run( params: InputParameters, seed: Long ): SimulationOutput {
     val rnd = new Random(seed);
     val r1 = params.p1 + params.p2 + params.p3 * 2;
-    return OutputParameters( r1 );
+    return SimulationOutput( [r1 as Double] );
   }
 
   public static val numParams = 3;

@@ -95,9 +95,8 @@ class JobProducer {
   private atomic def serializePeriodically() {
     val now = m_timer.milliTime();
     if( now - m_lastSavedAt > m_saveInterval ) {
-      val psjson = "parameter_sets_" + m_dumpFileIndex + ".json";
-      val runjson = "runs_" + m_dumpFileIndex + ".json";
-      printJSON(psjson, runjson);
+      val dump = "dump_" + m_dumpFileIndex;
+      dumpTables( dump );
       m_lastSavedAt = now;
       m_dumpFileIndex += 1;
     }
@@ -142,6 +141,13 @@ class JobProducer {
     val p2 = f2.printer();
     p2.println( m_tables.parameterSetsJson() );
     p2.flush();
+  }
+
+  public def dumpTables( filename: String ): void {
+    val f = new File(filename);
+    val p = f.printer();
+    m_tables.writeBinary(p);
+    p.flush();
   }
 }
 

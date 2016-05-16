@@ -34,3 +34,22 @@ tables are restored by #load() method
 ]
 #createTasksForUnfinishedRuns() creates tasks
   number of created runs should be 6 : 6
+>>> #testBinaryDump
+tables are restored by #loadFromBinary() method
+  restored PS  : 
+[
+{ "id": 0, "point": [3,500,10], "params": { "p1": 3, "p2": 5.0, "p3": 1.0 } },
+{ "id": 1, "point": [4,500,10], "params": { "p1": 4, "p2": 5.0, "p3": 1.0 } },
+{ "id": 2, "point": [5,500,20], "params": { "p1": 5, "p2": 5.0, "p3": 2.0 } }
+]
+  restored runs: 
+[
+{ "id": 0, "parentPSId": 0, "seed": 0, "result": [0.0], "placeId": 0, "startAt": -1, "finishAt": -1 },
+{ "id": 1, "parentPSId": 0, "seed": 1, "result": [1.0], "placeId": 1, "startAt": 123, "finishAt": 456 },
+{ "id": 2, "parentPSId": 1, "seed": 2, "result": [0.0], "placeId": 0, "startAt": -1, "finishAt": -1 },
+{ "id": 3, "parentPSId": 1, "seed": 3, "result": [0.0], "placeId": 0, "startAt": -1, "finishAt": -1 },
+{ "id": 4, "parentPSId": 2, "seed": 4, "result": [0.0], "placeId": 0, "startAt": -1, "finishAt": -1 },
+{ "id": 5, "parentPSId": 2, "seed": 5, "result": [0.0], "placeId": 0, "startAt": -1, "finishAt": -1 }
+]
+#createTasksForUnfinishedRuns() creates tasks
+  number of created runs should be 5 : 5

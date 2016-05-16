@@ -3,7 +3,7 @@ package caravan;
 import x10.regionarray.Region;
 import x10.io.File;
 import x10.util.Random;
-import caravan.util.JSON;
+import caravan.SimulationOutput;
 
 public class Simulator {
 
@@ -17,30 +17,12 @@ public class Simulator {
     }
   }
 
-  public static struct OutputParameters( duration: Double ) {
-
-    static def loadJSON( json: JSON.Value ): OutputParameters {
-      val duration = json(0).toDouble();
-      return OutputParameters( duration );
-    }
-
-    public def toString(): String {
-      return "[" + duration + "]";
-    }
-
-    public def normalize(): Rail[Double]{self.size==numOutputs} {
-      val r = new Rail[Double](numOutputs);
-      r(0) = duration;
-      return r;
-    }
-  }
-
-  static def run( params: InputParameters, seed: Long ): OutputParameters {
+  static def run( params: InputParameters, seed: Long ): SimulationOutput {
     val rnd = new Random(seed);
     val dt = (rnd.nextDouble() * 2.0 - 1.0) * params.sigma;
     val t = (params.mu + dt) * 1000.0;
     System.sleep( t as Long );
-    return OutputParameters( t );
+    return SimulationOutput( [t as Double] );
   }
 
   public static val numParams = 3;
