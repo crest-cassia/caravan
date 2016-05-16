@@ -82,16 +82,16 @@ public class Run {
   }
 
   public def writeBinary( w: Printer ): void {
-    val marshal_long = new LongMarshal();
-    marshal_long.write( w, id );
-    marshal_long.write( w, parentPSId );
-    marshal_long.write( w, seed );
+    val marshalLong = new LongMarshal();
+    marshalLong.write( w, id );
+    marshalLong.write( w, parentPSId );
+    marshalLong.write( w, seed );
 
     result.writeBinary( w );
 
-    marshal_long.write( w, placeId );
-    marshal_long.write( w, startAt );
-    marshal_long.write( w, finishAt );
+    marshalLong.write( w, placeId );
+    marshalLong.write( w, startAt );
+    marshalLong.write( w, finishAt );
   }
 
   public static def loadFromBinary( r: FileReader, table: Tables ): Run {

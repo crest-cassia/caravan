@@ -35,10 +35,10 @@ public class ParameterSet( id: Long, point: Point{self.rank==Simulator.numParams
   }
 
   public def writeBinary( w: Printer ): void {
-    val marshal_long = new LongMarshal();
-    marshal_long.write( w, id );
+    val marshalLong = new LongMarshal();
+    marshalLong.write( w, id );
     for( i in 0..(point.rank-1) ) {
-      marshal_long.write( w, point(i) );
+      marshalLong.write( w, point(i) );
     }
   }
 
