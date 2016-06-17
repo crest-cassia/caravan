@@ -19,25 +19,9 @@ public class Simulator {
     public def toJson(): String { return toString(); }
   }
 
-  static struct OutputParameters( result: Double ) {
-
-    static def loadJSON( json: JSON.Value ): OutputParameters {
-      val op = json(0).toDouble();
-      return OutputParameters( op );
-    }
-
-    public def toString(): String { return "[" + result + "]"; }
-
-    public def normalize(): Rail[Double]{self.size==numOutputs} {
-      val r = new Rail[Double](numOutputs);
-      r(0) = result;
-      return r;
-    }
-  }
-
-  static def run( params: InputParameters, seed: Long ): OutputParameters {
+  static def run( params: InputParameters, seed: Long ): SimulationOutput {
     val result = runSimulator( params.p1, params.p2, params.p3, seed );
-    return OutputParameters( result );
+    return SimulationOutput( [result as Double] );
   }
 
   @Native("c++", "RunSimulator( #1, #2, #3, #4)")

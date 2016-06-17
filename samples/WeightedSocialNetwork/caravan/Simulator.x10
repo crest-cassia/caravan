@@ -21,27 +21,9 @@ public class Simulator {
     }
   }
 
-  static struct OutputParameters( degree: Long ) {
-
-    static def loadJSON( json: JSON.Value ): OutputParameters {
-      val degree = json(0).toLong();
-      return OutputParameters( degree );
-    }
-
-    public def toString(): String {
-      return "[" + degree + "]";
-    }
-
-    public def normalize(): Rail[Double]{self.size==numOutputs} {
-      val r = new Rail[Double](numOutputs);
-      r(0) = degree as Double;
-      return r;
-    }
-  }
-
-  static def run( params: InputParameters, seed: Long ): OutputParameters {
+  static def run( params: InputParameters, seed: Long ): SimulationOutput {
     val degree = runSimulator( params.p_ld, params.aging, seed );
-    return OutputParameters( degree );
+    return SimulationOutput( [degree as Double] );
   }
 
   @Native("c++", "RunSimulator(2000, 0.05, 0.005, 1.0, 0.0, #1, #2, 0.01, 5000, #3)")
