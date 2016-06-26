@@ -15,9 +15,9 @@ class JobBuffer {
   var m_numRunning: Long = 0;
   val m_freePlaces = new ArrayList[Place]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
-  val m_isLockQueue: AtomicBoolean = new AtomicBoolean(false);
-  val m_isLockResults: AtomicBoolean = new AtomicBoolean(false);
-  val m_isLockFreePlaces: AtomicBoolean = new AtomicBoolean(false);
+  var m_isLockQueue: Boolean = false;
+  var m_isLockResults: Boolean = false;
+  var m_isLockFreePlaces: Boolean = false;
 
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long ) {
     m_refProducer = _refProducer;
@@ -29,9 +29,9 @@ class JobBuffer {
   }
 
   public def getInitialTasks() {
-    when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
+    when( !m_isLockQueue ) { m_isLockQueue = true; }
     fillTaskQueueIfEmpty();
-    m_isLockQueue.set(false);
+    atomic { m_isLockQueue = false; }
   }
 
   private def fillTaskQueueIfEmpty(): void {
@@ -47,7 +47,7 @@ class JobBuffer {
   }
 
   def popTasks(): Rail[Task] {
-    when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
+    when( !m_isLockQueue ) { m_isLockQueue = true; }
     d("Buffer popTasks " + m_numRunning + "/" + m_taskQueue.size() );
     fillTaskQueueIfEmpty();
 
@@ -56,7 +56,7 @@ class JobBuffer {
     m_numRunning += tasks.size;
 
     d("Buffer sending " + tasks.size + " tasks to consumer" );
-    m_isLockQueue.set(false);
+    atomic { m_isLockQueue = false; }
     return tasks;
   }
 
@@ -65,7 +65,7 @@ class JobBuffer {
   }
 
   def saveResult( result: JobConsumer.RunResult ) {
-    when( !m_isLockResults.get() ) { m_isLockResults.set(true); }
+    when( !m_isLockResults ) { m_isLockResults = true; }
     val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
 
     d("Buffer saving result of task " + result.runId );
@@ -77,7 +77,7 @@ class JobBuffer {
       }
       m_resultsBuffer.clear();
     }
-    m_isLockResults.set(false);
+    atomic { m_isLockResults = false; }
 
     if( resultsToSave.size() > 0 ) {
       d("Buffer sending " + resultsToSave.size() + "results to Producer");
@@ -95,8 +95,8 @@ class JobBuffer {
   }
 
   def registerFreePlace( freePlace: Place ) {
-    when( !m_isLockFreePlaces.get() ) { m_isLockFreePlaces.set(true); }
     d("Buffer registering freePlace " + freePlace );
+    when( !m_isLockFreePlaces ) { m_isLockFreePlaces = true; }
     var registerToProducer: Boolean = false;
     if( m_freePlaces.isEmpty() ) {
       registerToProducer = true;
@@ -113,21 +113,21 @@ class JobBuffer {
       d("Buffer registered self as free buffer");
     }
     d("Buffer registered freePlace " + freePlace );
-    m_isLockFreePlaces.set(false);
+    atomic { m_isLockFreePlaces = false; }
   }
 
   def wakeUp() {
     d("Buffer waking up");
-    when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
+    when( !m_isLockQueue ) { m_isLockQueue = true; }
     d("Buffer filling queue");
     fillTaskQueueIfEmpty();
     d("Buffer filled queue");
-    m_isLockQueue.set(false);
-    when( !m_isLockFreePlaces.get() ) { m_isLockFreePlaces.set(true); }
+    atomic{ m_isLockQueue = false; }
+    when( !m_isLockFreePlaces ) { m_isLockFreePlaces = true; }
     d("Buffer launching consumers");
     launchConsumerAtFreePlace();
     d("Buffer launched consumers");
-    m_isLockFreePlaces.set(false);
+    atomic{ m_isLockFreePlaces = false; }
   }
 
   private def launchConsumerAtFreePlace() {

@@ -19,9 +19,9 @@ class JobProducer {
   val m_saveInterval: Long;
   var m_dumpFileIndex: Long;
   val m_logger: MyLogger = new MyLogger();
-  val m_isLockQueue: AtomicBoolean = new AtomicBoolean(false);
-  val m_isLockResults: AtomicBoolean = new AtomicBoolean(false);
-  val m_isLockBuffers: AtomicBoolean = new AtomicBoolean(false);
+  var m_isLockQueue: Boolean = false;
+  var m_isLockResults: Boolean = false;
+  var m_isLockBuffers: Boolean = false;
 
   def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long ) {
     m_tables = _tables;
@@ -54,15 +54,15 @@ class JobProducer {
   }
 
   public def registerFreeBuffer( refBuffer: GlobalRef[JobBuffer] ) {
-    when( !m_isLockBuffers.get() ) { m_isLockBuffers.set(true); }
+    when( !m_isLockBuffers ) { m_isLockBuffers = true; }
     d("Producer registering free buffer");
     m_freeBuffers.add( refBuffer );
     d("Producer registered free buffer");
-    m_isLockBuffers.set(false);
+    atomic { m_isLockBuffers = false; }
   }
 
   public def saveResults( results: ArrayList[JobConsumer.RunResult] ) {
-    when( !m_isLockResults.get() ) { m_isLockResults.set(true); }
+    when( !m_isLockResults ) { m_isLockResults = true; }
     var tasks: ArrayList[Task] = new ArrayList[Task]();
 
     d("Producer saving " + results.size() + " results");
@@ -77,19 +77,19 @@ class JobProducer {
         }
       }
     }
-    m_isLockResults.set(false);
+    atomic { m_isLockResults = false; }
 
-    when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
+    when( !m_isLockQueue ) { m_isLockQueue = true; }
     m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
-    m_isLockQueue.set(false);
+    atomic { m_isLockQueue = false; }
 
     d("Producer saved " + results.size() + " results");
     serializePeriodically();
 
-    when( !m_isLockBuffers.get() ) { m_isLockBuffers.set(true); }
+    when( !m_isLockBuffers ) { m_isLockBuffers = true; }
     notifyFreeBuffer(qSize);
-    m_isLockBuffers.set(false);
+    atomic { m_isLockBuffers = false; }
   }
 
   private atomic def serializePeriodically() {
@@ -119,12 +119,12 @@ class JobProducer {
   }
 
   public def popTasks(): Rail[Task] {
-    when( !m_isLockQueue.get() ) { m_isLockQueue.set(true); }
+    when( !m_isLockQueue ) { m_isLockQueue = true; }
     d("Producer popTasks is called");
     val n = calcNumTasksToPop();
     val tasks = m_taskQueue.popFirst( n );
     d("Producer sending " + tasks.size + " tasks to buffer");
-    m_isLockQueue.set(false);
+    atomic { m_isLockQueue = false; }
     return tasks;
   }
 
