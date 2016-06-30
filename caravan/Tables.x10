@@ -140,5 +140,16 @@ public class Tables {
     }
     return tasks;
   }
+
+  def numUnfinishedRuns(): Long {
+    var count:Long = 0;
+    for( entry in runsTable.entries() ) {
+      val run = entry.getValue();
+      if( run.unfinished() ) {
+        count += 1;
+      }
+    }
+    return count;
+  }
 }
 

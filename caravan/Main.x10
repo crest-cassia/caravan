@@ -67,6 +67,13 @@ public class Main {
     at( refJobProducer ) {
       refJobProducer().dumpTables("dump.bin");
     }
+    val numUnfinished = table.numUnfinishedRuns();
+    if( numUnfinished > 0 ) {
+      Console.ERR.println("There are " + numUnfinished + " unfinished tasks.");
+    }
+    else {
+      Console.ERR.println("All the tasks completed.");
+    }
 
     Console.ERR.println("Elapsed times ---");
     Console.ERR.println("  Initialization:" + (jobExecutionBegin-initializationBegin) + " ms");
