@@ -40,7 +40,7 @@ public class Main {
     val timer = new Timer();
     val initializationBegin = timer.milliTime();
     val refJobProducer = new GlobalRef[JobProducer](
-      new JobProducer( new Tables(), engine, numBuffers, saveInterval )
+      new JobProducer( table, engine, numBuffers, saveInterval )
     );
     val jobExecutionBegin = timer.milliTime();
 
