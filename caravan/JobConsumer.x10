@@ -39,6 +39,8 @@ class JobConsumer {
     val refBuf = m_refBuffer;
 
     val tasks = getTasksFromBuffer();
+    d("Consumer got initial tasks from buffer");
+
     while( tasks.size() > 0 ) {
       if( isExpired() ) { return; }
 
