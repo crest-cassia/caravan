@@ -18,14 +18,15 @@ class JobProducer {
   var m_lastSavedAt: Long;
   val m_saveInterval: Long;
   var m_dumpFileIndex: Long;
-  val m_logger: MyLogger = new MyLogger();
+  val m_logger: MyLogger;
   var m_isLockQueue: Boolean = false;
   var m_isLockResults: Boolean = false;
   var m_isLockBuffers: Boolean = false;
 
-  def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long ) {
+  def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long, refTimeForLogger: Long ) {
     m_tables = _tables;
     m_engine = _engine;
+    m_logger = new MyLogger( refTimeForLogger );
     m_taskQueue = new Deque[Task]();
     if( m_tables.empty() ) {
       enqueueInitialTasks();

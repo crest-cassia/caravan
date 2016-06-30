@@ -40,7 +40,7 @@ public class Main {
     val timer = new Timer();
     val initializationBegin = timer.milliTime();
     val refJobProducer = new GlobalRef[JobProducer](
-      new JobProducer( table, engine, numBuffers, saveInterval )
+      new JobProducer( table, engine, numBuffers, saveInterval, initializationBegin )
     );
     val jobExecutionBegin = timer.milliTime();
 
@@ -48,15 +48,14 @@ public class Main {
       async at( Place(i*numProcPerBuf) ) {
         val min = Runtime.hereLong();
         val max = Math.min( min+numProcPerBuf, Place.numPlaces() );
-        val buffer = new JobBuffer( refJobProducer, (max-1-min) );
+        val buffer = new JobBuffer( refJobProducer, (max-1-min), initializationBegin );
         buffer.getInitialTasks();
         val refBuffer = new GlobalRef[JobBuffer]( buffer );
 
         for( j in (min+1)..(max-1) ) {
           async at( Place(j) ) {
-            val consumer = new JobConsumer( refBuffer );
-            val t = new Timer();
-            consumer.setExpiration( t.milliTime() + timeOut );
+            val consumer = new JobConsumer( refBuffer, initializationBegin );
+            consumer.setExpiration( initializationBegin + timeOut );
             consumer.run();
           }
         }

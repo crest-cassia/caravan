@@ -10,7 +10,7 @@ import caravan.util.Deque;
 class JobBuffer {
 
   val m_refProducer: GlobalRef[JobProducer];
-  val m_logger = new MyLogger();
+  val m_logger: MyLogger;
   val m_taskQueue = new Deque[Task]();
   val m_resultsBuffer = new ArrayList[JobConsumer.RunResult]();
   var m_numRunning: Long = 0;
@@ -20,9 +20,10 @@ class JobBuffer {
   var m_isLockResults: Boolean = false;
   var m_isLockFreePlaces: Boolean = false;
 
-  def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long ) {
+  def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
     m_refProducer = _refProducer;
     m_numConsumers = _numConsumers;
+    m_logger = new MyLogger( refTimeForLogger );
   }
 
   private def d(s:String) {
@@ -137,7 +138,7 @@ class JobBuffer {
       val place = pair.first;
       val timeOut = pair.second;
       async at( place ) {
-        val consumer = new JobConsumer( refMe );
+        val consumer = new JobConsumer( refMe, m_logger.m_refTime );
         consumer.setExpiration( timeOut );
         consumer.run();
       }

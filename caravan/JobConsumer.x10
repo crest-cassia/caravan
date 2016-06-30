@@ -11,10 +11,11 @@ class JobConsumer {
   val m_refBuffer: GlobalRef[JobBuffer];
   val m_timer = new Timer();
   var m_timeOut: Long = -1;
-  val m_logger = new MyLogger();
+  val m_logger: MyLogger;
 
-  def this( _refBuffer: GlobalRef[JobBuffer] ) {
+  def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long ) {
     m_refBuffer = _refBuffer;
+    m_logger = new MyLogger( refTimeForLogger );
   }
 
   private def d(s:String) {
