@@ -55,7 +55,8 @@ public class Main {
         for( j in (min+1)..(max-1) ) {
           async at( Place(j) ) {
             val consumer = new JobConsumer( refBuffer );
-            consumer.setExpiration( timeOut );
+            val t = new Timer();
+            consumer.setExpiration( t.milliTime() + timeOut );
             consumer.run();
           }
         }

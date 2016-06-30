@@ -22,7 +22,7 @@ class JobConsumer {
   }
 
   def setExpiration( timeOutMilliTime: Long ) {
-    m_timeOut = m_timer.milliTime() + timeOutMilliTime;
+    m_timeOut = timeOutMilliTime;
   }
 
   static struct RunResult(
@@ -39,6 +39,8 @@ class JobConsumer {
 
     val tasks = getTasksFromBuffer();
     while( tasks.size() > 0 ) {
+      if( isExpired() ) { return; }
+
       val task = tasks.popFirst();
       val result = runTask( task );
       d("Consumer finished task " + task.runId);
@@ -60,7 +62,7 @@ class JobConsumer {
     d("Consumer registering self as a free place");
     val place = here;
     at( refBuf ) {
-      refBuf().registerFreePlace( place );
+      refBuf().registerFreePlace( place, m_timeOut );
     }
     d("Consumer registered self as a free place");
     d("Consumer finished");

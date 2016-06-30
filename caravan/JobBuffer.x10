@@ -1,6 +1,7 @@
 package caravan;
 
 import x10.util.ArrayList;
+import x10.util.Pair;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicBoolean;
 import caravan.util.MyLogger;
@@ -13,7 +14,7 @@ class JobBuffer {
   val m_taskQueue = new Deque[Task]();
   val m_resultsBuffer = new ArrayList[JobConsumer.RunResult]();
   var m_numRunning: Long = 0;
-  val m_freePlaces = new ArrayList[Place]();
+  val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
   var m_isLockQueue: Boolean = false;
   var m_isLockResults: Boolean = false;
@@ -94,14 +95,14 @@ class JobBuffer {
     return (m_resultsBuffer.size() >= m_numRunning  + m_taskQueue.size() );
   }
 
-  def registerFreePlace( freePlace: Place ) {
+  def registerFreePlace( freePlace: Place, timeOut: Long ) {
     d("Buffer registering freePlace " + freePlace );
     when( !m_isLockFreePlaces ) { m_isLockFreePlaces = true; }
     var registerToProducer: Boolean = false;
     if( m_freePlaces.isEmpty() ) {
       registerToProducer = true;
     }
-    m_freePlaces.add( freePlace );
+    m_freePlaces.add( Pair[Place,Long](freePlace, timeOut) );
 
     if( registerToProducer ) {
       d("Buffer registering self as free buffer");
@@ -131,16 +132,13 @@ class JobBuffer {
   }
 
   private def launchConsumerAtFreePlace() {
-    val freePlaces = new ArrayList[Place]();
-    for( place in m_freePlaces ) {
-      freePlaces.add( place );
-    }
-    m_freePlaces.clear();
-
     val refMe = new GlobalRef[JobBuffer]( this );
-    for( place in freePlaces ) {
+    for( pair in m_freePlaces ) {
+      val place = pair.first;
+      val timeOut = pair.second;
       async at( place ) {
         val consumer = new JobConsumer( refMe );
+        consumer.setExpiration( timeOut );
         consumer.run();
       }
     }
