@@ -41,6 +41,7 @@ class JobConsumer {
     while( tasks.size() > 0 ) {
       val task = tasks.popFirst();
       val result = runTask( task );
+      d("Consumer finished task " + task.runId);
 
       at( refBuf ) {
         refBuf().saveResult( result );
@@ -52,6 +53,7 @@ class JobConsumer {
         val newTasks = getTasksFromBuffer();
         tasks.pushLast( newTasks.toRail() );
         d("Consumer got tasks from buffer");
+        d("  Tasks : " + newTasks.toRail() );
       }
     }
 
