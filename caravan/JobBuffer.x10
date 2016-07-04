@@ -140,7 +140,9 @@ class JobBuffer {
       async at( place ) {
         val consumer = new JobConsumer( refMe, m_logger.m_refTime );
         consumer.setExpiration( timeOut );
-        consumer.run();
+        async {   // must be called in async to realize a better load balancing in all places
+          consumer.run();
+        }
       }
     }
   }

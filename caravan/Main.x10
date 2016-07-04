@@ -71,7 +71,9 @@ public class Main {
             val consumer = new JobConsumer( refBuffer, initializationBegin );
             if( here.id < numProcPerBuf ) { logger.d("JobConsumer has been initialized"); }
             consumer.setExpiration( initializationBegin + timeOut );
-            consumer.run();
+            async {  // must be called in async to realize a better load balancing in all places
+              consumer.run();
+            }
           }
         }
       }
