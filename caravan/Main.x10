@@ -37,7 +37,7 @@ public class Main {
       Console.ERR.println("numProcPerBuf must be 3 or larger since at least two processes are used for producer and buffer");
       throw new Exception("numProcPerBuf must be 3 or larger");
     }
-    if( Place.numPlaces() % numProcPerBuf < 2 ) {
+    if( Place.numPlaces() % numProcPerBuf == 1 ) {
       Console.ERR.println("NumPlaces: " + Place.numPlaces() );
       Console.ERR.println("numProcPerBuf: " + numProcPerBuf );
       throw new Exception("NumPlaces % numProcPerBuf cannot be less than 2 since buffer must have at least one buffer and one consumer.");
