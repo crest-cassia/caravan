@@ -11,7 +11,10 @@ import x10.util.Timer;
 import x10.io.File;
 import x10.xrx.Runtime;
 
+import caravan.util.MyLogger;
+
 public class Main {
+
 
   public def run( engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ): void {
     val table = new Tables();
@@ -39,22 +42,30 @@ public class Main {
 
     val timer = new Timer();
     val initializationBegin = timer.milliTime();
+    val logger = new MyLogger( initializationBegin );
     val refJobProducer = new GlobalRef[JobProducer](
       new JobProducer( table, engine, numBuffers, saveInterval, initializationBegin )
     );
+    logger.d("JobProducer has been initialized");
+
     val jobExecutionBegin = timer.milliTime();
 
     finish for( i in 0..(numBuffers-1) ) {
       async at( Place(i*numProcPerBuf) ) {
         val min = Runtime.hereLong();
         val max = Math.min( min+numProcPerBuf, Place.numPlaces() );
+        if( here.id < numProcPerBuf ) { logger.d("JobBuffer is being initialized"); }
         val buffer = new JobBuffer( refJobProducer, (max-1-min), initializationBegin );
+        if( here.id < numProcPerBuf ) { logger.d("JobBuffer has been initialized"); }
         buffer.getInitialTasks();
+        if( here.id < numProcPerBuf ) { logger.d("JobBuffer got initial tasks"); }
         val refBuffer = new GlobalRef[JobBuffer]( buffer );
 
         for( j in (min+1)..(max-1) ) {
           async at( Place(j) ) {
+            if( here.id < numProcPerBuf ) { logger.d("JobConsumer is being initialized"); }
             val consumer = new JobConsumer( refBuffer, initializationBegin );
+            if( here.id < numProcPerBuf ) { logger.d("JobConsumer has been initialized"); }
             consumer.setExpiration( initializationBegin + timeOut );
             consumer.run();
           }
