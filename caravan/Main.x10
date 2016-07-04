@@ -29,14 +29,18 @@ public class Main {
   }
 
   private def execute( table: Tables, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ) {
-    if( Place.numPlaces() == 1 ) {
+    if( Place.numPlaces() <= 2 ) {
       Console.ERR.println("NumPlaces: " + Place.numPlaces() );
-      throw new Exception("Number of places must be larger than 1");
+      throw new Exception("Number of places must be larger than 2");
     }
-    if( Place.numPlaces() % numProcPerBuf == 1 ) {
+    if( numProcPerBuf <= 2 ) {
+      Console.ERR.println("numProcPerBuf must be 3 or larger since at least two processes are used for producer and buffer");
+      throw new Exception("numProcPerBuf must be 3 or larger");
+    }
+    if( Place.numPlaces() % numProcPerBuf < 2 ) {
       Console.ERR.println("NumPlaces: " + Place.numPlaces() );
       Console.ERR.println("numProcPerBuf: " + numProcPerBuf );
-      throw new Exception("NumPlaces % numProcPerBuf cannot be 1 since buffer must have at least one consumer.");
+      throw new Exception("NumPlaces % numProcPerBuf cannot be less than 2 since buffer must have at least one buffer and one consumer.");
     }
     val numBuffers = Math.ceil( Place.numPlaces() as Double / numProcPerBuf ) as Long;
 
@@ -52,7 +56,7 @@ public class Main {
 
     finish for( i in 0..(numBuffers-1) ) {
       async at( Place(i*numProcPerBuf) ) {
-        val min = Runtime.hereLong();
+        val min = (here.id == 0) ? 1 : Runtime.hereLong();
         val max = Math.min( min+numProcPerBuf, Place.numPlaces() ) - 1;
         if( here.id < numProcPerBuf ) { logger.d("JobBuffer is being initialized"); }
         val buffer = new JobBuffer( refJobProducer, (max-min), initializationBegin );
