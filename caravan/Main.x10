@@ -53,15 +53,15 @@ public class Main {
     finish for( i in 0..(numBuffers-1) ) {
       async at( Place(i*numProcPerBuf) ) {
         val min = Runtime.hereLong();
-        val max = Math.min( min+numProcPerBuf, Place.numPlaces() );
+        val max = Math.min( min+numProcPerBuf, Place.numPlaces() ) - 1;
         if( here.id < numProcPerBuf ) { logger.d("JobBuffer is being initialized"); }
-        val buffer = new JobBuffer( refJobProducer, (max-1-min), initializationBegin );
+        val buffer = new JobBuffer( refJobProducer, (max-min), initializationBegin );
         if( here.id < numProcPerBuf ) { logger.d("JobBuffer has been initialized"); }
         buffer.getInitialTasks();
         if( here.id < numProcPerBuf ) { logger.d("JobBuffer got initial tasks"); }
         val refBuffer = new GlobalRef[JobBuffer]( buffer );
 
-        for( j in (min+1)..(max-1) ) {
+        for( j in (min+1)..max ) {
           async at( Place(j) ) {
             if( here.id < numProcPerBuf ) { logger.d("JobConsumer is being initialized"); }
             val consumer = new JobConsumer( refBuffer, initializationBegin );
