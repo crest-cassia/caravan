@@ -1,13 +1,12 @@
 UNAME = ${shell uname}
-CPP=$(shell (which FCCpx 2>/dev/null || which g++-5 || which g++) | tail -n 1)
+CPP=$(notdir $(shell (which FCCpx 2>/dev/null || which g++-5 || which g++) | tail -n 1) )
 OPT=-O3 -Wall -DNDEBUG -fopenmp
 INCLUDE=
 LIBS=
 
-ifeq ($(CPP), FCCpx)
-	CPP=FCCpx
+ifeq ($(CPP),FCCpx)
 	OPT=-Kfast -Xg
-	INCLUDE=-I$(HOME)/program/libs/boost_1_54_0
+	INCLUDE=-I$(BOOST_PATH)
 endif
 
 libwsn.a: *.cpp *.hpp Makefile
