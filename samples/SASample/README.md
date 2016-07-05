@@ -31,7 +31,8 @@ source ~/.pyenv/versions/miniconda3-3.19.0/envs/salib/bin/activate salib
 
 If your simulator has three input parameters, we first need to prepare "param.txt" file as follows.
 In this sample, param.txt is already prepared.
-Always specify the range normalized to [0,1].
+If you would like to try with your simulator, prepare "param.txt" by yourself.
+When you prepare the file, specify [0,1] for the ranges of all the parameters. The domain is calculated by the framework.
 
 ```txt:param.txt
 x1 0.0 1.0
@@ -45,15 +46,13 @@ Then run SAlib to generate sample points as follows:
 python -m SALib.sample.saltelli -n 1000 -p ./param.txt -o model_input.txt --delimiter=' ' --max-order=1
 ```
 
-The number of generated points is $n(d+2)$, where "n" is the number you specified as an argument and "d" is the number of input parameters.
-In this case, you'll find 5000 points in "model_input.txt".
+The number of generated points is $n(d+2)$, where "n" is the number you specify as the command-line argument and "d" is the number of input parameters.
+In this case, you'll find 5000 points in "model_input.txt" since number of inputs is three.
 
 ## Building
 
 Based on the generated sampling points, CARAVAN distributes the runs to available processors.
-
-To build CARAVAN, run `./build.sh`. Then the executables are generated in `build/` directory.
-
+To build this sample, run `./build.sh`. Then the executables are generated in `build/` directory.
 In this example, the simulation code is a simple function for which sensitivity indices are analytically obtained.
 
 ## Running
@@ -66,7 +65,7 @@ X10_NPLACES=8 ./build/a.out model_input.txt
 
 ## Analyzing
 
-After you run the simulations, you will find "ps_ids.txt" in addition to "runs.json" and "parameter_sets.json".
+After you run the simulations, you will find "ps_ids.txt" in addition to "dump.bin".
 "ps_ids.txt" has the list of PS IDs for each sample point. Since an identical PS can be generated, we need to map the input sample points to the PS IDs using this file.
 
 To analyze the results, run the following command:
