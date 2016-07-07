@@ -13,5 +13,8 @@ libwsn.a: *.cpp *.hpp Makefile
 	$(CPP) $(OPT) $(INCLUDE) -c *.cpp
 	ar rcs libwsn.a *.o
 
+wsn.out: Makefile libwsn.a exe/main.cpp
+	$(CPP) $(OPT) $(INCLUDE) libwsn.a exe/main.cpp -o wsn.out
+
 clean:
 	rm -f *.o libwsn.a
