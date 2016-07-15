@@ -27,7 +27,7 @@ class JobBuffer {
   }
 
   private def d(s:String) {
-    if( here.id == 0 ) { m_logger.d(s); }
+    if( here.id == 1 ) { m_logger.d(s); }
   }
 
   public def getInitialTasks() {

@@ -55,17 +55,18 @@ public class Main {
     val jobExecutionBegin = timer.milliTime();
 
     finish for( i in 0..(numBuffers-1) ) {
-      async at( Place(i*numProcPerBuf) ) {
-        val min = (here.id == 0) ? 1 : Runtime.hereLong();
-        val max = Math.min( here.id+numProcPerBuf, Place.numPlaces() ) - 1;
+      val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
+      async at( Place(bufPlace) ) {
+        val minConsPlace = here.id+1;
+        val maxConsPlace = Math.min( here.id+numProcPerBuf, Place.numPlaces() ) - 1;
         if( here.id < numProcPerBuf ) { logger.d("JobBuffer is being initialized"); }
-        val buffer = new JobBuffer( refJobProducer, (max-min), initializationBegin );
+        val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
         if( here.id < numProcPerBuf ) { logger.d("JobBuffer has been initialized"); }
         buffer.getInitialTasks();
         if( here.id < numProcPerBuf ) { logger.d("JobBuffer got initial tasks"); }
         val refBuffer = new GlobalRef[JobBuffer]( buffer );
 
-        for( j in (min+1)..max ) {
+        for( j in minConsPlace..maxConsPlace ) {
           async at( Place(j) ) {
             if( here.id < numProcPerBuf ) { logger.d("JobConsumer is being initialized"); }
             val consumer = new JobConsumer( refBuffer, initializationBegin );
