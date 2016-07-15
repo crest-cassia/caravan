@@ -59,21 +59,23 @@ public class Main {
       async at( Place(bufPlace) ) {
         val minConsPlace = here.id+1;
         val maxConsPlace = Math.min( here.id+numProcPerBuf, Place.numPlaces() ) - 1;
-        if( i==0 ) { logger.d("JobBuffer is being initialized"); }
-        val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
-        if( i==0 ) { logger.d("JobBuffer has been initialized"); }
-        buffer.getInitialTasks();
-        if( i==0 ) { logger.d("JobBuffer got initial tasks"); }
-        val refBuffer = new GlobalRef[JobBuffer]( buffer );
+        async {  // use async in order to avoid initial overhead
+          if( i==0 ) { logger.d("JobBuffer is being initialized"); }
+          val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
+          if( i==0 ) { logger.d("JobBuffer has been initialized"); }
+          buffer.getInitialTasks();
+          if( i==0 ) { logger.d("JobBuffer got initial tasks"); }
+          val refBuffer = new GlobalRef[JobBuffer]( buffer );
 
-        for( j in minConsPlace..maxConsPlace ) {
-          async at( Place(j) ) {
-            if( here.id < numProcPerBuf ) { logger.d("JobConsumer is being initialized"); }
-            val consumer = new JobConsumer( refBuffer, initializationBegin );
-            if( here.id < numProcPerBuf ) { logger.d("JobConsumer has been initialized"); }
-            consumer.setExpiration( initializationBegin + timeOut );
-            async {  // must be called in async to realize a better load balancing in all places
-              consumer.run();
+          for( j in minConsPlace..maxConsPlace ) {
+            async at( Place(j) ) {
+              if( here.id < numProcPerBuf ) { logger.d("JobConsumer is being initialized"); }
+              val consumer = new JobConsumer( refBuffer, initializationBegin );
+              if( here.id < numProcPerBuf ) { logger.d("JobConsumer has been initialized"); }
+              consumer.setExpiration( initializationBegin + timeOut );
+              async {  // must be called in async to realize a better load balancing in all places
+                consumer.run();
+              }
             }
           }
         }
