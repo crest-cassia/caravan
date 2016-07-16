@@ -93,7 +93,8 @@ class JobBuffer {
   }
 
   private def hasEnoughResults(): Boolean {
-    return (m_resultsBuffer.size() >= m_numRunning  + m_taskQueue.size() );
+    val size = m_resultsBuffer.size();
+    return (size >= m_numConsumers) || (size >= m_numRunning + m_taskQueue.size() );
   }
 
   def registerFreePlace( freePlace: Place, timeOut: Long ) {
