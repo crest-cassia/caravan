@@ -82,15 +82,12 @@ class JobProducer {
     serializePeriodically();
     atomic { m_isLockResults = false; }
 
-    var qSize:Long = 0;
-    if( tasks.size() > 0 ) {
-      when( !m_isLockQueue ) { m_isLockQueue = true; }
-      m_taskQueue.pushLast( tasks.toRail() );
-      qSize = m_taskQueue.size();
-      atomic { m_isLockQueue = false; }
-    }
+    when( !m_isLockQueue ) { m_isLockQueue = true; } // to get m_taskQueue.size, we need to lock queue
+    m_taskQueue.pushLast( tasks.toRail() );
+    val qSize = m_taskQueue.size();
+    atomic { m_isLockQueue = false; }
 
-    if( qSize > 0 ) {
+    if( qSize > 0 ) {   // only when there is a task, notify buffers
       when( !m_isLockBuffers ) { m_isLockBuffers = true; }
       notifyFreeBuffer(qSize);
       atomic { m_isLockBuffers = false; }
@@ -109,6 +106,7 @@ class JobProducer {
 
   private def notifyFreeBuffer(numBuffersToLaunch: Long) {
     d("Producer notifying free buffers");
+    d("  num free buffers: " + m_freeBuffers.size() );
 
     val refBuffers = new ArrayList[GlobalRef[JobBuffer]]();
     while( m_freeBuffers.size () > 0 && refBuffers.size() < numBuffersToLaunch ) {
