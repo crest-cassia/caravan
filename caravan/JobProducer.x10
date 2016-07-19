@@ -78,19 +78,23 @@ class JobProducer {
         }
       }
     }
-    atomic { m_isLockResults = false; }
-
-    when( !m_isLockQueue ) { m_isLockQueue = true; }
-    m_taskQueue.pushLast( tasks.toRail() );
-    val qSize = m_taskQueue.size();
-    atomic { m_isLockQueue = false; }
-
     d("Producer saved " + results.size() + " results");
     serializePeriodically();
+    atomic { m_isLockResults = false; }
 
-    when( !m_isLockBuffers ) { m_isLockBuffers = true; }
-    notifyFreeBuffer(qSize);
-    atomic { m_isLockBuffers = false; }
+    var qSize:Long = 0;
+    if( tasks.size() > 0 ) {
+      when( !m_isLockQueue ) { m_isLockQueue = true; }
+      m_taskQueue.pushLast( tasks.toRail() );
+      qSize = m_taskQueue.size();
+      atomic { m_isLockQueue = false; }
+    }
+
+    if( qSize > 0 ) {
+      when( !m_isLockBuffers ) { m_isLockBuffers = true; }
+      notifyFreeBuffer(qSize);
+      atomic { m_isLockBuffers = false; }
+    }
   }
 
   private atomic def serializePeriodically() {
