@@ -146,6 +146,7 @@ class JobBuffer {
         }
       }
     }
+    m_freePlaces.clear(); // must be cleared since consumers are launched
   }
 }
 
