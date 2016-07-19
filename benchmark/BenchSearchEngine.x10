@@ -1,6 +1,8 @@
 import x10.util.ArrayList;
 import x10.regionarray.Region;
 import x10.util.Random;
+import x10.io.File;
+import x10.io.Printer;
 
 import caravan.SearchEngineI;
 import caravan.Task;
@@ -22,6 +24,8 @@ public class BenchSearchEngine implements SearchEngineI {
 
   val rnd: Random;
 
+  val logIO: Printer;
+
   var psCount: Long = 0;
   var finishedPSCount: Long = 0;
 
@@ -37,6 +41,9 @@ public class BenchSearchEngine implements SearchEngineI {
     sigmaLong = (sigma * 10.0) as Long;
 
     rnd = new Random( 0 );
+
+    val out = new File("engine_log.txt");
+    logIO = out.printer();
   }
 
   private def createNewTask( table: Tables, num: Long ): ArrayList[Task] {
@@ -60,7 +67,7 @@ public class BenchSearchEngine implements SearchEngineI {
   public def onParameterSetFinished( table: Tables, finishedPS: ParameterSet ): ArrayList[Task] {
     finishedPSCount += 1;
     val nonFinishedPS = psCount - finishedPSCount;
-    Console.ERR.println("on PS finished: " + nonFinishedPS);
+    logIO.printf("on PS finished: %ld\n", nonFinishedPS);
     if( rnd.nextDouble() < jobGenProb || nonFinishedPS == 0 ) {
       val numTodo = numStaticJobs + numDynamicJobs - psCount;
       val numTasks = numTodo > numJobsPerGen ? numJobsPerGen : numTodo;
