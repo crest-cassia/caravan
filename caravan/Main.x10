@@ -58,7 +58,7 @@ public class Main {
       val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
       async at( Place(bufPlace) ) {
         val minConsPlace = here.id+1;
-        val maxConsPlace = Math.min( here.id+numProcPerBuf, Place.numPlaces() ) - 1;
+        val maxConsPlace = Math.min( (i+1)*numProcPerBuf, Place.numPlaces() ) - 1;
         if( i==0 ) { logger.d("JobBuffer is being initialized"); }
         val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
         if( i==0 ) { logger.d("JobBuffer has been initialized"); }
