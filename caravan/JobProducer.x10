@@ -1,6 +1,7 @@
 package caravan;
 
 import x10.util.ArrayList;
+import x10.util.HashMap;
 import x10.io.File;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicBoolean;
@@ -12,16 +13,15 @@ class JobProducer {
   val m_tables: Tables;
   val m_engine: SearchEngineI;
   val m_taskQueue: Deque[Task];
-  val m_freeBuffers: ArrayList[GlobalRef[JobBuffer]];
+  val m_freeBuffers: HashMap[Place, GlobalRef[JobBuffer]];
   val m_numBuffers: Long;
   val m_timer = new Timer();
   var m_lastSavedAt: Long;
   val m_saveInterval: Long;
   var m_dumpFileIndex: Long;
   val m_logger: MyLogger;
-  var m_isLockQueue: Boolean = false;
+  var m_isLockQueueAndFreeBuffers: Boolean = false; // lock for m_taskQueue and m_freeBuffers
   var m_isLockResults: Boolean = false;
-  var m_isLockBuffers: Boolean = false;
 
   def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long, refTimeForLogger: Long ) {
     m_tables = _tables;
@@ -33,7 +33,7 @@ class JobProducer {
     } else {
       enqueueUnfinishedTasks();
     }
-    m_freeBuffers = new ArrayList[GlobalRef[JobBuffer]]();
+    m_freeBuffers = new HashMap[Place, GlobalRef[JobBuffer]]();
     m_numBuffers = _numBuffers;
     m_lastSavedAt = m_timer.milliTime();
     m_saveInterval = _saveInterval;
@@ -54,12 +54,10 @@ class JobProducer {
     m_taskQueue.pushLast( tasks.toRail() );
   }
 
-  public def registerFreeBuffer( refBuffer: GlobalRef[JobBuffer] ) {
-    when( !m_isLockBuffers ) { m_isLockBuffers = true; }
-    d("Producer registering free buffer");
-    m_freeBuffers.add( refBuffer );
-    d("Producer registered free buffer");
-    atomic { m_isLockBuffers = false; }
+  private def registerFreeBuffer( refBuffer: GlobalRef[JobBuffer] ) {
+    d("Producer registering free buffer : " + refBuffer.home );
+    m_freeBuffers( refBuffer.home )= refBuffer; // to avoid duplication, we use HashMap
+    d("Producer registered free buffer : " + refBuffer.home );
   }
 
   public def saveResults( results: ArrayList[JobConsumer.RunResult] ) {
@@ -82,16 +80,14 @@ class JobProducer {
     serializePeriodically();
     atomic { m_isLockResults = false; }
 
-    when( !m_isLockQueue ) { m_isLockQueue = true; } // to get m_taskQueue.size, we need to lock queue
+    when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
     m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
-    atomic { m_isLockQueue = false; }
 
     if( qSize > 0 ) {   // only when there is a task, notify buffers
-      when( !m_isLockBuffers ) { m_isLockBuffers = true; }
       notifyFreeBuffer(qSize);
-      atomic { m_isLockBuffers = false; }
     }
+    atomic { m_isLockQueueAndFreeBuffers = false; }
   }
 
   private atomic def serializePeriodically() {
@@ -105,29 +101,39 @@ class JobProducer {
   }
 
   private def notifyFreeBuffer(numBuffersToLaunch: Long) {
+    // numBuffersToLaunch must be 0
     d("Producer notifying free buffers");
-    d("  num free buffers: " + m_freeBuffers.size() );
 
     val refBuffers = new ArrayList[GlobalRef[JobBuffer]]();
-    while( m_freeBuffers.size () > 0 && refBuffers.size() < numBuffersToLaunch ) {
-      val freeBuf = m_freeBuffers.removeFirst();
-      refBuffers.add( freeBuf );
+    for( entry in m_freeBuffers.entries() ) {
+      val refBuf = entry.getValue();
+      refBuffers.add( refBuf );
+      if( refBuffers.size() >= numBuffersToLaunch ) { break; }
     }
+
     for( refBuf in refBuffers ) {
-      at( refBuf ) {
-        refBuf().wakeUp();
+      m_freeBuffers.delete( refBuf.home );
+      async at( refBuf ) {
+        async { refBuf().wakeUp(); }
       }
     }
     d("Producer notified free buffers");
   }
 
-  public def popTasks(): Rail[Task] {
-    when( !m_isLockQueue ) { m_isLockQueue = true; }
+  // return tasks if available.
+  // if there is no task, register the buffer as free
+  public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer] ): Rail[Task] {
+    when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
     d("Producer popTasks is called");
     val n = calcNumTasksToPop();
     val tasks = m_taskQueue.popFirst( n );
     d("Producer sending " + tasks.size + " tasks to buffer");
-    atomic { m_isLockQueue = false; }
+
+    if( tasks.size == 0 ) {
+      registerFreeBuffer( refBuf );
+    }
+
+    atomic { m_isLockQueueAndFreeBuffers = false; }
     return tasks;
   }
 

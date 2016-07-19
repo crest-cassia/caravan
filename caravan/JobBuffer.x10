@@ -16,9 +16,8 @@ class JobBuffer {
   var m_numRunning: Long = 0;
   val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
-  var m_isLockQueue: Boolean = false;
+  var m_isLockQueueAndFreePlaces: Boolean = false; // lock for m_taskQueue and m_freePlaces
   var m_isLockResults: Boolean = false;
-  var m_isLockFreePlaces: Boolean = false;
 
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
     m_refProducer = _refProducer;
@@ -31,38 +30,44 @@ class JobBuffer {
   }
 
   public def getInitialTasks() {
-    when( !m_isLockQueue ) { m_isLockQueue = true; }
-    fillTaskQueueIfEmpty();
-    atomic { m_isLockQueue = false; }
+    when( !m_isLockQueueAndFreePlaces ) { m_isLockQueueAndFreePlaces = true; }
+    fillTaskQueue();
+    atomic { m_isLockQueueAndFreePlaces = false; }
   }
 
-  private def fillTaskQueueIfEmpty(): void {
-    if( m_taskQueue.size() == 0 ) {
-      d("Buffer getting tasks from producer");
-      val refProd = m_refProducer;
-      val tasks = at( refProd ) {
-        return refProd().popTasks();
-      };
-      d("Buffer got " + tasks.size + " tasks from producer");
-      m_taskQueue.pushLast( tasks );
-    }
+  private def fillTaskQueue(): void {
+    d("Buffer getting tasks from producer");
+    val refProd = m_refProducer;
+    val refBuf = new GlobalRef[JobBuffer]( this );
+    val tasks = at( refProd ) {
+      return refProd().popTasksOrRegisterFreeBuffer( refBuf );
+    };
+    d("Buffer got " + tasks.size + " tasks from producer");
+    m_taskQueue.pushLast( tasks );
   }
 
+  // return tasks
+  // if there is no tasks to return, register consumer as free place
   def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
-    when( !m_isLockQueue ) { m_isLockQueue = true; }
+    when( !m_isLockQueueAndFreePlaces ) { m_isLockQueueAndFreePlaces = true; }
+
     d("Buffer popTasks " + m_numRunning + "/" + m_taskQueue.size() );
-    fillTaskQueueIfEmpty();
+
+    if( m_taskQueue.size() == 0 && m_freePlaces.isEmpty() ) {
+      fillTaskQueue();
+    }
 
     val n = calcNumTasksToPop();
     val tasks = m_taskQueue.popFirst( n );
     m_numRunning += tasks.size;
 
-    d("Buffer sending " + tasks.size + " tasks to consumer" );
-    atomic { m_isLockQueue = false; }
-
     if( tasks.size == 0 ) {
       registerFreePlace( freePlace, timeOut );
     }
+
+    d("Buffer sending " + tasks.size + " tasks to consumer" );
+    atomic { m_isLockQueueAndFreePlaces = false; }
+
     return tasks;
   }
 
@@ -102,39 +107,26 @@ class JobBuffer {
   }
 
   private def registerFreePlace( freePlace: Place, timeOut: Long ) {
-    d("Buffer registering freePlace " + freePlace );
-    when( !m_isLockFreePlaces ) { m_isLockFreePlaces = true; }
+    d("Buffer registering free consumer " + freePlace );
     var registerToProducer: Boolean = false;
     if( m_freePlaces.isEmpty() ) {
       registerToProducer = true;
     }
     m_freePlaces.add( Pair[Place,Long](freePlace, timeOut) );
 
-    if( registerToProducer ) {
-      d("Buffer registering self as free buffer");
-      val refMe = new GlobalRef[JobBuffer]( this );
-      val refProd = m_refProducer;
-      at( refProd ) {
-        refProd().registerFreeBuffer( refMe );
-      }
-      d("Buffer registered self as free buffer");
-    }
-    d("Buffer registered freePlace " + freePlace );
-    atomic { m_isLockFreePlaces = false; }
+    d("Buffer registered free consumer " + freePlace );
   }
 
   def wakeUp() {
     d("Buffer waking up");
-    when( !m_isLockQueue ) { m_isLockQueue = true; }
+    when( !m_isLockQueueAndFreePlaces ) { m_isLockQueueAndFreePlaces = true; }
     d("Buffer filling queue");
-    fillTaskQueueIfEmpty();
+    fillTaskQueue();
     d("Buffer filled queue");
-    atomic{ m_isLockQueue = false; }
-    when( !m_isLockFreePlaces ) { m_isLockFreePlaces = true; }
     d("Buffer launching consumers");
     launchConsumerAtFreePlace();
     d("Buffer launched consumers");
-    atomic{ m_isLockFreePlaces = false; }
+    atomic{ m_isLockQueueAndFreePlaces = false; }
   }
 
   private def launchConsumerAtFreePlace() {
