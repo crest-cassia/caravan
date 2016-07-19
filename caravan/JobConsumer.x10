@@ -38,7 +38,7 @@ class JobConsumer {
     d("Consumer starting");
     val refBuf = m_refBuffer;
 
-    val tasks = getTasksFromBuffer();
+    val tasks = getTasksFromBufferOrRegisterFreePlace();
     d("Consumer got initial tasks from buffer");
 
     while( tasks.size() > 0 ) {
@@ -55,19 +55,13 @@ class JobConsumer {
 
       if( tasks.size() == 0 ) {
         d("Consumer task queue is empty. getting tasks");
-        val newTasks = getTasksFromBuffer();
+        val newTasks = getTasksFromBufferOrRegisterFreePlace();
         tasks.pushLast( newTasks.toRail() );
         d("Consumer got tasks from buffer");
         d("  Tasks : " + newTasks.toRail() );
       }
     }
 
-    d("Consumer registering self as a free place");
-    val place = here;
-    at( refBuf ) {
-      refBuf().registerFreePlace( place, m_timeOut );
-    }
-    d("Consumer registered self as a free place");
     d("Consumer finished");
   }
 
@@ -82,10 +76,12 @@ class JobConsumer {
     return result;
   }
 
-  def getTasksFromBuffer(): Deque[Task] {
+  def getTasksFromBufferOrRegisterFreePlace(): Deque[Task] {
     val refBuf = m_refBuffer;
+    val timeOut = m_timeOut;
+    val consPlace = here;
     val tasks = at( refBuf ) {
-      return refBuf().popTasks();
+      return refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
     };
     val q = new Deque[Task]();
     q.pushLast( tasks );

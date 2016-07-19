@@ -48,7 +48,7 @@ class JobBuffer {
     }
   }
 
-  def popTasks(): Rail[Task] {
+  def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
     when( !m_isLockQueue ) { m_isLockQueue = true; }
     d("Buffer popTasks " + m_numRunning + "/" + m_taskQueue.size() );
     fillTaskQueueIfEmpty();
@@ -59,6 +59,10 @@ class JobBuffer {
 
     d("Buffer sending " + tasks.size + " tasks to consumer" );
     atomic { m_isLockQueue = false; }
+
+    if( tasks.size == 0 ) {
+      registerFreePlace( freePlace, timeOut );
+    }
     return tasks;
   }
 
@@ -97,7 +101,7 @@ class JobBuffer {
     return (size >= m_numConsumers) || (size >= m_numRunning + m_taskQueue.size() );
   }
 
-  def registerFreePlace( freePlace: Place, timeOut: Long ) {
+  private def registerFreePlace( freePlace: Place, timeOut: Long ) {
     d("Buffer registering freePlace " + freePlace );
     when( !m_isLockFreePlaces ) { m_isLockFreePlaces = true; }
     var registerToProducer: Boolean = false;
