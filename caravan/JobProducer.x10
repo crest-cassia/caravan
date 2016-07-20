@@ -113,8 +113,8 @@ class JobProducer {
 
     for( refBuf in refBuffers ) {
       m_freeBuffers.delete( refBuf.home );
-      async at( refBuf ) {
-        async { refBuf().wakeUp(); }
+      at( refBuf ) async {
+        refBuf().wakeUp();
       }
     }
     d("Producer notified " + refBuffers.size() + " free buffers");
