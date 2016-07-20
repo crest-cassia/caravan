@@ -124,10 +124,10 @@ class JobProducer {
   // if there is no task, register the buffer as free
   public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer] ): Rail[Task] {
     when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
-    d("Producer popTasks is called");
+    d("Producer popTasks is called by " + refBuf.home );
     val n = calcNumTasksToPop();
     val tasks = m_taskQueue.popFirst( n );
-    d("Producer sending " + tasks.size + " tasks to buffer");
+    d("Producer sending " + tasks.size + " tasks to buffer" + refBuf.home);
 
     if( tasks.size == 0 ) {
       registerFreeBuffer( refBuf );
