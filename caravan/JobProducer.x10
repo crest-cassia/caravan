@@ -20,6 +20,7 @@ class JobProducer {
   var m_dumpFileIndex: Long;
   val m_logger: MyLogger;
   var m_isLockQueueAndFreeBuffers: Boolean = false; // lock for m_taskQueue and m_freeBuffers
+  var m_numActivityPopingTasks: Long = 0; // number of activities which calls popTasks
   var m_isLockResults: Boolean = false;
 
   def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long, refTimeForLogger: Long ) {
@@ -79,7 +80,7 @@ class JobProducer {
     serializePeriodically();
     atomic { m_isLockResults = false; }
 
-    when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
+    when( allowSaving() && !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
     m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
 
@@ -97,6 +98,10 @@ class JobProducer {
       m_lastSavedAt = now;
       m_dumpFileIndex += 1;
     }
+  }
+
+  private def allowSaving(): Boolean {
+    return (m_numActivityPopingTasks == 0 || m_taskQueue.size() == 0);
   }
 
   private def notifyFreeBuffer(numBuffersToLaunch: Long) {
@@ -122,6 +127,7 @@ class JobProducer {
   // return tasks if available.
   // if there is no task, register the buffer as free
   public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer] ): Rail[Task] {
+    atomic { m_numActivityPopingTasks += 1; }
     when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
     d("Producer popTasks is called by " + refBuf.home );
     val n = calcNumTasksToPop();
@@ -132,7 +138,10 @@ class JobProducer {
       registerFreeBuffer( refBuf );
     }
 
-    atomic { m_isLockQueueAndFreeBuffers = false; }
+    atomic {
+      m_isLockQueueAndFreeBuffers = false;
+      m_numActivityPopingTasks -= 1;
+    }
     return tasks;
   }
 
