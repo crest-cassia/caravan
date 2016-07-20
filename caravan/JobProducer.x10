@@ -61,7 +61,7 @@ class JobProducer {
   }
 
   public def saveResults( results: ArrayList[JobConsumer.RunResult] ) {
-    when( !m_isLockResults ) { m_isLockResults = true; }
+    when( allowSaving() && !m_isLockResults ) { m_isLockResults = true; }
     var tasks: ArrayList[Task] = new ArrayList[Task]();
 
     d("Producer saving " + results.size() + " results");
