@@ -91,14 +91,20 @@ class JobBuffer {
     atomic { m_isLockResults = false; }
 
     if( resultsToSave.size() > 0 ) {
-      d("Buffer sending " + resultsToSave.size() + "results to Producer");
-      val refProd = m_refProducer;
-      at( refProd ) {
-        refProd().saveResults( resultsToSave );
+      async {
+        sendResultsToProducer( resultsToSave );
       }
-      d("Buffer sent " + resultsToSave.size() + "results to Producer");
     }
     d("Buffer saved result of task " + result.runId);
+  }
+
+  private def sendResultsToProducer( resultsToSave: ArrayList[JobConsumer.RunResult] ) {
+    d("Buffer sending " + resultsToSave.size() + "results to Producer");
+    val refProd = m_refProducer;
+    at( refProd ) {
+      refProd().saveResults( resultsToSave );
+    }
+    d("Buffer sent " + resultsToSave.size() + "results to Producer");
   }
 
   private def hasEnoughResults(): Boolean {
