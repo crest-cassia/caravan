@@ -134,12 +134,10 @@ class JobBuffer {
     for( pair in m_freePlaces ) {
       val place = pair.first;
       val timeOut = pair.second;
-      async at( place ) {
+      at( place ) async {
         val consumer = new JobConsumer( refMe, m_logger.m_refTime );
         consumer.setExpiration( timeOut );
-        async {   // must be called in async to realize a better load balancing in all places
-          consumer.run();
-        }
+        consumer.run();
       }
     }
     m_freePlaces.clear(); // must be cleared since consumers are launched

@@ -84,7 +84,7 @@ class JobProducer {
     m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
 
-    if( qSize > 0 ) {   // only when there is a task, notify buffers
+    if( m_taskQueue.size() > 0 && m_freeBuffers.size() > 0 ) {   // only when there is a task and free buffer
       notifyFreeBuffer(qSize);
     }
     atomic { m_isLockQueueAndFreeBuffers = false; }
@@ -113,21 +113,21 @@ class JobProducer {
 
     for( refBuf in refBuffers ) {
       m_freeBuffers.delete( refBuf.home );
-      async at( refBuf ) {
-        async { refBuf().wakeUp(); }
+      at( refBuf ) async {
+        refBuf().wakeUp();
       }
     }
-    d("Producer notified free buffers");
+    d("Producer notified " + refBuffers.size() + " free buffers");
   }
 
   // return tasks if available.
   // if there is no task, register the buffer as free
   public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer] ): Rail[Task] {
     when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
-    d("Producer popTasks is called");
+    d("Producer popTasks is called by " + refBuf.home );
     val n = calcNumTasksToPop();
     val tasks = m_taskQueue.popFirst( n );
-    d("Producer sending " + tasks.size + " tasks to buffer");
+    d("Producer sending " + tasks.size + " tasks to buffer" + refBuf.home);
 
     if( tasks.size == 0 ) {
       registerFreeBuffer( refBuf );

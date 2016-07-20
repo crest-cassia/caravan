@@ -56,7 +56,7 @@ public class Main {
 
     finish for( i in 0..(numBuffers-1) ) {
       val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
-      async at( Place(bufPlace) ) {
+      at( Place(bufPlace) ) async {
         val minConsPlace = here.id+1;
         val maxConsPlace = Math.min( (i+1)*numProcPerBuf, Place.numPlaces() ) - 1;
         if( i==0 ) { logger.d("JobBuffer is being initialized"); }
@@ -67,14 +67,12 @@ public class Main {
         val refBuffer = new GlobalRef[JobBuffer]( buffer );
 
         for( j in minConsPlace..maxConsPlace ) {
-          async at( Place(j) ) {
+          at( Place(j) ) async {
             if( here.id < numProcPerBuf ) { logger.d("JobConsumer is being initialized"); }
             val consumer = new JobConsumer( refBuffer, initializationBegin );
             if( here.id < numProcPerBuf ) { logger.d("JobConsumer has been initialized"); }
             consumer.setExpiration( initializationBegin + timeOut );
-            async {  // must be called in async to realize a better load balancing in all places
-              consumer.run();
-            }
+            consumer.run();
           }
         }
       }
