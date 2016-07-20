@@ -3,7 +3,7 @@ package caravan;
 import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
-import x10.util.concurrent.AtomicBoolean;
+import x10.util.concurrent.AtomicLong;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -13,7 +13,7 @@ class JobBuffer {
   val m_logger: MyLogger;
   val m_taskQueue = new Deque[Task]();
   val m_resultsBuffer = new ArrayList[JobConsumer.RunResult]();
-  var m_numRunning: Long = 0;
+  var m_numRunning: AtomicLong = new AtomicLong(0);
   val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
   var m_isLockQueueAndFreePlaces: Boolean = false; // lock for m_taskQueue and m_freePlaces
@@ -51,7 +51,7 @@ class JobBuffer {
   def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
     when( !m_isLockQueueAndFreePlaces ) { m_isLockQueueAndFreePlaces = true; }
 
-    d("Buffer popTasks " + m_numRunning + "/" + m_taskQueue.size() );
+    d("Buffer popTasks " + m_numRunning.get() + "/" + m_taskQueue.size() );
 
     if( m_taskQueue.size() == 0 && m_freePlaces.isEmpty() ) {
       fillTaskQueue();
@@ -59,7 +59,7 @@ class JobBuffer {
 
     val n = calcNumTasksToPop();
     val tasks = m_taskQueue.popFirst( n );
-    m_numRunning += tasks.size;
+    m_numRunning.addAndGet( tasks.size );
 
     if( tasks.size == 0 ) {
       registerFreePlace( freePlace, timeOut );
@@ -81,7 +81,7 @@ class JobBuffer {
 
     d("Buffer saving result of task " + result.runId );
     m_resultsBuffer.add( result );
-    m_numRunning -= 1;
+    m_numRunning.decrementAndGet();
     if( hasEnoughResults() ) {
       for( res in m_resultsBuffer ) {
         resultsToSave.add( res );
@@ -109,7 +109,7 @@ class JobBuffer {
 
   private def hasEnoughResults(): Boolean {
     val size = m_resultsBuffer.size();
-    return (size >= m_numConsumers) || (size >= m_numRunning + m_taskQueue.size() );
+    return (size >= m_numConsumers) || (size >= m_numRunning.get() + m_taskQueue.size() );
   }
 
   private def registerFreePlace( freePlace: Place, timeOut: Long ) {
