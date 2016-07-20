@@ -67,7 +67,6 @@ class JobConsumer {
 
   private def runTask( task: Task ): RunResult {
     val runId = task.runId;
-    // m_logger.fine("Consumer#runTask " + runId + " at " + here);
     val startAt = m_timer.milliTime();
     val runPlace = here.id;
     val localResult = task.run();
