@@ -126,11 +126,11 @@ class JobProducer {
 
   // return tasks if available.
   // if there is no task, register the buffer as free
-  public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer] ): Rail[Task] {
+  public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer], numConsOfBuffer: Long ): Rail[Task] {
     atomic { m_numActivityPopingTasks += 1; }
     when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
     d("Producer popTasks is called by " + refBuf.home );
-    val n = calcNumTasksToPop();
+    val n = calcNumTasksToPop( numConsOfBuffer );
     val tasks = m_taskQueue.popFirst( n );
     d("Producer sending " + tasks.size + " tasks to buffer" + refBuf.home);
 
@@ -145,8 +145,16 @@ class JobProducer {
     return tasks;
   }
 
-  private def calcNumTasksToPop(): Long {
-    return Math.ceil((m_taskQueue.size() as Double) / (2.0*m_numBuffers)) as Long;
+  private def calcNumTasksToPop( numConsOfBuffer: Long ): Long {
+    var target:Long = (Math.ceil((m_taskQueue.size() as Double) / (2.0*m_numBuffers)) as Long);
+    val min = Math.ceil( numConsOfBuffer * 0.2 ) as Long;
+    if( target < min ) {
+      target = min;
+    }
+    if( target > m_taskQueue.size() ) {
+      target = m_taskQueue.size();
+    }
+    return target;
   }
 
   public def printJSON( psJson: String, runsJson: String ) {

@@ -39,8 +39,9 @@ class JobBuffer {
     d("Buffer getting tasks from producer");
     val refProd = m_refProducer;
     val refBuf = new GlobalRef[JobBuffer]( this );
+    val numCons = m_numConsumers;
     val tasks = at( refProd ) {
-      return refProd().popTasksOrRegisterFreeBuffer( refBuf );
+      return refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
     };
     d("Buffer got " + tasks.size + " tasks from producer");
     m_taskQueue.pushLast( tasks );
