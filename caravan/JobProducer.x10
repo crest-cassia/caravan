@@ -84,7 +84,7 @@ class JobProducer {
     m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
 
-    if( qSize > 0 ) {   // only when there is a task, notify buffers
+    if( m_taskQueue.size() > 0 && m_freeBuffers.size() > 0 ) {   // only when there is a task and free buffer
       notifyFreeBuffer(qSize);
     }
     atomic { m_isLockQueueAndFreeBuffers = false; }
@@ -117,7 +117,7 @@ class JobProducer {
         async { refBuf().wakeUp(); }
       }
     }
-    d("Producer notified free buffers");
+    d("Producer notified " + refBuffers.size() + " free buffers");
   }
 
   // return tasks if available.
