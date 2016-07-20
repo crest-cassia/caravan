@@ -110,7 +110,21 @@ class JobBuffer {
 
   private def hasEnoughResults(): Boolean {
     val size = m_resultsBuffer.size();
-    return (size >= m_numConsumers) || (size >= m_numRunning.get() + m_taskQueue.size() );
+
+    // send results if size is larger than the maximum capacity (m_numConsumers)
+    if( size >= m_numConsumers ) { return true; }
+
+    var qSize: Long;
+    atomic { qSize = m_taskQueue.size(); }
+    if( size >= m_numRunning.get() + qSize ) {  // basic criteria to send results
+      if( size >= m_numConsumers*0.2 ) { return true; } // minimum bulk size
+      else {
+        // even if size is smaller than the minimum bulk size,
+        // send results when there is no remaining task.
+        if( m_numRunning.get() + qSize == 0 ) { return true; }
+      }
+    }
+    return false;
   }
 
   private def registerFreePlace( freePlace: Place, timeOut: Long ) {
