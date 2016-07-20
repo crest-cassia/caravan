@@ -101,7 +101,7 @@ class JobBuffer {
   private def sendResultsToProducer( resultsToSave: ArrayList[JobConsumer.RunResult] ) {
     d("Buffer sending " + resultsToSave.size() + "results to Producer");
     val refProd = m_refProducer;
-    at( refProd ) {
+    at( refProd ) async {
       refProd().saveResults( resultsToSave );
     }
     d("Buffer sent " + resultsToSave.size() + "results to Producer");
