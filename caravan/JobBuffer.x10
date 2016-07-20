@@ -114,10 +114,6 @@ class JobBuffer {
 
   private def registerFreePlace( freePlace: Place, timeOut: Long ) {
     d("Buffer registering free consumer " + freePlace );
-    var registerToProducer: Boolean = false;
-    if( m_freePlaces.isEmpty() ) {
-      registerToProducer = true;
-    }
     m_freePlaces.add( Pair[Place,Long](freePlace, timeOut) );
 
     d("Buffer registered free consumer " + freePlace );
