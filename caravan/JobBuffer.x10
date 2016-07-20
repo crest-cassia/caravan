@@ -82,7 +82,7 @@ class JobBuffer {
     d("Buffer saving result of task " + result.runId );
     m_resultsBuffer.add( result );
     m_numRunning -= 1;
-    if( hasEnoughResults() ) { // TODO: set parameter
+    if( hasEnoughResults() ) {
       for( res in m_resultsBuffer ) {
         resultsToSave.add( res );
       }
