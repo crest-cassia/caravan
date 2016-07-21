@@ -4,6 +4,7 @@ import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicLong;
+import x10.compiler.Pragma;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -40,11 +41,13 @@ class JobBuffer {
     val refProd = m_refProducer;
     val refBuf = new GlobalRef[JobBuffer]( this );
     val numCons = m_numConsumers;
-    val tasks = at( refProd ) {
-      return refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
-    };
-    d("Buffer got " + tasks.size + " tasks from producer");
-    m_taskQueue.pushLast( tasks );
+    @Pragma(Pragma.FINISH_HERE) finish at( refProd ) async {
+      val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
+      at( refBuf ) async {
+        refBuf().d("Buffer got " + tasks.size + " tasks from producer");
+        refBuf().m_taskQueue.pushLast( tasks );
+      }
+    }
   }
 
   // return tasks
