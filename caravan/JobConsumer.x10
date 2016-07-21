@@ -12,10 +12,12 @@ class JobConsumer {
   val m_timer = new Timer();
   var m_timeOut: Long = -1;
   val m_logger: MyLogger;
+  val m_tasks: Deque[Task];
 
   def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long ) {
     m_refBuffer = _refBuffer;
     m_logger = new MyLogger( refTimeForLogger );
+    m_tasks = new Deque[Task]();
   }
 
   private def d(s:String) {
@@ -38,13 +40,13 @@ class JobConsumer {
     d("Consumer starting");
     val refBuf = m_refBuffer;
 
-    val tasks = getTasksFromBufferOrRegisterFreePlace();
+    getTasksFromBufferOrRegisterFreePlace();
     d("Consumer got initial tasks from buffer");
 
-    while( tasks.size() > 0 ) {
+    while( m_tasks.size() > 0 ) {
       if( isExpired() ) { return; }
 
-      val task = tasks.popFirst();
+      val task = m_tasks.popFirst();
       val result = runTask( task );
       d("Consumer finished task " + task.runId);
 
@@ -53,12 +55,10 @@ class JobConsumer {
       }
       if( isExpired() ) { return; }
 
-      if( tasks.size() == 0 ) {
+      if( m_tasks.size() == 0 ) {
         d("Consumer task queue is empty. getting tasks");
-        val newTasks = getTasksFromBufferOrRegisterFreePlace();
-        tasks.pushLast( newTasks.toRail() );
-        d("Consumer got tasks from buffer");
-        d("  Tasks : " + newTasks.toRail() );
+        getTasksFromBufferOrRegisterFreePlace();
+        d("Consumer got " + m_tasks.size() + " tasks from buffer");
       }
     }
 
@@ -75,16 +75,14 @@ class JobConsumer {
     return result;
   }
 
-  def getTasksFromBufferOrRegisterFreePlace(): Deque[Task] {
+  def getTasksFromBufferOrRegisterFreePlace() {
     val refBuf = m_refBuffer;
     val timeOut = m_timeOut;
     val consPlace = here;
     val tasks = at( refBuf ) {
       return refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
     };
-    val q = new Deque[Task]();
-    q.pushLast( tasks );
-    return q;
+    m_tasks.pushLast( tasks );
   }
 
   private def isExpired(): Boolean {
