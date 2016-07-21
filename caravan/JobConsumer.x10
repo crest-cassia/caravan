@@ -2,6 +2,7 @@ package caravan;
 
 import x10.util.ArrayList;
 import x10.util.Timer;
+import x10.compiler.Pragma;
 import caravan.SimulationOutput;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
@@ -79,10 +80,14 @@ class JobConsumer {
     val refBuf = m_refBuffer;
     val timeOut = m_timeOut;
     val consPlace = here;
-    val tasks = at( refBuf ) {
-      return refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
-    };
-    m_tasks.pushLast( tasks );
+    val refCons = new GlobalRef[JobConsumer]( this );
+
+    @Pragma(Pragma.FINISH_HERE) finish at( refBuf ) async {
+      val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
+      at( refCons ) async {
+        refCons().m_tasks.pushLast( tasks );
+      }
+    }
   }
 
   private def isExpired(): Boolean {
