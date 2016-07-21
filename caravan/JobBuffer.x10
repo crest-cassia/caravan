@@ -85,7 +85,7 @@ class JobBuffer {
 
     d("Buffer saving " + results.size + " results");
     m_resultsBuffer.addAll( results );
-    m_numRunning.decrementAndGet();
+    m_numRunning.addAndGet( -results.size );
     if( hasEnoughResults() ) {
       for( res in m_resultsBuffer ) {
         resultsToSave.add( res );
