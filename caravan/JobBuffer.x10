@@ -79,12 +79,12 @@ class JobBuffer {
     return Math.ceil((m_taskQueue.size() as Double) / (2.0*m_numConsumers)) as Long;
   }
 
-  def saveResult( result: JobConsumer.RunResult ) {
+  def saveResults( results: Rail[JobConsumer.RunResult] ) {
     when( !m_isLockResults ) { m_isLockResults = true; }
     val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
 
-    d("Buffer saving result of task " + result.runId );
-    m_resultsBuffer.add( result );
+    d("Buffer saving " + results.size + " results");
+    m_resultsBuffer.addAll( results );
     m_numRunning.decrementAndGet();
     if( hasEnoughResults() ) {
       for( res in m_resultsBuffer ) {
@@ -99,7 +99,7 @@ class JobBuffer {
         sendResultsToProducer( resultsToSave );
       }
     }
-    d("Buffer saved result of task " + result.runId);
+    d("Buffer saved " + results.size + " results");
   }
 
   private def sendResultsToProducer( resultsToSave: ArrayList[JobConsumer.RunResult] ) {
