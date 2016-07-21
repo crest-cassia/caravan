@@ -48,7 +48,7 @@ class JobConsumer {
       val result = runTask( task );
       d("Consumer finished task " + task.runId);
 
-      at( refBuf ) {
+      at( refBuf ) async {
         refBuf().saveResult( result );
       }
       if( isExpired() ) { return; }
