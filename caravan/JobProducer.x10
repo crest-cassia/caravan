@@ -61,6 +61,7 @@ class JobProducer {
   }
 
   public def saveResults( results: ArrayList[JobConsumer.RunResult] ) {
+    d("Producer saveResults is called. # results: " + results.size() + " , m_numActivityPopTasks: " + m_numActivityPopingTasks);
     when( allowSaving() && !m_isLockResults ) { m_isLockResults = true; }
     var tasks: ArrayList[Task] = new ArrayList[Task]();
 
@@ -127,9 +128,10 @@ class JobProducer {
   // return tasks if available.
   // if there is no task, register the buffer as free
   public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer], numConsOfBuffer: Long ): Rail[Task] {
+    d("Producer popTasks is called by " + refBuf.home + " , m_numActivityPopTasks: " + m_numActivityPopingTasks);
     atomic { m_numActivityPopingTasks += 1; }
     when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
-    d("Producer popTasks is called by " + refBuf.home );
+    d("Producer popTasks has started for " + refBuf.home );
     val n = calcNumTasksToPop( numConsOfBuffer );
     val tasks = m_taskQueue.popFirst( n );
     d("Producer sending " + tasks.size + " tasks to buffer" + refBuf.home);
