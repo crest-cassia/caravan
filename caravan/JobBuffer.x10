@@ -4,6 +4,7 @@ import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicLong;
+import x10.util.concurrent.AtomicBoolean;
 import x10.compiler.Pragma;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
@@ -19,6 +20,7 @@ class JobBuffer {
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
   var m_isLockQueueAndFreePlaces: Boolean = false; // lock for m_taskQueue and m_freePlaces
   var m_isLockResults: Boolean = false;
+  val m_sendingResults: AtomicBoolean = new AtomicBoolean(false);
 
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
     m_refProducer = _refProducer;
@@ -86,19 +88,19 @@ class JobBuffer {
     d("Buffer saving " + results.size + " results");
     m_resultsBuffer.addAll( results );
     m_numRunning.addAndGet( -results.size );
-    if( hasEnoughResults() ) {
+    if( isReadyToSendResults() ) {
       for( res in m_resultsBuffer ) {
         resultsToSave.add( res );
       }
       m_resultsBuffer.clear();
+      m_sendingResults.set( true );
+      async {
+        sendResultsToProducer( resultsToSave );
+        m_sendingResults.set( false );
+      }
     }
     atomic { m_isLockResults = false; }
 
-    if( resultsToSave.size() > 0 ) {
-      async {
-        sendResultsToProducer( resultsToSave );
-      }
-    }
     d("Buffer saved " + results.size + " results");
   }
 
@@ -106,29 +108,35 @@ class JobBuffer {
     d("Buffer sending " + resultsToSave.size() + "results to Producer");
     val refProd = m_refProducer;
     val bufPlace = here;
-    at( refProd ) async {
+    at( refProd ) {
       refProd().saveResults( resultsToSave, bufPlace );
     }
     d("Buffer sent " + resultsToSave.size() + "results to Producer");
   }
 
-  private def hasEnoughResults(): Boolean {
+  private def isReadyToSendResults(): Boolean {
+    // to finalize the program,
+    // we have to send results whenever all tasks have finished.
+    var qSize: Long;
+    atomic { qSize = m_taskQueue.size(); }
+    if( m_numRunning.get() + qSize == 0 ) { return true; }
+
+    // if there is an activity sending results, do not send results until it completes.
+    if( m_sendingResults.get() ) { return false; }
+
+    // depending on the size of results, we determine whether send or not.
     val size = m_resultsBuffer.size();
 
     // send results if size is larger than the maximum capacity (m_numConsumers)
     if( size >= m_numConsumers ) { return true; }
 
-    var qSize: Long;
-    atomic { qSize = m_taskQueue.size(); }
-    if( size >= m_numRunning.get() + qSize ) {  // basic criteria to send results
-      if( size >= m_numConsumers*0.2 ) { return true; } // minimum bulk size
-      else {
-        // even if size is smaller than the minimum bulk size,
-        // send results when there is no remaining task.
-        if( m_numRunning.get() + qSize == 0 ) { return true; }
-      }
+    val minimumBulkSize = m_numConsumers * 0.2;
+    if( size >= m_numRunning.get() + qSize && size >= minimumBulkSize ) {
+      return true;
     }
-    return false;
+    else {
+      return false;
+    }
   }
 
   private def registerFreePlace( freePlace: Place, timeOut: Long ) {
