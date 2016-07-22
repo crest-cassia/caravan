@@ -83,7 +83,11 @@ class JobConsumer {
   }
 
   private def hasEnoughResults(): Boolean {
-    return (m_results.size() >= m_tasks.size());
+    val taskSize = m_tasks.size();
+    if( taskSize == 0 ) { return true; }
+    val minSize = 3;
+    val numResults = m_results.size();
+    return (numResults >= taskSize && numResults >= minSize );
   }
 
   def getTasksFromBufferOrRegisterFreePlace() {
