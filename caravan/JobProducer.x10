@@ -60,8 +60,8 @@ class JobProducer {
     d("Producer registered free buffer : " + refBuffer.home );
   }
 
-  public def saveResults( results: ArrayList[JobConsumer.RunResult] ) {
-    d("Producer saveResults is called. # results: " + results.size() + " , m_numActivityPopTasks: " + m_numActivityPopingTasks);
+  public def saveResults( results: ArrayList[JobConsumer.RunResult], caller: Place ) {
+    d("Producer saveResults is called. # results: " + results.size() + " , caller: " + caller);
     when( allowSaving() && !m_isLockResults ) { m_isLockResults = true; }
     var tasks: ArrayList[Task] = new ArrayList[Task]();
 
