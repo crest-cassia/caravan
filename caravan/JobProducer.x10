@@ -61,11 +61,11 @@ class JobProducer {
   }
 
   public def saveResults( results: ArrayList[JobConsumer.RunResult], caller: Place ) {
-    d("Producer saveResults is called. # results: " + results.size() + " , caller: " + caller);
+    d("Producer saveResults is called. # results: " + results.size() + " sent by " + caller);
     when( allowSaving() && !m_isLockResults ) { m_isLockResults = true; }
     var tasks: ArrayList[Task] = new ArrayList[Task]();
 
-    d("Producer saving " + results.size() + " results");
+    d("Producer saving " + results.size() + " results sent by " + caller);
     for( res in results ) {
       val run = m_tables.runsTable.get( res.runId );
       run.storeResult( res.result, res.placeId, res.startAt, res.finishAt );
@@ -77,7 +77,7 @@ class JobProducer {
         }
       }
     }
-    d("Producer saved " + results.size() + " results");
+    d("Producer saved " + results.size() + " results sent by " + caller);
     serializePeriodically();
     atomic { m_isLockResults = false; }
 
