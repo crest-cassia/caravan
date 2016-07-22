@@ -57,7 +57,7 @@ class JobBuffer {
   def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
     when( !m_isLockQueueAndFreePlaces ) { m_isLockQueueAndFreePlaces = true; }
 
-    d("Buffer popTasks " + m_numRunning.get() + "/" + m_taskQueue.size() );
+    d("Buffer popTasks " + m_numRunning.get() + "/" + m_taskQueue.size() + " called by " + freePlace);
 
     if( m_taskQueue.size() == 0 && m_freePlaces.isEmpty() ) {
       fillTaskQueue();
@@ -71,7 +71,7 @@ class JobBuffer {
       registerFreePlace( freePlace, timeOut );
     }
 
-    d("Buffer sending " + tasks.size + " tasks to consumer" );
+    d("Buffer sending " + tasks.size + " tasks to consumer " + freePlace );
     atomic { m_isLockQueueAndFreePlaces = false; }
 
     return tasks;
