@@ -81,6 +81,7 @@ class JobProducer {
     serializePeriodically();
     atomic { m_isLockResults = false; }
 
+    d("Producer preparint notifying buffers : sent by " + caller);
     when( allowSaving() && !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
     m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
@@ -144,6 +145,7 @@ class JobProducer {
       m_isLockQueueAndFreeBuffers = false;
       m_numActivityPopingTasks -= 1;
     }
+    d("Producer popTasks finished called by " + refBuf.home);
     return tasks;
   }
 

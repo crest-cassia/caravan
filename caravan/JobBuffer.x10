@@ -55,9 +55,10 @@ class JobBuffer {
   // return tasks
   // if there is no tasks to return, register consumer as free place
   def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
+    d("Buffer popTasks is called by " + freePlace);
     when( !m_isLockQueueAndFreePlaces ) { m_isLockQueueAndFreePlaces = true; }
 
-    d("Buffer popTasks " + m_numRunning.get() + "/" + m_taskQueue.size() + " called by " + freePlace);
+    d("Buffer popTasks is running " + m_numRunning.get() + "/" + m_taskQueue.size() + " called by " + freePlace);
 
     if( m_taskQueue.size() == 0 && m_freePlaces.isEmpty() ) {
       fillTaskQueue();
@@ -82,6 +83,7 @@ class JobBuffer {
   }
 
   def saveResults( results: Rail[JobConsumer.RunResult] ) {
+    d("Buffer saveResults is called");
     when( !m_isLockResults ) { m_isLockResults = true; }
     val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
 
