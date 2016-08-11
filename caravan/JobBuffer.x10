@@ -19,7 +19,6 @@ class JobBuffer {
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
   var m_isLockQueueAndFreePlaces: Boolean = false; // lock for m_taskQueue and m_freePlaces
   var m_isLockResults: Boolean = false;
-  val m_sendingResults: AtomicBoolean = new AtomicBoolean(false);
 
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
     m_refProducer = _refProducer;
@@ -91,35 +90,27 @@ class JobBuffer {
   def saveResults( results: Rail[JobConsumer.RunResult] ) {
     d("Buffer saveResults is called");
     when( !m_isLockResults ) { m_isLockResults = true; }
-    val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
 
     d("Buffer saving " + results.size + " results");
     m_resultsBuffer.addAll( results );
     m_numRunning.addAndGet( -results.size );
     if( isReadyToSendResults() ) {
+      val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
       for( res in m_resultsBuffer ) {
         resultsToSave.add( res );
       }
       m_resultsBuffer.clear();
-      m_sendingResults.set( true );
-      async {
-        sendResultsToProducer( resultsToSave );
-        m_sendingResults.set( false );
+      d("Buffer sending " + resultsToSave.size() + "results to Producer");
+      val refProd = m_refProducer;
+      val bufPlace = here;
+      at( refProd ) {
+        refProd().saveResults( resultsToSave, bufPlace );
       }
+      d("Buffer sent " + resultsToSave.size() + "results to Producer");
     }
     atomic { m_isLockResults = false; }
 
     d("Buffer saved " + results.size + " results");
-  }
-
-  private def sendResultsToProducer( resultsToSave: ArrayList[JobConsumer.RunResult] ) {
-    d("Buffer sending " + resultsToSave.size() + "results to Producer");
-    val refProd = m_refProducer;
-    val bufPlace = here;
-    at( refProd ) {
-      refProd().saveResults( resultsToSave, bufPlace );
-    }
-    d("Buffer sent " + resultsToSave.size() + "results to Producer");
   }
 
   private def isReadyToSendResults(): Boolean {
@@ -128,9 +119,6 @@ class JobBuffer {
     var qSize: Long;
     atomic { qSize = m_taskQueue.size(); }
     if( m_numRunning.get() + qSize == 0 ) { return true; }
-
-    // if there is an activity sending results, do not send results until it completes.
-    if( m_sendingResults.get() ) { return false; }
 
     // depending on the size of results, we determine whether send or not.
     val size = m_resultsBuffer.size();
