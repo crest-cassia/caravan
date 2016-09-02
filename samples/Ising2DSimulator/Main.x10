@@ -1,11 +1,11 @@
 import caravan.Administrator;
 import caravan.SearchEngines.GridSearcher;
 
-class IsingSearch {
+class Main {
 
   static public def main( args: Rail[String] ) {
     val m = new Administrator();
-    val engine = new GridSearcher( 0.5, 1 );
+    val engine = new GridSearcher( 0.2, 1 );
     if( args.size != 1 ) {
       Console.ERR.println("  Usage: ./a.out <seed>");
       throw new Exception("Invalid argument");

@@ -12,8 +12,8 @@ cp libising2d.a ${BUILD}
 cd -
 
 if [ $IS_MPI = 1 ]; then
-  x10c++ -v -O -x10rt mpi -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/IsingSearch.x10 -VERBOSE_CHECKS -cxx-postarg libising2d.a
+  x10c++ -v -O -x10rt mpi -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/Main.x10 -VERBOSE_CHECKS -cxx-postarg libising2d.a
 else
-  x10c++ -v -O            -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/IsingSearch.x10 -VERBOSE_CHECKS -cxx-postarg libising2d.a
+  x10c++ -v -O            -sourcepath ${SCRIPTDIR}/../..:${SCRIPTDIR} -d ${BUILD} ${SCRIPTDIR}/Main.x10 -VERBOSE_CHECKS -cxx-postarg libising2d.a
 fi
 

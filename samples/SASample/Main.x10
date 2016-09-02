@@ -1,7 +1,7 @@
 import caravan.Administrator;
 import caravan.SearchEngines.FileInputSearcher;
 
-class SASample {
+class Main {
 
   static public def main( args: Rail[String] ) {
     val m = new Administrator();

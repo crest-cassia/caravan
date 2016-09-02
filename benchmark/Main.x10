@@ -2,7 +2,7 @@ import x10.util.ArrayList;
 import x10.io.File;
 import caravan.Administrator;
 
-class Benchmark {
+class Main {
 
   static public def main( args: Rail[String] ) {
     if( args.size == 8 ) {
