@@ -14,7 +14,7 @@ import x10.compiler.Pragma;
 
 import caravan.util.MyLogger;
 
-public class Main {
+public class Administrator {
 
 
   public def run( engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ): void {

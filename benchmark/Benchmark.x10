@@ -1,12 +1,12 @@
 import x10.util.ArrayList;
 import x10.io.File;
-import caravan.Main;
+import caravan.Administrator;
 
 class Benchmark {
 
   static public def main( args: Rail[String] ) {
     if( args.size == 8 ) {
-      val m = new Main();
+      val m = new Administrator();
       val numStaticJobs = Long.parse( args(0) );
       val numDynamicJobs = Long.parse( args(1) );
       val jobGenProb = Double.parse( args(2) );

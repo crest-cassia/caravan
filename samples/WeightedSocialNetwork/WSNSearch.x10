@@ -1,10 +1,10 @@
-import caravan.Main;
+import caravan.Administrator;
 import caravan.SearchEngines.GridSearcher;
 
 class WSNSearch {
 
   static public def main( args: Rail[String] ) {
-    val m = new Main();
+    val m = new Administrator();
     val engine = new GridSearcher( 5, 1 );
     if( args.size != 1 ) {
       Console.ERR.println("  Usage: ./a.out <seed>");

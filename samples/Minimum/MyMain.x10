@@ -1,10 +1,10 @@
-import caravan.Main;
+import caravan.Administrator;
 import caravan.SearchEngines.GridSearcher;
 
 class IsingSearch {
 
   static public def main( args: Rail[String] ) {
-    val m = new Main();
+    val m = new Administrator();
     val engine = new GridSearcher( 0.5, 1 );
     if( args.size != 1 ) {
       Console.ERR.println("  Usage: ./a.out <seed>");

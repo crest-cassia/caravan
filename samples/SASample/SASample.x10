@@ -1,10 +1,10 @@
-import caravan.Main;
+import caravan.Administrator;
 import caravan.SearchEngines.FileInputSearcher;
 
 class SASample {
 
   static public def main( args: Rail[String] ) {
-    val m = new Main();
+    val m = new Administrator();
     Console.ERR.println("Initializing Searcher");
     if( args.size != 1 ) {
       Console.ERR.println("  Usage: ./a.out <model_input.txt>");
