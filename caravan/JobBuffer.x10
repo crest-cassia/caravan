@@ -4,7 +4,7 @@ import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicLong;
-import x10.compiler.Pragma;
+import x10.util.concurrent.AtomicBoolean;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -41,6 +41,12 @@ class JobBuffer {
     val refProd = m_refProducer;
     val refBuf = new GlobalRef[JobBuffer]( this );
     val numCons = m_numConsumers;
+    val tasks = at( refProd ) {
+      return refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
+    };
+    d("Buffer got " + tasks.size + " tasks from producer");
+    m_taskQueue.pushLast( tasks );
+    /*
     @Pragma(Pragma.FINISH_HERE) finish at( refProd ) async {
       val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
       at( refBuf ) async {
@@ -48,14 +54,16 @@ class JobBuffer {
         refBuf().m_taskQueue.pushLast( tasks );
       }
     }
+    */
   }
 
   // return tasks
   // if there is no tasks to return, register consumer as free place
   def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
+    d("Buffer popTasks is called by " + freePlace);
     when( !m_isLockQueueAndFreePlaces ) { m_isLockQueueAndFreePlaces = true; }
 
-    d("Buffer popTasks " + m_numRunning.get() + "/" + m_taskQueue.size() );
+    d("Buffer popTasks is running " + m_numRunning.get() + "/" + m_taskQueue.size() + " called by " + freePlace);
 
     if( m_taskQueue.size() == 0 && m_freePlaces.isEmpty() ) {
       fillTaskQueue();
@@ -69,7 +77,7 @@ class JobBuffer {
       registerFreePlace( freePlace, timeOut );
     }
 
-    d("Buffer sending " + tasks.size + " tasks to consumer" );
+    d("Buffer sending " + tasks.size + " tasks to consumer " + freePlace );
     atomic { m_isLockQueueAndFreePlaces = false; }
 
     return tasks;
@@ -79,55 +87,52 @@ class JobBuffer {
     return Math.ceil((m_taskQueue.size() as Double) / (2.0*m_numConsumers)) as Long;
   }
 
-  def saveResult( result: JobConsumer.RunResult ) {
+  def saveResults( results: Rail[JobConsumer.RunResult] ) {
+    d("Buffer saveResults is called");
     when( !m_isLockResults ) { m_isLockResults = true; }
-    val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
 
-    d("Buffer saving result of task " + result.runId );
-    m_resultsBuffer.add( result );
-    m_numRunning.decrementAndGet();
-    if( hasEnoughResults() ) {
+    d("Buffer saving " + results.size + " results");
+    m_resultsBuffer.addAll( results );
+    m_numRunning.addAndGet( -results.size );
+    if( isReadyToSendResults() ) {
+      val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
       for( res in m_resultsBuffer ) {
         resultsToSave.add( res );
       }
       m_resultsBuffer.clear();
+      d("Buffer sending " + resultsToSave.size() + "results to Producer");
+      val refProd = m_refProducer;
+      val bufPlace = here;
+      at( refProd ) {
+        refProd().saveResults( resultsToSave, bufPlace );
+      }
+      d("Buffer sent " + resultsToSave.size() + "results to Producer");
     }
     atomic { m_isLockResults = false; }
 
-    if( resultsToSave.size() > 0 ) {
-      async {
-        sendResultsToProducer( resultsToSave );
-      }
-    }
-    d("Buffer saved result of task " + result.runId);
+    d("Buffer saved " + results.size + " results");
   }
 
-  private def sendResultsToProducer( resultsToSave: ArrayList[JobConsumer.RunResult] ) {
-    d("Buffer sending " + resultsToSave.size() + "results to Producer");
-    val refProd = m_refProducer;
-    at( refProd ) async {
-      refProd().saveResults( resultsToSave );
-    }
-    d("Buffer sent " + resultsToSave.size() + "results to Producer");
-  }
+  private def isReadyToSendResults(): Boolean {
+    // to finalize the program,
+    // we have to send results whenever all tasks have finished.
+    var qSize: Long;
+    atomic { qSize = m_taskQueue.size(); }
+    if( m_numRunning.get() + qSize == 0 ) { return true; }
 
-  private def hasEnoughResults(): Boolean {
+    // depending on the size of results, we determine whether send or not.
     val size = m_resultsBuffer.size();
 
     // send results if size is larger than the maximum capacity (m_numConsumers)
     if( size >= m_numConsumers ) { return true; }
 
-    var qSize: Long;
-    atomic { qSize = m_taskQueue.size(); }
-    if( size >= m_numRunning.get() + qSize ) {  // basic criteria to send results
-      if( size >= m_numConsumers*0.2 ) { return true; } // minimum bulk size
-      else {
-        // even if size is smaller than the minimum bulk size,
-        // send results when there is no remaining task.
-        if( m_numRunning.get() + qSize == 0 ) { return true; }
-      }
+    val minimumBulkSize = m_numConsumers * 0.2;
+    if( size >= m_numRunning.get() + qSize && size >= minimumBulkSize ) {
+      return true;
     }
-    return false;
+    else {
+      return false;
+    }
   }
 
   private def registerFreePlace( freePlace: Place, timeOut: Long ) {

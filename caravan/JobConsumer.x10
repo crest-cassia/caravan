@@ -14,11 +14,13 @@ class JobConsumer {
   var m_timeOut: Long = -1;
   val m_logger: MyLogger;
   val m_tasks: Deque[Task];
+  val m_results: ArrayList[RunResult];
 
   def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long ) {
     m_refBuffer = _refBuffer;
     m_logger = new MyLogger( refTimeForLogger );
     m_tasks = new Deque[Task]();
+    m_results = new ArrayList[RunResult]();
   }
 
   private def d(s:String) {
@@ -49,10 +51,15 @@ class JobConsumer {
 
       val task = m_tasks.popFirst();
       val result = runTask( task );
+      m_results.add( result );
       d("Consumer finished task " + task.runId);
 
-      at( refBuf ) async {
-        refBuf().saveResult( result );
+      if( hasEnoughResults() ) {
+        val results = m_results.toRail();
+        m_results.clear();
+        at( refBuf ) {
+          refBuf().saveResults( results );
+        }
       }
       if( isExpired() ) { return; }
 
@@ -74,6 +81,14 @@ class JobConsumer {
     val finishAt = m_timer.milliTime();
     val result = RunResult( runId, localResult, runPlace, startAt, finishAt );
     return result;
+  }
+
+  private def hasEnoughResults(): Boolean {
+    val taskSize = m_tasks.size();
+    if( taskSize == 0 ) { return true; }
+    val minSize = 3;
+    val numResults = m_results.size();
+    return (numResults >= taskSize && numResults >= minSize );
   }
 
   def getTasksFromBufferOrRegisterFreePlace() {

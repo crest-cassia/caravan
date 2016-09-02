@@ -10,6 +10,7 @@ import x10.util.ArrayList;
 import x10.util.Timer;
 import x10.io.File;
 import x10.xrx.Runtime;
+import x10.compiler.Pragma;
 
 import caravan.util.MyLogger;
 
@@ -54,7 +55,7 @@ public class Main {
 
     val jobExecutionBegin = timer.milliTime();
 
-    finish for( i in 0..(numBuffers-1) ) {
+    @Pragma(Pragma.FINISH_DENSE) finish for( i in 0..(numBuffers-1) ) {
       val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
       at( Place(bufPlace) ) async {
         val minConsPlace = here.id+1;

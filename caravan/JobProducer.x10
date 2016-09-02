@@ -60,12 +60,12 @@ class JobProducer {
     d("Producer registered free buffer : " + refBuffer.home );
   }
 
-  public def saveResults( results: ArrayList[JobConsumer.RunResult] ) {
-    d("Producer saveResults is called. # results: " + results.size() + " , m_numActivityPopTasks: " + m_numActivityPopingTasks);
+  public def saveResults( results: ArrayList[JobConsumer.RunResult], caller: Place ) {
+    d("Producer saveResults is called. # results: " + results.size() + " sent by " + caller);
     when( allowSaving() && !m_isLockResults ) { m_isLockResults = true; }
     var tasks: ArrayList[Task] = new ArrayList[Task]();
 
-    d("Producer saving " + results.size() + " results");
+    d("Producer saving " + results.size() + " results sent by " + caller);
     for( res in results ) {
       val run = m_tables.runsTable.get( res.runId );
       run.storeResult( res.result, res.placeId, res.startAt, res.finishAt );
@@ -77,10 +77,11 @@ class JobProducer {
         }
       }
     }
-    d("Producer saved " + results.size() + " results");
+    d("Producer saved " + results.size() + " results sent by " + caller);
     serializePeriodically();
     atomic { m_isLockResults = false; }
 
+    d("Producer preparint notifying buffers : sent by " + caller);
     when( allowSaving() && !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
     m_taskQueue.pushLast( tasks.toRail() );
     val qSize = m_taskQueue.size();
@@ -144,6 +145,7 @@ class JobProducer {
       m_isLockQueueAndFreeBuffers = false;
       m_numActivityPopingTasks -= 1;
     }
+    d("Producer popTasks finished called by " + refBuf.home);
     return tasks;
   }
 
