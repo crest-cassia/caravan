@@ -3,9 +3,9 @@
 Initially #empty() should be true : true
 #parameterSetsJson() dump PS in JSON: 
 [
-{ "id": 0, "point": [3,500,10], "params": { "p1": 3, "p2": 5.0, "p3": 1.0 } },
-{ "id": 1, "point": [4,500,10], "params": { "p1": 4, "p2": 5.0, "p3": 1.0 } },
-{ "id": 2, "point": [5,500,20], "params": { "p1": 5, "p2": 5.0, "p3": 2.0 } }
+{ "id": 0, "point": [3,500,10] },
+{ "id": 1, "point": [4,500,10] },
+{ "id": 2, "point": [5,500,20] }
 ]
 #runsJson() dump runs in JSON: 
 [
@@ -19,9 +19,9 @@ Initially #empty() should be true : true
 tables are restored by #load() method
   restored PS  : 
 [
-{ "id": 0, "point": [3,500,10], "params": { "p1": 3, "p2": 5.0, "p3": 1.0 } },
-{ "id": 1, "point": [4,500,10], "params": { "p1": 4, "p2": 5.0, "p3": 1.0 } },
-{ "id": 2, "point": [5,500,20], "params": { "p1": 5, "p2": 5.0, "p3": 2.0 } }
+{ "id": 0, "point": [3,500,10] },
+{ "id": 1, "point": [4,500,10] },
+{ "id": 2, "point": [5,500,20] }
 ]
   restored runs: 
 [
@@ -38,9 +38,9 @@ tables are restored by #load() method
 tables are restored by #loadFromBinary() method
   restored PS  : 
 [
-{ "id": 0, "point": [3,500,10], "params": { "p1": 3, "p2": 5.0, "p3": 1.0 } },
-{ "id": 1, "point": [4,500,10], "params": { "p1": 4, "p2": 5.0, "p3": 1.0 } },
-{ "id": 2, "point": [5,500,20], "params": { "p1": 5, "p2": 5.0, "p3": 2.0 } }
+{ "id": 0, "point": [3,500,10] },
+{ "id": 1, "point": [4,500,10] },
+{ "id": 2, "point": [5,500,20] }
 ]
   restored runs: 
 [

@@ -11,10 +11,6 @@ public class Simulator {
     public def toString(): String {
       return "{ \"mu\": " + mu + ", \"sigma\": " + sigma + ", \"p3\": " + p3 + " }";
     }
-
-    public def toJson(): String {
-      return toString();
-    }
   }
 
   static def run( params: InputParameters, seed: Long ): SimulationOutput {

@@ -7,8 +7,6 @@ public class Simulator {
     public def toString(): String {
       return "{ \"p1\": " + p1 + ", \"p2\": " + p2 + ", \"p3\": " + p3 + " }";
     }
-
-    public def toJson(): String { return toString(); }
   }
 
   static def run( params: InputParameters, seed: Long ): SimulationOutput {

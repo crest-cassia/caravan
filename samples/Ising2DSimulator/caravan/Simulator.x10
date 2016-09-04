@@ -5,7 +5,6 @@ import x10.io.File;
 import x10.compiler.Native;
 import x10.compiler.NativeCPPInclude;
 import x10.compiler.NativeCPPCompilationUnit;
-import caravan.util.JSON;
 
 @NativeCPPInclude("main.hpp")
 
@@ -14,10 +13,6 @@ public class Simulator {
   static struct InputParameters( beta: Double, h: Double, l: Long ) {
     public def toString(): String {
       return "{ \"beta\": " + beta + ", \"h\": " + h + ", \"l\": " + l + " }";
-    }
-
-    public def toJson(): String {
-      return toString();
     }
   }
 

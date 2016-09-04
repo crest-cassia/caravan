@@ -5,7 +5,6 @@ import x10.io.File;
 import x10.compiler.Native;
 import x10.compiler.NativeCPPInclude;
 import x10.compiler.NativeCPPCompilationUnit;
-import caravan.util.JSON;
 
 @NativeCPPInclude("main.hpp")
 
@@ -15,8 +14,6 @@ public class Simulator {
     public def toString(): String {
       return "{ \"p1\": " + p1 + ", \"p2\": " + p2 + ", \"p3\": " + p3 + " }";
     }
-
-    public def toJson(): String { return toString(); }
   }
 
   static def run( params: InputParameters, seed: Long ): SimulationOutput {

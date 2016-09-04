@@ -2,7 +2,7 @@
 >>> #testFields
 { id: 10, point: [3,500,10], params: { "p1": 3, "p2": 5.0, "p3": 1.0 } }
 >>> #testToJSON
-{ "id": 10, "point": [3,500,10], "params": { "p1": 3, "p2": 5.0, "p3": 1.0 } }
+{ "id": 10, "point": [3,500,10] }
 >>> #testLoadJSON
 { id: 1234, point: [2,120,10], params: { "p1": 2, "p2": 1.2, "p3": 1.0 } }
 >>> #testRuns
