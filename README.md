@@ -49,7 +49,7 @@ Specification of the arguments depends on each project.
 The environment variable `X10_NPLACES` specifies the number of places (i.e. processes) for socket-backed programs.
 The number of places must be larger than 1 because CARAVAN needs at least one job-producer and one job-consumer processes.
 
-After running the command, you'll find `runs.json` and `parameter_sets.json` files, where the simulation results are stored.
+After running the command, you'll find `dump.bin` file, where the simulation results are stored.
 
 ## Building a benchmark project
 
@@ -98,5 +98,20 @@ The `timeOut` limits the elapsed time of the program.
 
 ## Preparing your own project
 
-To appear...
+To make your own project, you need to prepare the things listed in the following.
+
+- `Main.x10`
+    - Main function of the executable
+- `build.sh`
+    - a script to build your project
+- `Simulator.x10`
+    - Definition of the simulator. Information specific to your simulator is defined in this class.
+- [optional] Simulation code written in C++
+    - If you'd like to run a simulator written in C++, you need to prepare the codes.
+- [optional] Searcher class
+    - This class defines how caravan searches in parameter-space. If you are going to use one of the predefined searchers, please skip this step.
+
+A minimal project is found in `sample/Minimum` directory, which contains `Main.x10`, `build.sh`, and `Simulator.x10`.
+Copy this directory and make your own project based on this.
+
 
