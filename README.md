@@ -1,4 +1,3 @@
-
 # CARAVAN
 
 A framework for large scale parameter-space exploration.
@@ -50,6 +49,7 @@ The environment variable `X10_NPLACES` specifies the number of places (i.e. proc
 The number of places must be larger than 1 because CARAVAN needs at least one job-producer and one job-consumer processes.
 
 After running the command, you'll find `dump.bin` file, where the simulation results are stored.
+For the file format of the dump file, see [dump_format.md](dump_format.md).
 
 ## Building a benchmark project
 
