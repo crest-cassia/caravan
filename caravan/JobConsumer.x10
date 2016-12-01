@@ -97,9 +97,9 @@ class JobConsumer {
     val consPlace = here;
     val refCons = new GlobalRef[JobConsumer]( this );
 
-    @Pragma(Pragma.FINISH_HERE) finish at( refBuf ) async {
+    at( refBuf ) {
       val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
-      at( refCons ) async {
+      at( refCons ) {
         refCons().m_tasks.pushLast( tasks );
       }
     }

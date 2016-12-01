@@ -63,19 +63,17 @@ public class Administrator {
         if( i==0 ) { logger.d("JobBuffer is being initialized"); }
         val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
         if( i==0 ) { logger.d("JobBuffer has been initialized"); }
+
+        val consumerPlaceTimeoutPairs = new ArrayList[ Pair[Place,Long] ]();
+        for( j in minConsPlace..maxConsPlace ) {
+          val place = Place(j);
+          val t = initializationBegin + timeOut;
+          consumerPlaceTimeoutPairs.add( Pair[Place,Long]( place, t ) );
+        }
+        buffer.registerConsumerPlaces( consumerPlaceTimeoutPairs );
+        if( i==0 ) { logger.d("JobConsumers are registered to Buffer"); }
         buffer.getInitialTasks();
         if( i==0 ) { logger.d("JobBuffer got initial tasks"); }
-        val refBuffer = new GlobalRef[JobBuffer]( buffer );
-
-        for( j in minConsPlace..maxConsPlace ) {
-          at( Place(j) ) async {
-            if( here.id < numProcPerBuf ) { logger.d("JobConsumer is being initialized"); }
-            val consumer = new JobConsumer( refBuffer, initializationBegin );
-            if( here.id < numProcPerBuf ) { logger.d("JobConsumer has been initialized"); }
-            consumer.setExpiration( initializationBegin + timeOut );
-            consumer.run();
-          }
-        }
       }
     }
 
