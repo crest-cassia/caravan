@@ -106,7 +106,7 @@ class JobBuffer {
     atomic {
       m_resultsBuffer.addAll( results );
       m_numRunning.addAndGet( -results.size );
-      if( isReadyToSendResults() && m_isSendingResults.get() == false ) {
+      if( isReadyToSendResults() ) {
         for( res in m_resultsBuffer ) {
           resultsToSave.add( res );
         }
@@ -138,19 +138,23 @@ class JobBuffer {
   private def isReadyToSendResults(): Boolean {
     // to finalize the program,
     // we have to send results whenever all tasks have finished.
-    var qSize: Long;
-    qSize = m_taskQueue.size();
+    val qSize = m_taskQueue.size();
     if( m_numRunning.get() + qSize == 0 ) { return true; }
 
-    // depending on the size of results, we determine whether send or not.
-    val size = m_resultsBuffer.size();
+    if( m_isSendingResults.get() == false ) {
+      // depending on the size of results, we determine whether send or not.
+      val size = m_resultsBuffer.size();
 
-    // send results if size is larger than the maximum capacity (m_numConsumers)
-    if( size >= m_numConsumers ) { return true; }
+      // send results if size is larger than the maximum capacity (m_numConsumers)
+      if( size >= m_numConsumers ) { return true; }
 
-    val minimumBulkSize = m_numConsumers * 0.2;
-    if( size >= m_numRunning.get() + qSize && size >= minimumBulkSize ) {
-      return true;
+      val minimumBulkSize = m_numConsumers * 0.2;
+      if( size >= m_numRunning.get() + qSize && size >= minimumBulkSize ) {
+        return true;
+      }
+      else {
+        return false;
+      }
     }
     else {
       return false;
