@@ -19,9 +19,6 @@ class JobProducer {
   val m_saveInterval: Long;
   var m_dumpFileIndex: Long;
   val m_logger: MyLogger;
-  var m_isLockQueueAndFreeBuffers: Boolean = false; // lock for m_taskQueue and m_freeBuffers
-  var m_numActivityPopingTasks: Long = 0; // number of activities which calls popTasks
-  var m_isLockResults: Boolean = false;
 
   def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long, refTimeForLogger: Long ) {
     m_tables = _tables;
@@ -111,10 +108,6 @@ class JobProducer {
     }
   }
 
-  private def allowSaving(): Boolean {
-    return (m_numActivityPopingTasks == 0 || m_taskQueue.size() == 0);
-  }
-
   private def popFreeBuffers(numBuffersToLaunch: Long): ArrayList[GlobalRef[JobBuffer]] {
 
     val refBuffers = new ArrayList[GlobalRef[JobBuffer]]();
@@ -131,24 +124,15 @@ class JobProducer {
 
   // return tasks if available.
   // if there is no task, register the buffer as free
-  public def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer], numConsOfBuffer: Long ): Rail[Task] {
-    d("Producer popTasks is called by " + refBuf.home + " , m_numActivityPopTasks: " + m_numActivityPopingTasks);
-    atomic { m_numActivityPopingTasks += 1; }
-    when( !m_isLockQueueAndFreeBuffers ) { m_isLockQueueAndFreeBuffers = true; }
-    d("Producer popTasks has started for " + refBuf.home );
+  public atomic def popTasksOrRegisterFreeBuffer( refBuf: GlobalRef[JobBuffer], numConsOfBuffer: Long ): Rail[Task] {
+    d("Producer popTasks is called by " + refBuf.home);
     val n = calcNumTasksToPop( numConsOfBuffer );
     val tasks = m_taskQueue.popFirst( n );
-    d("Producer sending " + tasks.size + " tasks to buffer" + refBuf.home);
 
     if( tasks.size == 0 ) {
       registerFreeBuffer( refBuf );
     }
-
-    atomic {
-      m_isLockQueueAndFreeBuffers = false;
-      m_numActivityPopingTasks -= 1;
-    }
-    d("Producer popTasks finished called by " + refBuf.home);
+    d("Producer sending " + tasks.size + " tasks to buffer" + refBuf.home);
     return tasks;
   }
 
