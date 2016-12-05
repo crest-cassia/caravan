@@ -17,6 +17,7 @@ class JobBuffer {
   var m_numRunning: AtomicLong = new AtomicLong(0);
   val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
+  val m_isSendingResults: AtomicBoolean = new AtomicBoolean(false);
 
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
     m_refProducer = _refProducer;
@@ -105,11 +106,12 @@ class JobBuffer {
     atomic {
       m_resultsBuffer.addAll( results );
       m_numRunning.addAndGet( -results.size );
-      if( isReadyToSendResults() ) {
+      if( isReadyToSendResults() && m_isSendingResults.get() == false ) {
         for( res in m_resultsBuffer ) {
           resultsToSave.add( res );
         }
         m_resultsBuffer.clear();
+        m_isSendingResults.set(true);  // avoid sending results from multiple activities
       }
     }
 
@@ -124,10 +126,13 @@ class JobBuffer {
     d("Buffer is sending " + results.size() + " results to Producer");
     val refProd = m_refProducer;
     val bufPlace = here;
-    at( refProd ) async {
-      refProd().saveResults( results, bufPlace );
+    async {
+      at( refProd ) {
+        refProd().saveResults( results, bufPlace );
+      }
+      m_isSendingResults.set(false);  // Producer is ready to receive other results
+      d("Buffer has sent " + results.size() + " results to Producer");
     }
-    d("Buffer has sent " + results.size() + " results to Producer");
   }
 
   private def isReadyToSendResults(): Boolean {
