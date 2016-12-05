@@ -17,13 +17,14 @@ class JobProducer {
   val m_timer = new Timer();
   var m_lastSavedAt: Long;
   val m_saveInterval: Long;
+  val m_refTimeForLogger: Long;
   var m_dumpFileIndex: Long;
   val m_logger: MyLogger;
 
-  def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long, refTimeForLogger: Long ) {
+  def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long, _refTimeForLogger: Long ) {
     m_tables = _tables;
     m_engine = _engine;
-    m_logger = new MyLogger( refTimeForLogger );
+    m_logger = new MyLogger( _refTimeForLogger );
     m_taskQueue = new Deque[Task]();
     if( m_tables.empty() ) {
       enqueueInitialTasks();
@@ -34,6 +35,7 @@ class JobProducer {
     m_numBuffers = _numBuffers;
     m_lastSavedAt = m_timer.milliTime();
     m_saveInterval = _saveInterval;
+    m_refTimeForLogger = _refTimeForLogger;
     m_dumpFileIndex = 0;
   }
 
@@ -65,7 +67,7 @@ class JobProducer {
       var tasks: ArrayList[Task] = new ArrayList[Task]();
       for( res in results ) {
         val run = m_tables.runsTable.get( res.runId );
-        run.storeResult( res.result, res.placeId, res.startAt, res.finishAt );
+        run.storeResult( res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger );
         val ps = run.parameterSet( m_tables );
         if( ps.isFinished( m_tables ) ) {
           val local_tasks = m_engine.onParameterSetFinished( m_tables, ps );
