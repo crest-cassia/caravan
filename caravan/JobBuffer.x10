@@ -47,22 +47,30 @@ class JobBuffer {
     val refProd = m_refProducer;
     val refBuf = new GlobalRef[JobBuffer]( this );
     val numCons = m_numConsumers;
-    val tasks = at( refProd ) {
-      return refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
-    };
-    d("Buffer got " + tasks.size + " tasks from producer");
-    atomic {
-      m_taskQueue.pushLast( tasks );
-    }
-    /*
-    @Pragma(Pragma.FINISH_HERE) finish at( refProd ) async {
+
+    // val tasks = at( refProd ) {
+    //   return refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
+    // };
+    // d("Buffer got " + tasks.size + " tasks from producer");
+    // atomic {
+    //   m_taskQueue.pushLast( tasks );
+    // }
+    val taskFolder = new GlobalRef[ArrayList[Task]]( new ArrayList[Task]() );
+    //@Pragma(Pragma.FINISH_HERE)
+    finish at( refProd ) async {
       val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
-      at( refBuf ) async {
-        refBuf().d("Buffer got " + tasks.size + " tasks from producer");
-        refBuf().m_taskQueue.pushLast( tasks );
+      at( taskFolder ) async {
+        d("adding tasks to TaskFolder");
+        for( task in tasks ) {
+          taskFolder().add( task );
+        }
       }
     }
-    */
+    atomic {
+      for( task in taskFolder() ) {
+        m_taskQueue.pushLast( task );
+      }
+    }
   }
 
   // return tasks
