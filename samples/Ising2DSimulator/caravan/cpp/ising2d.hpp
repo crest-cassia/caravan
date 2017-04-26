@@ -7,9 +7,9 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
-#include <boost/array.hpp>
-#include <boost/random.hpp>
-#include <boost/cstdint.hpp>
+#include <array>
+#include <random>
+#include <cstdint>
 
 // Simple Ising model simulation on square lattice
 // Metropolic transition probability
@@ -30,9 +30,9 @@ private:
   const double m_beta;  // inverse temperature (J is fixed to 1.0)
   const double m_h;
   const uint32_t m_seed;
-  boost::mt19937 * pRnd;
+  std::mt19937 * pRnd;
   std::vector<int8_t> m_spins; // upspin : 1, downspin: 0
-  boost::array< boost::array<double, 5>, 2 > m_trans;
+  std::array< std::array<double, 5>, 2 > m_trans;
   void ValidateParameters();
   void SystemInitialization();
   void UpdateSpin(size_t i, double dRnd);  // udpate spin[i]

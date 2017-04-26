@@ -61,12 +61,12 @@ void Ising2D::SystemInitialization() {
     }
   }
 
-  pRnd = new boost::mt19937(m_seed);
+  pRnd = new std::mt19937(m_seed);
   m_spins.assign( m_lx * (m_ly + 2) , 1);
 }
 
 void Ising2D::Update() {
-  boost::random::uniform_01<> uni_dist;
+  std::uniform_real_distribution<double> uni_dist(0.0,1.0);
 
   // update odd spins
   for( size_t i=m_lx; i < m_lx + m_lx * m_ly; i+=2) {
