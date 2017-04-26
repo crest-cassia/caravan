@@ -17,6 +17,7 @@ class JobBuffer {
   var m_numRunning: AtomicLong = new AtomicLong(0);
   val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
+  val m_isSendingResults: AtomicBoolean = new AtomicBoolean(false);
 
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
     m_refProducer = _refProducer;
@@ -46,22 +47,30 @@ class JobBuffer {
     val refProd = m_refProducer;
     val refBuf = new GlobalRef[JobBuffer]( this );
     val numCons = m_numConsumers;
-    val tasks = at( refProd ) {
-      return refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
-    };
-    d("Buffer got " + tasks.size + " tasks from producer");
-    atomic {
-      m_taskQueue.pushLast( tasks );
-    }
-    /*
-    @Pragma(Pragma.FINISH_HERE) finish at( refProd ) async {
+
+    // val tasks = at( refProd ) {
+    //   return refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
+    // };
+    // d("Buffer got " + tasks.size + " tasks from producer");
+    // atomic {
+    //   m_taskQueue.pushLast( tasks );
+    // }
+    val taskFolder = new GlobalRef[ArrayList[Task]]( new ArrayList[Task]() );
+    //@Pragma(Pragma.FINISH_HERE)
+    finish at( refProd ) async {
       val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
-      at( refBuf ) async {
-        refBuf().d("Buffer got " + tasks.size + " tasks from producer");
-        refBuf().m_taskQueue.pushLast( tasks );
+      at( taskFolder ) async {
+        d("adding tasks to TaskFolder");
+        for( task in tasks ) {
+          taskFolder().add( task );
+        }
       }
     }
-    */
+    atomic {
+      for( task in taskFolder() ) {
+        m_taskQueue.pushLast( task );
+      }
+    }
   }
 
   // return tasks
@@ -110,6 +119,7 @@ class JobBuffer {
           resultsToSave.add( res );
         }
         m_resultsBuffer.clear();
+        m_isSendingResults.set(true);  // avoid sending results from multiple activities
       }
     }
 
@@ -124,28 +134,35 @@ class JobBuffer {
     d("Buffer is sending " + results.size() + " results to Producer");
     val refProd = m_refProducer;
     val bufPlace = here;
-    at( refProd ) async {
-      refProd().saveResults( results, bufPlace );
+    async {
+      at( refProd ) {
+        refProd().saveResults( results, bufPlace );
+      }
+      m_isSendingResults.set(false);  // Producer is ready to receive other results
+      d("Buffer has sent " + results.size() + " results to Producer");
     }
-    d("Buffer has sent " + results.size() + " results to Producer");
   }
 
   private def isReadyToSendResults(): Boolean {
     // to finalize the program,
     // we have to send results whenever all tasks have finished.
-    var qSize: Long;
-    qSize = m_taskQueue.size();
+    val qSize = m_taskQueue.size();
     if( m_numRunning.get() + qSize == 0 ) { return true; }
 
-    // depending on the size of results, we determine whether send or not.
-    val size = m_resultsBuffer.size();
+    if( m_isSendingResults.get() == false ) {
+      // depending on the size of results, we determine whether send or not.
+      val size = m_resultsBuffer.size();
 
-    // send results if size is larger than the maximum capacity (m_numConsumers)
-    if( size >= m_numConsumers ) { return true; }
+      // send results if size is larger than the maximum capacity (m_numConsumers)
+      if( size >= m_numConsumers ) { return true; }
 
-    val minimumBulkSize = m_numConsumers * 0.2;
-    if( size >= m_numRunning.get() + qSize && size >= minimumBulkSize ) {
-      return true;
+      val minimumBulkSize = m_numConsumers * 0.2;
+      if( size >= m_numRunning.get() + qSize && size >= minimumBulkSize ) {
+        return true;
+      }
+      else {
+        return false;
+      }
     }
     else {
       return false;
