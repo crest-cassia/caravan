@@ -55,7 +55,7 @@ public class Administrator {
 
     val jobExecutionBegin = timer.milliTime();
 
-    @Pragma(Pragma.FINISH_DENSE) finish for( i in 0..(numBuffers-1) ) {
+    for( i in 0..(numBuffers-1) ) {
       val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
       at( Place(bufPlace) ) async {
         val minConsPlace = here.id+1;
@@ -77,6 +77,9 @@ public class Administrator {
       }
     }
 
+    at( refJobProducer ) {
+      refJobProducer().waitCompletion();
+    }
     val terminationBegin = timer.milliTime();
 
     at( refJobProducer ) {

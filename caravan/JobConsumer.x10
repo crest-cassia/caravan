@@ -57,7 +57,7 @@ class JobConsumer {
       if( hasEnoughResults() ) {
         val results = m_results.toRail();
         m_results.clear();
-        at( refBuf ) {
+        at( refBuf ) async {
           refBuf().saveResults( results );
         }
       }
@@ -96,10 +96,9 @@ class JobConsumer {
     val timeOut = m_timeOut;
     val consPlace = here;
     val refCons = new GlobalRef[JobConsumer]( this );
-
-    at( refBuf ) {
+    finish at( refBuf ) async {
       val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
-      at( refCons ) {
+      at( refCons ) async {
         refCons().m_tasks.pushLast( tasks );
       }
     }

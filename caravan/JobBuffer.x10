@@ -1,5 +1,6 @@
 package caravan;
 
+import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
@@ -55,9 +56,9 @@ class JobBuffer {
     // atomic {
     //   m_taskQueue.pushLast( tasks );
     // }
-    val taskFolder = new GlobalRef[ArrayList[Task]]( new ArrayList[Task]() );
+/*    val taskFolder = new GlobalRef[ArrayList[Task]]( new ArrayList[Task]() );
     //@Pragma(Pragma.FINISH_HERE)
-    finish at( refProd ) async {
+  finish at( refProd ) async {
       val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
       at( taskFolder ) async {
         d("adding tasks to TaskFolder");
@@ -65,9 +66,17 @@ class JobBuffer {
           taskFolder().add( task );
         }
       }
-    }
+    }*/
+    // reduce version
+    val reducer = new MyReducible();
+    val rtasks = finish (reducer) {
+    at( refProd ) async {
+      val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
+      offer tasks;
+    }};
+    d("adding tasks to TaskFolder");
     atomic {
-      for( task in taskFolder() ) {
+      for( task in rtasks ) {
         m_taskQueue.pushLast( task );
       }
     }
@@ -135,7 +144,7 @@ class JobBuffer {
     val refProd = m_refProducer;
     val bufPlace = here;
     async {
-      at( refProd ) {
+      at( refProd ) @Uncounted async {
         refProd().saveResults( results, bufPlace );
       }
       m_isSendingResults.set(false);  // Producer is ready to receive other results
@@ -193,7 +202,7 @@ class JobBuffer {
       val place = pair.first;
       val timeOut = pair.second;
       d("Buffer launching consumers at " + place);
-      at( place ) async {
+      at( place ) @Uncounted async {
         val consumer = new JobConsumer( refMe, m_logger.m_refTime );
         consumer.setExpiration( timeOut );
         consumer.run();
