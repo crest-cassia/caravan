@@ -1,5 +1,6 @@
 package caravan;
 
+import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.io.File;
@@ -97,7 +98,7 @@ class JobProducer {
     if( refBuffers.size() > 0 ) {
       async {
         for( refBuf in refBuffers ) {
-          at( refBuf ) async {
+          at( refBuf ) @Uncounted async {
             refBuf().wakeUp();
           }
         }

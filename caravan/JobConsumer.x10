@@ -1,5 +1,6 @@
 package caravan;
 
+import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.Timer;
 import x10.compiler.Pragma;
@@ -57,7 +58,7 @@ class JobConsumer {
       if( hasEnoughResults() ) {
         val results = m_results.toRail();
         m_results.clear();
-        at( refBuf ) async {
+        at( refBuf ) @Uncounted async {
           refBuf().saveResults( results );
         }
       }
