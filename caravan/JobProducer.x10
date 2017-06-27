@@ -18,6 +18,7 @@ class JobProducer {
   val m_freeBuffers: HashMap[Place, GlobalRef[JobBuffer]];
   val m_numBuffers: Long;
   var m_numRunning: AtomicLong = new AtomicLong(0);
+  val m_latch: SimpleLatch = new SimpleLatch();
   val m_timer = new Timer();
   var m_lastSavedAt: Long;
   val m_saveInterval: Long;
@@ -176,15 +177,14 @@ class JobProducer {
     m_tables.writeBinary(p);
     p.flush();
   }
-  val latch = new SimpleLatch();
+
   public def waitCompletion() {
-    Console.ERR.println("TK start waiting");
-    latch.await();
-    Console.ERR.println("TK start waiting done");
+    d("waiting completion");
+    m_latch.await();
   }
   public def notifyCompletion() {
-    Console.ERR.println("TK notify");
-    latch.release();      	     
+    d("releasing latch");
+    m_latch.release();
   }
 }
 

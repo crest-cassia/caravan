@@ -10,7 +10,7 @@ import x10.util.ArrayList;
 import x10.util.Timer;
 import x10.io.File;
 import x10.xrx.Runtime;
-import x10.compiler.Pragma;
+import x10.compiler.*;
 
 import caravan.util.MyLogger;
 
@@ -57,7 +57,7 @@ public class Administrator {
 
     for( i in 0..(numBuffers-1) ) {
       val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
-      at( Place(bufPlace) ) async {
+      at( Place(bufPlace) ) @Uncounted async {
         val minConsPlace = here.id+1;
         val maxConsPlace = Math.min( (i+1)*numProcPerBuf, Place.numPlaces() ) - 1;
         if( i==0 ) { logger.d("JobBuffer is being initialized"); }
