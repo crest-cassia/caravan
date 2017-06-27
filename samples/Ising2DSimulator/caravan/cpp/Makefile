@@ -1,12 +1,11 @@
 CPP=$(shell (which FCCpx 2>/dev/null || which g++-5 || which g++) | tail -n 1)
-OPT=-O3 -Wall -DNDEBUG
+OPT=-O2 -Wall -std=c++11
 INCLUDE=
 LIBS=
 
 ifeq ($(CPP), FCCpx)
 	CPP=FCCpx
-	OPT=-Kfast -Xg
-	INCLUDE=-I$(HOME)/program/libs/boost_1_54_0
+	OPT=-Kfast -Xg -std=c++11
 endif
 
 libising2d.a: *.cpp *.hpp Makefile
