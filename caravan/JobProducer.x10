@@ -72,7 +72,6 @@ class JobProducer {
     atomic {
       var tasks: ArrayList[Task] = new ArrayList[Task]();
       val runningTasks = m_numRunning.addAndGet( -results.size() );
-      toNotify = (runningTasks == 0L) && m_taskQueue.empty();
       for( res in results ) {
         val run = m_tables.runsTable.get( res.runId );
         run.storeResult( res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger );
@@ -94,6 +93,7 @@ class JobProducer {
           for( ref in popped ) { refBuffers.add( ref ); }
         }
       }
+      toNotify = (runningTasks == 0L) && m_taskQueue.empty();
     }
 
     if( refBuffers.size() > 0 ) {
