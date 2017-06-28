@@ -36,6 +36,10 @@ class JobProducer {
     } else {
       enqueueUnfinishedTasks();
     }
+    if( m_taskQueue.empty() ) {
+      Console.ERR.println("[E] No task was created when initializing JobProducer");
+      throw new Exception("no task to execute");
+    }
     m_freeBuffers = new HashMap[Place, GlobalRef[JobBuffer]]();
     m_numBuffers = _numBuffers;
     m_lastSavedAt = m_timer.milliTime();
