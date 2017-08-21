@@ -55,9 +55,9 @@ public class Administrator {
 
     val jobExecutionBegin = timer.milliTime();
 
-    for( i in 0..(numBuffers-1) ) {
+    finish for( i in 0..(numBuffers-1) ) {
       val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
-      at( Place(bufPlace) ) @Uncounted async {
+      at( Place(bufPlace) ) async {
         val minConsPlace = here.id+1;
         val maxConsPlace = Math.min( (i+1)*numProcPerBuf, Place.numPlaces() ) - 1;
         if( i==0 ) { logger.d("JobBuffer is being initialized"); }
@@ -77,9 +77,6 @@ public class Administrator {
       }
     }
 
-    at( refJobProducer ) {
-      refJobProducer().waitCompletion();
-    }
     val terminationBegin = timer.milliTime();
 
     at( refJobProducer ) {

@@ -126,7 +126,7 @@ class JobBuffer {
     val refProd = m_refProducer;
     val bufPlace = here;
     async {
-      at( refProd ) @Uncounted async {
+      at( refProd ) async {
         refProd().saveResults( results, bufPlace );
       }
       m_isSendingResults.set(false);  // Producer is ready to receive other results
@@ -180,17 +180,19 @@ class JobBuffer {
       consumerPlaces = m_freePlaces.clone();
       m_freePlaces.clear();
     }
-    for( pair in consumerPlaces ) {
+    async {
+    finish for( pair in consumerPlaces ) {
       val place = pair.first;
       val timeOut = pair.second;
       d("Buffer launching consumers at " + place);
-      at( place ) @Uncounted async {
+      at( place ) async {
         val consumer = new JobConsumer( refMe, m_logger.m_refTime );
         consumer.setExpiration( timeOut );
         consumer.run();
       }
+      d("Buffer launched all free consumers");
     }
-    d("Buffer launched all free consumers");
+  }
   }
 }
 

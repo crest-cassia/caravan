@@ -7,8 +7,6 @@ import x10.io.File;
 import x10.util.Timer;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
-import x10.util.concurrent.AtomicLong;
-import x10.util.concurrent.SimpleLatch;
 
 class JobProducer {
 
@@ -17,8 +15,6 @@ class JobProducer {
   val m_taskQueue: Deque[Task];
   val m_freeBuffers: HashMap[Place, GlobalRef[JobBuffer]];
   val m_numBuffers: Long;
-  var m_numRunning: AtomicLong = new AtomicLong(0);
-  val m_latch: SimpleLatch = new SimpleLatch();
   val m_timer = new Timer();
   var m_lastSavedAt: Long;
   val m_saveInterval: Long;
@@ -72,10 +68,8 @@ class JobProducer {
     d("Producer saveResults is called. " + results.size() + " results sent by " + caller);
 
     val refBuffers = new ArrayList[GlobalRef[JobBuffer]]();
-    val toNotify:Boolean;
     atomic {
       var tasks: ArrayList[Task] = new ArrayList[Task]();
-      val runningTasks = m_numRunning.addAndGet( -results.size() );
       for( res in results ) {
         val run = m_tables.runsTable.get( res.runId );
         run.storeResult( res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger );
@@ -97,20 +91,18 @@ class JobProducer {
           for( ref in popped ) { refBuffers.add( ref ); }
         }
       }
-      toNotify = (runningTasks == 0L) && m_taskQueue.empty();
     }
 
     if( refBuffers.size() > 0 ) {
       async {
         for( refBuf in refBuffers ) {
-          at( refBuf ) @Uncounted async {
+          at( refBuf ) async {
             refBuf().wakeUp();
           }
         }
         d("Producer has woken up " + refBuffers.size() + " free buffers");
       }
     }
-    if(toNotify) notifyCompletion();
   }
 
   private atomic def serializePeriodically() {
@@ -143,7 +135,6 @@ class JobProducer {
     d("Producer popTasks is called by " + refBuf.home);
     val n = calcNumTasksToPop( numConsOfBuffer );
     val tasks = m_taskQueue.popFirst( n );
-    m_numRunning.addAndGet( tasks.size );
 
     if( tasks.size == 0 ) {
       registerFreeBuffer( refBuf );
@@ -180,15 +171,6 @@ class JobProducer {
     val p = f.printer();
     m_tables.writeBinary(p);
     p.flush();
-  }
-
-  public def waitCompletion() {
-    d("waiting completion");
-    m_latch.await();
-  }
-  public def notifyCompletion() {
-    d("releasing latch");
-    m_latch.release();
   }
 }
 
