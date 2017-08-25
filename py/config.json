@@ -1,0 +1,9 @@
+{
+  "num_inputs": 3,
+  "num_outputs": 2,
+  "search_region":[
+    [-10,10],
+    [0,5],
+    [-3,3]
+  ]
+}
