@@ -1,2 +1,3 @@
-num_outputs = 3
-num_inputs = 4
+num_outputs = None
+num_inputs = None
+

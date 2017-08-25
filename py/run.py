@@ -4,8 +4,6 @@ import struct
 
 class Run:
 
-    _dump_fmt = ">qqq" + "d" * setting.num_outputs + "qqq"
-
 
     def __init__(self, run_id, ps_id, seed):
         self.id = run_id
@@ -29,7 +27,7 @@ class Run:
         self.finish_at = finish_at
 
     def pack_binary(self):
-        fmt = self.__class__._dump_fmt
+        fmt = ">qqq" + "d" * setting.num_outputs + "qqq"
         return struct.pack(fmt, self.id, self.ps_id, self.seed, *self.results, self.place_id, self.start_at, self.finish_at)
 
     @classmethod
@@ -38,7 +36,7 @@ class Run:
 
     @classmethod
     def unpack_binary(cls, bytes):
-        fmt = cls._dump_fmt
+        fmt = ">qqq" + "d" * setting.num_outputs + "qqq"
         t = struct.unpack(fmt, bytes)
         r = cls( *t[0:3] )
         results = list( t[3:(3+setting.num_outputs)] )

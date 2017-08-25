@@ -5,7 +5,6 @@ import struct
 
 
 class ParameterSet:
-    _dump_fmt = ">q" + "q" * setting.num_inputs
 
     def __init__(self, ps_id, point):
         self.id = ps_id
@@ -13,12 +12,12 @@ class ParameterSet:
         self.run_ids = []
 
     def pack_binary(self):
-        fmt = self.__class__._dump_fmt
+        fmt = ">q" + "q" * setting.num_inputs
         return struct.pack(fmt, self.id, *self.point)
 
     @classmethod
     def unpack_binary(cls, bytes):
-        fmt = cls._dump_fmt
+        fmt = ">q" + "q" * setting.num_inputs
         t = struct.unpack(fmt, bytes)
         ps = cls(t[0], tuple(t[1:]))
         return ps

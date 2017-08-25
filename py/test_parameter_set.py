@@ -7,6 +7,8 @@ import setting
 class ParameterSetTest(unittest.TestCase):
 
     def setUp(self):
+        setting.num_outputs = 3
+        setting.num_inputs = 4
         tables.clear()
 
     def test_ps(self):

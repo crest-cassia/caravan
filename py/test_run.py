@@ -1,8 +1,15 @@
 import unittest
+import setting
 import run
+import tables
 
 
 class TestRun(unittest.TestCase):
+
+    def setUp(self):
+        setting.num_outputs = 3
+        setting.num_inputs = 4
+        tables.clear()
 
     def test_run(self):
         r = run.Run(1234, 104, 5678)

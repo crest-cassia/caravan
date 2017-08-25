@@ -1,11 +1,14 @@
 import unittest
 import tables
 import parameter_set
+import setting
 
 
 class TestTables(unittest.TestCase):
 
     def setUp(self):
+        setting.num_outputs = 3
+        setting.num_inputs = 4
         tables.clear()
 
     def test_dump_empty(self):
