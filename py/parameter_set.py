@@ -24,6 +24,10 @@ class ParameterSet:
         return ps
 
     @classmethod
+    def byte_size(cls):
+        return 8 + 8*setting.num_inputs
+
+    @classmethod
     def find_or_create(cls, point):
         p = tuple(point)
         if p in tables.ps_point_table:
@@ -76,80 +80,4 @@ class ParameterSet:
                 results = [r.results[i] for r in runs]
                 avg[i] = sum(results) / len(results)
         return avg
-
-
-if __name__ == '__main__':
-    def test_ps():
-        ps = ParameterSet(500, (2, 3, 4, 5))
-        assert ps.id == 500
-        assert ps.point == (2, 3, 4, 5)
-        assert ps.run_ids == []
-        print(ps.__dict__)
-
-    test_ps()
-
-    def test_pack_unpack():
-        ps = ParameterSet(500, (2, 3, 4, 5))
-        bytes = ps.pack_binary()
-        ps2 = ParameterSet.unpack_binary(bytes)
-        print(ps2.__dict__)
-        assert ps.id == ps2.id
-        assert ps.point == ps2.point
-
-    test_pack_unpack()
-
-    def test_create():
-        tables.clear()
-        ps = ParameterSet.find_or_create((0, 1, 2, 3))
-        assert ps.id == 0
-        assert ps.point == (0, 1, 2, 3)
-        assert len(tables.ps_table) == 1
-        assert len(tables.ps_point_table) == 1
-        ps2 = ParameterSet.find_or_create((3, 4, 5, 6))
-        assert len(tables.ps_table) == 2
-        assert len(tables.ps_point_table) == 2
-        print(ps2.__dict__)
-        assert tables.ps_point_table[(3, 4, 5, 6)] == ps2
-
-        ps3 = ParameterSet.find_or_create((0, 1, 2, 3))
-        assert ps == ps3
-        assert len(tables.ps_table) == 2
-        assert len(tables.ps_point_table) == 2
-
-    test_create()
-
-    def test_create_runs():
-        tables.clear()
-        ps = ParameterSet.find_or_create((0, 1, 2, 3))
-        runs = ps.create_runs_upto(3)
-        assert [r.id for r in runs] == [0, 1, 2]
-        ps2 = ParameterSet.find_or_create((0, 1, 3, 4))
-        runs = ps2.create_runs_upto(3)
-        assert [r.id for r in runs] == [3, 4, 5]
-
-    test_create_runs()
-
-    def test_is_finished():
-        tables.clear()
-        ps = ParameterSet.find_or_create((0, 1, 2, 3))
-        assert ps.is_finished() == True
-        runs = ps.create_runs_upto(1)
-        assert ps.is_finished() == False
-        assert len(ps.finished_runs()) == 0
-        runs[0].store_result([1.0, 2.0, 3.0], 3, 111, 222)
-        assert ps.is_finished() == True
-        assert len(ps.finished_runs()) == 1
-
-    test_is_finished()
-
-    def test_averaged_result():
-        tables.clear()
-        ps = ParameterSet.find_or_create((0, 1, 2, 3))
-        runs = ps.create_runs_upto(3)
-        assert ps.averaged_result() == [None] * setting.num_outputs
-        for (i,r) in enumerate(runs):
-            r.store_result([1.0+i, 2.0+i, 3.0+1], 3, 111, 222)
-        assert ps.averaged_result() == [2.0, 3.0, 4.0]
-
-    test_averaged_result()
 

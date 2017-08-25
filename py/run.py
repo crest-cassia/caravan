@@ -33,6 +33,10 @@ class Run:
         return struct.pack(fmt, self.id, self.ps_id, self.seed, *self.results, self.place_id, self.start_at, self.finish_at)
 
     @classmethod
+    def byte_size(cls):
+        return 24 + 8*setting.num_outputs + 24
+
+    @classmethod
     def unpack_binary(cls, bytes):
         fmt = cls._dump_fmt
         t = struct.unpack(fmt, bytes)
@@ -40,26 +44,4 @@ class Run:
         results = list( t[3:(3+setting.num_outputs)] )
         r.store_result(results, *t[-3:] )
         return r
-
-
-
-if __name__ == '__main__':
-    def test_run():
-        r = Run(1234, 104, 5678)
-        print(r.id)
-        print(r.__dict__)
-        print(r.is_finished())
-        r.store_result( [1.0, 2.0, 3.0], 3, 111, 222)
-        print(r.is_finished())
-        print(r.__dict__)
-    test_run()
-
-    def test_pack_unpack():
-        r = Run(1234, 104, 5678)
-        r.store_result( [1.0, 2.0, 3.0], 3, 111, 222)
-        bytes = r.pack_binary()
-        print(bytes)
-        r = Run.unpack_binary(bytes)
-        print( r.__dict__ )
-    test_pack_unpack()
 
