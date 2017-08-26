@@ -10,6 +10,7 @@ def load_setting(config_file):
     setting.num_inputs = config['num_inputs']
     setting.num_outputs = config['num_outputs']
     setting.search_region = config['search_region']
+    setting.command = config['command']
     f.close()
 
 max_submitted_run_id = 0
@@ -17,7 +18,7 @@ max_submitted_run_id = 0
 def _submit(run):
     global max_submitted_run_id
     s_point = " ".join( [str(x) for x in run.parameter_set().point] )
-    out = "%d %s %d\n" % (run.id, s_point, run.seed)
+    out = "%d %s %d %s %d\n" % (run.id, setting.command, run.id, s_point, run.seed)
     sys.stdout.write(out)
     max_submitted_run_id = len(tables.runs_table)
 
