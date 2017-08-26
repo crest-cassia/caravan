@@ -10,7 +10,6 @@ import caravan.util.Deque;
 
 class JobProducer {
 
-  val m_tables: Tables;
   val m_engine: SearchEngineI;
   val m_taskQueue: Deque[Task];
   val m_freeBuffers: HashMap[Place, GlobalRef[JobBuffer]];
@@ -22,16 +21,10 @@ class JobProducer {
   var m_dumpFileIndex: Long;
   val m_logger: MyLogger;
 
-  def this( _tables: Tables, _engine: SearchEngineI, _numBuffers: Long, _saveInterval: Long, _refTimeForLogger: Long ) {
-    m_tables = _tables;
-    m_engine = _engine;
+  def this( _numBuffers: Long, _refTimeForLogger: Long ) {
     m_logger = new MyLogger( _refTimeForLogger );
     m_taskQueue = new Deque[Task]();
-    if( m_tables.empty() ) {
-      enqueueInitialTasks();
-    } else {
-      enqueueUnfinishedTasks();
-    }
+    enqueueInitialTasks();
     if( m_taskQueue.empty() ) {
       Console.ERR.println("[E] No task was created when initializing JobProducer");
       throw new Exception("no task to execute");
@@ -49,12 +42,8 @@ class JobProducer {
   }
 
   private def enqueueInitialTasks() {
+    // IMPLEMENT ME
     val tasks = m_engine.createInitialTask( m_tables, Simulator.searchRegion() );
-    m_taskQueue.pushLast( tasks.toRail() );
-  }
-
-  private def enqueueUnfinishedTasks() {
-    val tasks = m_tables.createTasksForUnfinishedRuns();
     m_taskQueue.pushLast( tasks.toRail() );
   }
 
@@ -71,18 +60,15 @@ class JobProducer {
     atomic {
       var tasks: ArrayList[Task] = new ArrayList[Task]();
       for( res in results ) {
-        val run = m_tables.runsTable.get( res.runId );
-        run.storeResult( res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger );
-        val ps = run.parameterSet( m_tables );
-        if( ps.isFinished( m_tables ) ) {
-          val local_tasks = m_engine.onParameterSetFinished( m_tables, ps );
-          for( task in local_tasks ) {
-            tasks.add( task );
-          }
+        // IMPLEMENT ME
+        sendResultToSearcher(res.runid, res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger);
+        // run.storeResult( res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger );
+        val local_tasks = getTasks();
+        for( task in local_tasks ) {
+          tasks.add( task );
         }
       }
       d("Producer saved " + results.size() + " results sent by " + caller);
-      serializePeriodically();
 
       if( tasks.size() > 0 ) {
         m_taskQueue.pushLast( tasks.toRail() );
@@ -102,16 +88,6 @@ class JobProducer {
         }
         d("Producer has woken up " + refBuffers.size() + " free buffers");
       }
-    }
-  }
-
-  private atomic def serializePeriodically() {
-    val now = m_timer.milliTime();
-    if( now - m_lastSavedAt > m_saveInterval ) {
-      val dump = "dump_" + m_dumpFileIndex;
-      dumpTables( dump );
-      m_lastSavedAt = now;
-      m_dumpFileIndex += 1;
     }
   }
 
@@ -153,24 +129,6 @@ class JobProducer {
       target = m_taskQueue.size();
     }
     return target;
-  }
-
-  public def printJSON( psJson: String, runsJson: String ) {
-    val f = new File(runsJson);
-    val p = f.printer();
-    p.println( m_tables.runsJson() );
-    p.flush();
-    val f2 = new File(psJson);
-    val p2 = f2.printer();
-    p2.println( m_tables.parameterSetsJson() );
-    p2.flush();
-  }
-
-  public def dumpTables( filename: String ): void {
-    val f = new File(filename);
-    val p = f.printer();
-    m_tables.writeBinary(p);
-    p.flush();
   }
 }
 

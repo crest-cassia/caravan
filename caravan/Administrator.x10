@@ -16,20 +16,7 @@ import caravan.util.MyLogger;
 
 public class Administrator {
 
-
-  public def run( engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ): void {
-    val table = new Tables();
-    execute( table, engine, saveInterval, timeOut, numProcPerBuf );
-  }
-
-  public def restart( dumpFile: String, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ) {
-    val infile = new File( dumpFile );
-    val reader = infile.openRead();
-    val table = Tables.loadFromBinary( reader );
-    execute( table, engine, saveInterval, timeOut, numProcPerBuf );
-  }
-
-  private def execute( table: Tables, engine: SearchEngineI, saveInterval: Long, timeOut: Long, numProcPerBuf: Long ) {
+  private def checkNumPlaces( numProcPerBuf: Long ) {
     if( Place.numPlaces() <= 2 ) {
       Console.ERR.println("NumPlaces: " + Place.numPlaces() );
       throw new Exception("Number of places must be larger than 2");
@@ -43,13 +30,17 @@ public class Administrator {
       Console.ERR.println("numProcPerBuf: " + numProcPerBuf );
       throw new Exception("NumPlaces % numProcPerBuf cannot be less than 2 since buffer must have at least one buffer and one consumer.");
     }
-    val numBuffers = Math.ceil( Place.numPlaces() as Double / numProcPerBuf ) as Long;
+  }
 
+  public def run( timeOut: Long, numProcPerBuf: Long ) {
+    checkNumPlaces( numProcPerBuf );
+
+    val numBuffers = Math.ceil( Place.numPlaces() as Double / numProcPerBuf ) as Long;
     val timer = new Timer();
     val initializationBegin = timer.milliTime();
     val logger = new MyLogger( initializationBegin );
     val refJobProducer = new GlobalRef[JobProducer](
-      new JobProducer( table, engine, numBuffers, saveInterval, initializationBegin )
+      new JobProducer( numBuffers, initializationBegin )
     );
     logger.d("JobProducer has been initialized");
 
@@ -79,14 +70,13 @@ public class Administrator {
     val terminationBegin = timer.milliTime();
 
     at( refJobProducer ) {
-      refJobProducer().dumpTables("dump.bin");
-    }
-    val numUnfinished = table.numUnfinishedRuns();
-    if( numUnfinished > 0 ) {
-      Console.ERR.println("There are " + numUnfinished + " unfinished tasks.");
-    }
-    else {
-      Console.ERR.println("All the tasks completed.");
+      val numUnfinished = refJobProducer().numUnfinished();
+      if( numUnfinished > 0 ) {
+        Console.ERR.println("There are " + numUnfinished + " unfinished tasks.");
+      }
+      else {
+        Console.ERR.println("All the tasks completed.");
+      }
     }
 
     Console.ERR.println("Elapsed times ---");
