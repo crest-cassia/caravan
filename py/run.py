@@ -28,7 +28,8 @@ class Run:
 
     def pack_binary(self):
         fmt = ">qqq" + "d" * setting.num_outputs + "qqq"
-        return struct.pack(fmt, self.id, self.ps_id, self.seed, *self.results, self.place_id, self.start_at, self.finish_at)
+        args = [self.id, self.ps_id, self.seed] + self.results + [self.place_id, self.start_at, self.finish_at]
+        return struct.pack(fmt, *args)
 
     @classmethod
     def byte_size(cls):
