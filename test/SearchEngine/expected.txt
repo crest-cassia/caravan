@@ -1,0 +1,7 @@
+> SearchEngineTest
+3
+{ taskId : 0, argv : [./foobar.out,0,1,2,3,1000] }
+{ taskId : 1, argv : [./foobar.out,1,2,3,2,1001] }
+{ taskId : 2, argv : [./foobar.out,2,3,4,1,1002] }
+{ taskId : 4, argv : [./foobar2.out,4,2,3,4,1234] }
+{ taskId : 4, argv : [./foobar2.out,4,2,3,4,1234] }
