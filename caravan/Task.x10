@@ -2,13 +2,19 @@ package caravan;
 
 import x10.io.File;
 import x10.util.Timer;
+import x10.util.ArrayList;
 
 public struct Task( taskId: Long, argv: Rail[String] ) {
 
+  private def system( argv: Rail[String] ): Long {
+    // IMPLEMENT ME
+    return 0;
+  }
+
   public def run(): SimulationOutput {
-    val err = system( argv );
-    if( err != 0 ) {
-      return SimulationOutput( [] )
+    val rc = system( argv );
+    if( rc != 0 ) {
+      return SimulationOutput(rc, new Rail[Double]() );
     }
     return parseResults();
   }
@@ -26,7 +32,7 @@ public struct Task( taskId: Long, argv: Rail[String] ) {
       }
     }
 
-    val so = SimulationOutput( results.toRail() );
+    val so = SimulationOutput( 0, results.toRail() );
     return so;
   }
 
@@ -35,7 +41,7 @@ public struct Task( taskId: Long, argv: Rail[String] ) {
   }
   
   public def toString(): String {
-    return "{ runId : " + runId + ", argv : " + argv + " }";
+    return "{ taskId : " + taskId + ", argv : " + argv + " }";
   }
 }
 
