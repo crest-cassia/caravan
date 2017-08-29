@@ -32,7 +32,7 @@ public class Administrator {
     }
   }
 
-  public def run( timeOut: Long, numProcPerBuf: Long ) {
+  public def run( cmd_args: Rail[String], timeOut: Long, numProcPerBuf: Long ) {
     checkNumPlaces( numProcPerBuf );
 
     val numBuffers = Math.ceil( Place.numPlaces() as Double / numProcPerBuf ) as Long;
@@ -40,7 +40,7 @@ public class Administrator {
     val initializationBegin = timer.milliTime();
     val logger = new MyLogger( initializationBegin );
     val refJobProducer = new GlobalRef[JobProducer](
-      new JobProducer( numBuffers, initializationBegin )
+      new JobProducer( cmd_args, numBuffers, initializationBegin )
     );
     logger.d("JobProducer has been initialized");
 

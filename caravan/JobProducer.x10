@@ -21,9 +21,16 @@ class JobProducer {
   var m_dumpFileIndex: Long;
   val m_logger: MyLogger;
 
-  def this( _numBuffers: Long, _refTimeForLogger: Long ) {
+  def this( cmd_args: Rail[String], _numBuffers: Long, _refTimeForLogger: Long ) {
     m_logger = new MyLogger( _refTimeForLogger );
     m_taskQueue = new Deque[Task]();
+
+    val ret = SearchEngine.launchSearcher( cmd_args );
+    if( ret != 0 ) {
+      Console.ERR.println("[E] Failed to create a subprocess.", cmd_args);
+      throw new Exception("failed to launch a searcher");
+    }
+
     enqueueInitialTasks();
     if( m_taskQueue.empty() ) {
       Console.ERR.println("[E] No task was created when initializing JobProducer");
@@ -42,8 +49,7 @@ class JobProducer {
   }
 
   private def enqueueInitialTasks() {
-    // IMPLEMENT ME
-    val tasks = m_engine.createInitialTask( m_tables, Simulator.searchRegion() );
+    val tasks = SearchEngine.createInitialTasks();
     m_taskQueue.pushLast( tasks.toRail() );
   }
 
