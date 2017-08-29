@@ -10,17 +10,17 @@ public struct Task( taskId: Long, argv: Rail[String] ) {
   @Native("c++", "system( (#1)->c_str() );")
   private native static def system( cmd:String ):Int;
 
-  public def run(): SimulationOutput {
+  public def run(): Result {
     var cmd: String = "";
     for( arg in argv ) { cmd += arg + " "; }
     val rc = system( cmd );
     if( rc != 0n ) {
-      return SimulationOutput(rc as Long, new Rail[Double]() );
+      return Result(taskId, rc as Long, new Rail[Double]() );
     }
     return parseResults();
   }
 
-  private def parseResults(): SimulationOutput {
+  private def parseResults(): Result {
 
     val results = new ArrayList[Double]();
   
@@ -33,7 +33,7 @@ public struct Task( taskId: Long, argv: Rail[String] ) {
       }
     }
 
-    val so = SimulationOutput( 0, results.toRail() );
+    val so = Result(taskId, 0, results.toRail() );
     return so;
   }
 

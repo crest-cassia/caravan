@@ -24,7 +24,7 @@ class TaskTest {
     val out = task.run();
 
     assert out.rc == 0;
-    p( out.values );
+    p( out.toString() );
 
     val f = new File( task.resultsFilePath() );
     assert f.exists();
