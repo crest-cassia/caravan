@@ -1,6 +1,7 @@
 import caravan.Task;
+import x10.io.File;
 
-class Task {
+class TaskTest {
 
   static public def p( obj:Any ): void {
     Console.OUT.println( obj );
@@ -18,7 +19,17 @@ class Task {
     val task = Task( taskId as Long, argv as Rail[String] );
 
     p( task.toString() );
-  }
+    assert task.taskId == taskId;
 
+    val out = task.run();
+
+    assert out.rc == 0;
+    p( out.values );
+
+    val f = new File( task.resultsFilePath() );
+    assert f.exists();
+
+    f.delete();
+  }
 }
 
