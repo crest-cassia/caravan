@@ -89,10 +89,8 @@ class JobBuffer {
     }
 
     if( needToFillTask ) {
-      // async {
-        fillTaskQueue();
-        launchConsumerAtFreePlace();
-      // }
+      fillTaskQueue();
+      launchConsumerAtFreePlace();
     }
     return tasks;
   }
@@ -127,13 +125,11 @@ class JobBuffer {
     d("Buffer is sending " + results.size() + " results to Producer");
     val refProd = m_refProducer;
     val bufPlace = here;
-    // async {
-      at( refProd ) { // async {
-        refProd().saveResults( results, bufPlace );
-      }
-      m_isSendingResults.set(false);  // Producer is ready to receive other results
-      d("Buffer has sent " + results.size() + " results to Producer");
-    // }
+    at( refProd ) async {
+      refProd().saveResults( results, bufPlace );
+    }
+    m_isSendingResults.set(false);  // Producer is ready to receive other results
+    d("Buffer has sent " + results.size() + " results to Producer");
   }
 
   private def isReadyToSendResults(): Boolean {
