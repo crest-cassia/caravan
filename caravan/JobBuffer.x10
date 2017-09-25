@@ -32,7 +32,9 @@ class JobBuffer {
 
   public def getInitialTasks() {
     fillTaskQueue();
-    launchConsumerAtFreePlace();
+    finish {
+      launchConsumerAtFreePlace();
+    }
   }
 
   public def registerConsumerPlaces(placeTimeoutPairs: ArrayList[ Pair[Place,Long] ]) {
@@ -180,8 +182,7 @@ class JobBuffer {
       consumerPlaces = m_freePlaces.clone();
       m_freePlaces.clear();
     }
-    // async {
-    finish for( pair in consumerPlaces ) {
+    for( pair in consumerPlaces ) {
       val place = pair.first;
       val timeOut = pair.second;
       d("Buffer launching consumers at " + place);
@@ -193,7 +194,6 @@ class JobBuffer {
       }
       d("Buffer launched all free consumers");
     }
-    //}
   }
 }
 
