@@ -58,7 +58,7 @@ class JobConsumer {
       if( hasEnoughResults() ) {
         val results = m_results.toRail();
         m_results.clear();
-        at( refBuf ) async {
+        at( refBuf ) {
           refBuf().saveResults( results );
         }
       }

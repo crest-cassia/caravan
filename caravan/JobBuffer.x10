@@ -32,7 +32,9 @@ class JobBuffer {
 
   public def getInitialTasks() {
     fillTaskQueue();
-    launchConsumerAtFreePlace();
+    finish {
+      launchConsumerAtFreePlace();
+    }
   }
 
   public def registerConsumerPlaces(placeTimeoutPairs: ArrayList[ Pair[Place,Long] ]) {
@@ -87,10 +89,8 @@ class JobBuffer {
     }
 
     if( needToFillTask ) {
-      async {
-        fillTaskQueue();
-        launchConsumerAtFreePlace();
-      }
+      fillTaskQueue();
+      launchConsumerAtFreePlace();
     }
     return tasks;
   }
@@ -125,13 +125,11 @@ class JobBuffer {
     d("Buffer is sending " + results.size() + " results to Producer");
     val refProd = m_refProducer;
     val bufPlace = here;
-    async {
-      at( refProd ) async {
-        refProd().saveResults( results, bufPlace );
-      }
-      m_isSendingResults.set(false);  // Producer is ready to receive other results
-      d("Buffer has sent " + results.size() + " results to Producer");
+    at( refProd ) async {
+      refProd().saveResults( results, bufPlace );
     }
+    m_isSendingResults.set(false);  // Producer is ready to receive other results
+    d("Buffer has sent " + results.size() + " results to Producer");
   }
 
   private def isReadyToSendResults(): Boolean {
@@ -180,19 +178,18 @@ class JobBuffer {
       consumerPlaces = m_freePlaces.clone();
       m_freePlaces.clear();
     }
-    async {
-    finish for( pair in consumerPlaces ) {
+    for( pair in consumerPlaces ) {
       val place = pair.first;
       val timeOut = pair.second;
       d("Buffer launching consumers at " + place);
+      val refTime = m_logger.m_refTime;
       at( place ) async {
-        val consumer = new JobConsumer( refMe, m_logger.m_refTime );
+        val consumer = new JobConsumer( refMe, refTime );
         consumer.setExpiration( timeOut );
         consumer.run();
       }
       d("Buffer launched all free consumers");
     }
-  }
   }
 }
 

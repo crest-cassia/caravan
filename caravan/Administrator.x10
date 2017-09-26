@@ -73,7 +73,6 @@ public class Administrator {
         buffer.registerConsumerPlaces( consumerPlaceTimeoutPairs );
         if( i==0 ) { logger.d("JobConsumers are registered to Buffer"); }
         buffer.getInitialTasks();
-        if( i==0 ) { logger.d("JobBuffer got initial tasks"); }
       }
     }
 
