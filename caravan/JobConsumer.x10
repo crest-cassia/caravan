@@ -4,7 +4,7 @@ import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.Timer;
 import x10.compiler.Pragma;
-import caravan.SimulationOutput;
+import caravan.Result;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -15,13 +15,13 @@ class JobConsumer {
   var m_timeOut: Long = -1;
   val m_logger: MyLogger;
   val m_tasks: Deque[Task];
-  val m_results: ArrayList[RunResult];
+  val m_results: ArrayList[TaskResult];
 
   def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long ) {
     m_refBuffer = _refBuffer;
     m_logger = new MyLogger( refTimeForLogger );
     m_tasks = new Deque[Task]();
-    m_results = new ArrayList[RunResult]();
+    m_results = new ArrayList[TaskResult]();
   }
 
   private def d(s:String) {
@@ -31,14 +31,6 @@ class JobConsumer {
   def setExpiration( timeOutMilliTime: Long ) {
     m_timeOut = timeOutMilliTime;
   }
-
-  static struct RunResult(
-    runId: Long,
-    result: SimulationOutput,
-    placeId: Long,
-    startAt: Long,
-    finishAt: Long
-  ) {};
 
   def run() {
     d("Consumer starting");
@@ -53,7 +45,7 @@ class JobConsumer {
       val task = m_tasks.popFirst();
       val result = runTask( task );
       m_results.add( result );
-      d("Consumer finished task " + task.runId);
+      d("Consumer finished task " + task.taskId);
 
       if( hasEnoughResults() ) {
         val results = m_results.toRail();
@@ -74,13 +66,13 @@ class JobConsumer {
     d("Consumer finished");
   }
 
-  private def runTask( task: Task ): RunResult {
-    val runId = task.runId;
+  private def runTask( task: Task ): TaskResult {
+    val taskId = task.taskId;
     val startAt = m_timer.milliTime();
     val runPlace = here.id;
     val localResult = task.run();
     val finishAt = m_timer.milliTime();
-    val result = RunResult( runId, localResult, runPlace, startAt, finishAt );
+    val result = TaskResult( taskId, 0, localResult, runPlace, startAt, finishAt );
     return result;
   }
 

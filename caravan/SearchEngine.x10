@@ -18,8 +18,8 @@ public class SearchEngine {
   @Native("c++", "readLinesUntilEmpty( (FILE*)(#1) )")
   private native static def readLinesUntilEmpty( fp_r: Long ): Rail[String];
 
-  @Native("c++", "writeLines( (FILE*)(#1), #2 )")
-  private native static def writeLines( fp_w: Long, lines: Rail[String] ): void;
+  @Native("c++", "writeLine( (FILE*)(#1), #2 )")
+  private native static def writeLine( fp_w: Long, line: Rail[String] ): void;
 
   public static def launchSearcher( argv: Rail[String] ): Long {
     return launchSubProcessWithPipes( argv, pidFilePointers );
@@ -50,25 +50,8 @@ public class SearchEngine {
     return Task( taskId, argv );
   }
 
-  private static def resultToLine( r: Result ): String {
-    val s = String.format("%l %l ", [r.taskId, r.rc as Any] );
-    var line: String = s;
-    for( x in r.values ) {
-      line += x.toString() + " ";
-    }
-    return line;
-  }
-
-  public static def onTasksFinished( results: Rail[Result] ): ArrayList[Task] {
-    val lines: Rail[String] = new Rail[String](results.size+1);
-    for( i in 0..(results.size-1) ) {
-      val r = results(i);
-      val line = resultToLine(r);
-      lines(i) = line;
-    }
-    lines(results.size) = "";  // finish writing by entering an empty line
-    writeLines( pidFilePointers(2), lines );
-
+  public static def sendResult( resultLine: String ): ArrayList[Task] {
+    writeLine( pidFilePointers(2), resultLine );
     return readTasks();
   }
 }

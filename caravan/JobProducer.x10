@@ -10,15 +10,11 @@ import caravan.util.Deque;
 
 class JobProducer {
 
-  val m_engine: SearchEngineI;
   val m_taskQueue: Deque[Task];
   val m_freeBuffers: HashMap[Place, GlobalRef[JobBuffer]];
   val m_numBuffers: Long;
   val m_timer = new Timer();
-  var m_lastSavedAt: Long;
-  val m_saveInterval: Long;
   val m_refTimeForLogger: Long;
-  var m_dumpFileIndex: Long;
   val m_logger: MyLogger;
 
   def this( cmd_args: Rail[String], _numBuffers: Long, _refTimeForLogger: Long ) {
@@ -38,10 +34,7 @@ class JobProducer {
     }
     m_freeBuffers = new HashMap[Place, GlobalRef[JobBuffer]]();
     m_numBuffers = _numBuffers;
-    m_lastSavedAt = m_timer.milliTime();
-    m_saveInterval = _saveInterval;
     m_refTimeForLogger = _refTimeForLogger;
-    m_dumpFileIndex = 0;
   }
 
   private def d(s:String) {
@@ -59,7 +52,7 @@ class JobProducer {
     d("Producer registered free buffer : " + refBuffer.home );
   }
 
-  public def saveResults( results: ArrayList[JobConsumer.RunResult], caller: Place ) {
+  public def saveResults( results: ArrayList[TaskResult], caller: Place ) {
     d("Producer saveResults is called. " + results.size() + " results sent by " + caller);
 
     val refBuffers = new ArrayList[GlobalRef[JobBuffer]]();
@@ -67,9 +60,7 @@ class JobProducer {
       var tasks: ArrayList[Task] = new ArrayList[Task]();
       for( res in results ) {
         // IMPLEMENT ME
-        sendResultToSearcher(res.runid, res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger);
-        // run.storeResult( res.result, res.placeId, res.startAt - m_refTimeForLogger, res.finishAt - m_refTimeForLogger );
-        val local_tasks = getTasks();
+        val local_tasks = SearchEngine.sendResult(res.toLine(m_refTimeForLogger));
         for( task in local_tasks ) {
           tasks.add( task );
         }
