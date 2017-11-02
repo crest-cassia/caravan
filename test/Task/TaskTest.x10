@@ -10,6 +10,7 @@ class TaskTest {
   static public def main( args: Rail[String] ) {
     p("> TaskTest");
     testRun();
+    testRunWithoutResultFile();
   }
 
   static public def testRun(): void {
@@ -31,5 +32,21 @@ class TaskTest {
     val f = new File( task.resultsFilePath() );
     assert f.exists();
   }
+
+  static public def testRunWithoutResultFile(): void {
+    val taskId = 1043;
+    val cmd = "echo foo 1 2 3 1234";
+    val task = Task( taskId, cmd );
+
+    assert task.taskId == taskId;
+    val out = task.run();
+
+    assert out.first == 0;
+    assert out.second.size == 0; // empty Rail
+
+    val dir = new File( task.workDirPath() );
+    assert dir.isDirectory();
+  }
+
 }
 

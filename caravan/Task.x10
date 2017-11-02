@@ -60,7 +60,8 @@ public struct Task( taskId: Long, cmd: String ) {
       return Pair[Long,Rail[Double]](rc as Long, new Rail[Double]() );
     }
 
-    val results = parseResults();
+    val f = new File( resultsFilePath() );
+    val results = f.exists() ? parseResults() : (new Rail[Double]() );
     return Pair[Long,Rail[Double]]( 0, results );
   }
 

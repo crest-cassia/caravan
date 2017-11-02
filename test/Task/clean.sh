@@ -6,4 +6,5 @@ BUILD=${BUILD:-build}
 rm -f stdout
 rm -f stderr
 rm -rf w00000132
+rm -rf w00001043
 
