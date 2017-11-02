@@ -1,3 +1,0 @@
-> TaskTest
-{ taskId : 132, argv : [./dummy.sh,132,1,2,3,1234] }
-{ taskId: 132, rc: 0, values: [132.0,1.0,2.0,3.0,1234.0]

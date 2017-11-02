@@ -123,3 +123,13 @@ long launchSubProcessWithPipes( x10::lang::Rail<x10::lang::String*>* x10_argv, l
   return 0l;
 }
 
+x10::lang::String* getCWD() {
+  char cwd[1024];
+  if( getcwd(cwd, sizeof(cwd)) != NULL ) {
+    return x10::lang::String::_make(cwd, false);
+  }
+  else {
+    return x10::lang::String::_make("", false);
+  }
+}
+

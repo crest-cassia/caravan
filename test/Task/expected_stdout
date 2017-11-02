@@ -1,0 +1,3 @@
+> TaskTest
+{ taskId : 132, cmd : echo 132 1 2 3 1234 > _results.txt }
+[132.0,1.0,2.0,3.0,1234.0]
