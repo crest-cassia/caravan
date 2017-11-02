@@ -4,7 +4,7 @@ import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.Timer;
 import x10.compiler.Pragma;
-import caravan.Result;
+import caravan.TaskResult;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -70,10 +70,12 @@ class JobConsumer {
     val taskId = task.taskId;
     val startAt = m_timer.milliTime();
     val runPlace = here.id;
-    val localResult = task.run();
+    val rcResults = task.run();
+    val rc = rcResults.first;
+    val results = rcResults.second;
     val finishAt = m_timer.milliTime();
-    val result = TaskResult( taskId, 0, localResult, runPlace, startAt, finishAt );
-    return result;
+    val tr = TaskResult( taskId, rc, results, runPlace, startAt, finishAt );
+    return tr;
   }
 
   private def hasEnoughResults(): Boolean {

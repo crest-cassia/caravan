@@ -14,7 +14,7 @@ class JobBuffer {
   val m_refProducer: GlobalRef[JobProducer];
   val m_logger: MyLogger;
   val m_taskQueue = new Deque[Task]();
-  val m_resultsBuffer = new ArrayList[JobConsumer.RunResult]();
+  val m_resultsBuffer = new ArrayList[TaskResult]();
   var m_numRunning: AtomicLong = new AtomicLong(0);
   val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
@@ -99,9 +99,9 @@ class JobBuffer {
     return Math.ceil((m_taskQueue.size() as Double) / (2.0*m_numConsumers)) as Long;
   }
 
-  def saveResults( results: Rail[JobConsumer.RunResult] ) {
+  def saveResults( results: Rail[TaskResult] ) {
     d("Buffer is saving " + results.size + " results");
-    val resultsToSave: ArrayList[JobConsumer.RunResult] = new ArrayList[JobConsumer.RunResult]();
+    val resultsToSave: ArrayList[TaskResult] = new ArrayList[TaskResult]();
     atomic {
       m_resultsBuffer.addAll( results );
       m_numRunning.addAndGet( -results.size );
@@ -121,7 +121,7 @@ class JobBuffer {
     d("Buffer has saved " + results.size + " results");
   }
 
-  private def sendResultsToProducer( results: ArrayList[JobConsumer.RunResult] ) {
+  private def sendResultsToProducer( results: ArrayList[TaskResult] ) {
     d("Buffer is sending " + results.size() + " results to Producer");
     val refProd = m_refProducer;
     val bufPlace = here;

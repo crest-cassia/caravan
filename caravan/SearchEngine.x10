@@ -40,14 +40,11 @@ public class SearchEngine {
   }
 
   private static def parseLine( line: String ): Task {
-    val parsed = line.split(" ");
-    assert parsed.size > 1;
-    val taskId = Long.parse( parsed(0) );
-    val argv = new Rail[String]( parsed.size - 1 );
-    for( i in 1..(parsed.size-1) ) {
-      argv(i-1) = parsed(i);
-    }
-    return Task( taskId, argv );
+    val split_at = line.indexOf(" ") as Int;
+    assert split_at > 0;
+    val taskId = Long.parse( line.substring(0n,split_at) );
+    val cmd = line.substring(split_at+1n);
+    return Task( taskId, cmd );
   }
 
   public static def sendResult( resultLine: String ): ArrayList[Task] {

@@ -16,14 +16,16 @@ class JobProducer {
   val m_timer = new Timer();
   val m_refTimeForLogger: Long;
   val m_logger: MyLogger;
+  var m_numRunning: Long;
 
   def this( cmd_args: Rail[String], _numBuffers: Long, _refTimeForLogger: Long ) {
     m_logger = new MyLogger( _refTimeForLogger );
     m_taskQueue = new Deque[Task]();
+    m_numRunning = 0;
 
     val ret = SearchEngine.launchSearcher( cmd_args );
     if( ret != 0 ) {
-      Console.ERR.println("[E] Failed to create a subprocess.", cmd_args);
+      Console.ERR.println("[E] Failed to create a subprocess." + cmd_args);
       throw new Exception("failed to launch a searcher");
     }
 
@@ -35,6 +37,10 @@ class JobProducer {
     m_freeBuffers = new HashMap[Place, GlobalRef[JobBuffer]]();
     m_numBuffers = _numBuffers;
     m_refTimeForLogger = _refTimeForLogger;
+  }
+
+  public def numUnfinished(): Long {
+    return m_taskQueue.size() + m_numRunning;
   }
 
   private def d(s:String) {
@@ -61,6 +67,7 @@ class JobProducer {
       for( res in results ) {
         // IMPLEMENT ME
         val local_tasks = SearchEngine.sendResult(res.toLine(m_refTimeForLogger));
+        m_numRunning -= 1;
         for( task in local_tasks ) {
           tasks.add( task );
         }
@@ -111,6 +118,9 @@ class JobProducer {
 
     if( tasks.size == 0 ) {
       registerFreeBuffer( refBuf );
+    }
+    else {
+      m_numRunning += tasks.size;
     }
     d("Producer sending " + tasks.size + " tasks to buffer" + refBuf.home);
     return tasks;
