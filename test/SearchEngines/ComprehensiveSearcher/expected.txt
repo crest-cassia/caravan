@@ -1,8 +1,0 @@
-> ComprehensiveSearcherTest
->>> #testConstructor
-constructor accepts num_runs: 1 = 1
->>> #testCreateInitialTask
-#createInitialTask creates tasks: 7623 = 7623
-  each PS has 3 runs: 3
->>> #testOnParameterSetFinished
-#onParameterSetFinished does not create tasks: [] = []
