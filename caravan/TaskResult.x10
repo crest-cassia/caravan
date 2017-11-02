@@ -10,12 +10,11 @@ public struct TaskResult(
   ) {
 
   public def toLine( refTime: Long): String {
-    val s = String.format("%l %l %l %l %l", [taskId as Any, rc, placeId, startAt-refTime, finishAt-refTime] );
-    var line: String = s;
+    var s:String = String.format("%d %d %d %d %d", [taskId as Any, rc, placeId, startAt-refTime, finishAt-refTime] );
     for( r in result ) {
-      line += " " + r.toString();
+      s += " " + r.toString();
     }
-    return line;
+    return s;
   }
 };
 

@@ -90,15 +90,11 @@ x10::lang::Rail<x10::lang::String*>* readLinesUntilEmpty(FILE* fp_r) {
   return arr;
 }
 
-void writeLines(FILE* fp_w, x10::lang::Rail<x10::lang::String*>* lines) {
-  for( size_t i=0; i < lines->FMGL(size); i++) {
-    x10::lang::String* p_s = lines->raw[i];
-    // std::cerr << "[DEBUG] writing: " << p_s->c_str() << std::endl;
-    fprintf(fp_w, "%s\n", p_s->c_str() );
-  }
-  fprintf(fp_w, "\n");
-  // std::cerr << "[DEBUG] writing end" << std::endl;
+void writeLine(FILE* fp_w, x10::lang::String* line) {
+  // std::cerr << "[DEBUG] writing: " << p_s->c_str() << std::endl;
+  fprintf(fp_w, "%s\n", line->c_str() );
   fflush(fp_w);
+  // std::cerr << "[DEBUG] writing end" << std::endl;
 }
 
 long launchSubProcessWithPipes( x10::lang::Rail<x10::lang::String*>* x10_argv, long* fps_pid) {
@@ -126,3 +122,4 @@ long launchSubProcessWithPipes( x10::lang::Rail<x10::lang::String*>* x10_argv, l
 
   return 0l;
 }
+
