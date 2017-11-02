@@ -19,7 +19,7 @@ public class SearchEngine {
   private native static def readLinesUntilEmpty( fp_r: Long ): Rail[String];
 
   @Native("c++", "writeLine( (FILE*)(#1), #2 )")
-  private native static def writeLine( fp_w: Long, line: Rail[String] ): void;
+  private native static def writeLine( fp_w: Long, line: String ): void;
 
   public static def launchSearcher( argv: Rail[String] ): Long {
     return launchSubProcessWithPipes( argv, pidFilePointers );

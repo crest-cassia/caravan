@@ -1,6 +1,6 @@
 package caravan;
 
-public static struct TaskResult(
+public struct TaskResult(
     taskId: Long,
     rc: Long,
     result: Rail[Double],
@@ -16,5 +16,6 @@ public static struct TaskResult(
       line += " " + r.toString();
     }
     return line;
+  }
 };
 

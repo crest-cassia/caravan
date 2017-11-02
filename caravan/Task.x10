@@ -3,6 +3,7 @@ package caravan;
 import x10.io.File;
 import x10.util.Timer;
 import x10.util.ArrayList;
+import x10.util.Pair;
 import x10.compiler.Native;
 
 public struct Task( taskId: Long, argv: Rail[String] ) {
@@ -10,20 +11,19 @@ public struct Task( taskId: Long, argv: Rail[String] ) {
   @Native("c++", "system( (#1)->c_str() );")
   private native static def system( cmd:String ):Int;
 
-  public def run(): Result {
+  public def run(): Pair[Long,Rail[Double]] {
     var cmd: String = "";
     for( arg in argv ) { cmd += arg + " "; }
     val rc = system( cmd );
     if( rc != 0n ) {
-      return Result(taskId, rc as Long, new Rail[Double]() );
+      return Pair[Long,Rail[Double]](rc as Long, new Rail[Double]() );
     }
-    return parseResults();
+    val results = parseResults();
+    return Pair[Long,Rail[Double]]( 0, results );
   }
 
-  private def parseResults(): Result {
-
+  private def parseResults(): Rail[Double] {
     val results = new ArrayList[Double]();
-  
     val f = new File( resultsFilePath() );
     for( line in f.lines() ) {
       val trimmed = line.trim();
@@ -32,9 +32,7 @@ public struct Task( taskId: Long, argv: Rail[String] ) {
         results.add(d);
       }
     }
-
-    val so = Result(taskId, 0, results.toRail() );
-    return so;
+    return results.toRail();
   }
 
   public def resultsFilePath(): String {

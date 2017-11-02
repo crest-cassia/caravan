@@ -1,5 +1,7 @@
+import x10.util.ArrayList;
 import caravan.SearchEngine;
-import caravan.Result;
+import caravan.TaskResult;
+import caravan.Task;
 
 class SearchEngineTest {
 
@@ -21,17 +23,21 @@ class SearchEngineTest {
     assert SearchEngine.pidFilePointers(1) != 0;
     assert SearchEngine.pidFilePointers(2) != 0;
 
-    val tasks = SearchEngine.createInitialTasks();
-    p( tasks.size() );
-    for( t in tasks ) {
-      p( t.toString() );
-    }
+    val init_tasks = SearchEngine.createInitialTasks();
+    p( init_tasks.size() );
+    showTasks( init_tasks );
 
-    val results = new Rail[Result](2);
-    results(0) = Result(0, 0, [10.0, 20.0]);
-    results(1) = Result(1, 0, [3.0, 4.0]);
-    val tasks2 = SearchEngine.onTasksFinished( results );
-    for( t in tasks2 ) {
+    val results = new Rail[TaskResult](2);
+    results(0) = TaskResult(0, 0, [10.0, 20.0], 3, 100, 200 );
+    results(1) = TaskResult(1, 0, [3.0, 4.0], 2, 100, 200 );
+    for( r in results ) {
+      val tasks = SearchEngine.sendResult( r.toLine(0) );
+      showTasks( tasks );
+    }
+  }
+
+  static private def showTasks(tasks: ArrayList[Task]): void {
+    for( t in tasks ) {
       p( t.toString() );
     }
   }
