@@ -1,16 +1,15 @@
-import setting
+import itertools
 import tables
 import parameter_set
 
+class SearchEngine:
 
-def create_initial_runs():
-    points = [(0,1,2),(3,4,5)]
-    for p in points:
-        ps = parameter_set.ParameterSet.find_or_create(p)
-        ps.create_runs_upto(3)
+    def __init__(self, ranges, num_runs=1):
+        self.ranges = ranges
+        self.num_runs = num_runs
 
-def on_parameter_set_finished(finished_ps):
-    if finished_ps.point == (0,1,2):
-        ps = parameter_set.ParameterSet.find_or_create((6,7,8))
-        ps.create_runs_upto(3)
+    def create_initial_runs(self, srv):
+        for point in itertools.product( *self.ranges ):
+            ps = parameter_set.ParameterSet.find_or_create(point)
+            ps.create_runs_upto(self.num_runs)
 

@@ -1,8 +1,5 @@
-import setting
 import tables
 import run
-import struct
-
 
 class ParameterSet:
 
@@ -10,21 +7,6 @@ class ParameterSet:
         self.id = ps_id
         self.point = point
         self.run_ids = []
-
-    def pack_binary(self):
-        fmt = ">q" + "q" * setting.num_inputs
-        return struct.pack(fmt, self.id, *self.point)
-
-    @classmethod
-    def unpack_binary(cls, bytes):
-        fmt = ">q" + "q" * setting.num_inputs
-        t = struct.unpack(fmt, bytes)
-        ps = cls(t[0], tuple(t[1:]))
-        return ps
-
-    @classmethod
-    def byte_size(cls):
-        return 8 + 8*setting.num_inputs
 
     @classmethod
     def find_or_create(cls, point):
@@ -71,12 +53,15 @@ class ParameterSet:
         return True
 
     def averaged_result(self):
-        n = setting.num_outputs
-        avg = [None] * n
-        runs = self.finished_runs()
-        if len(runs) > 0:
+        runs = [ r for r in self.finished_runs() if r.rc == 0 ]
+        if len(runs) == 0:
+            return []
+        else:
+            n = len( runs[0].results )
+            averages = []
             for i in range(n):
-                results = [r.results[i] for r in runs]
-                avg[i] = sum(results) / len(results)
-        return avg
+                results = [r.results[i] for r in runs if r.results[i] ]
+                avg = sum(results) / len(results)
+                averages.append(avg)
+            return averages
 

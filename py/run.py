@@ -1,46 +1,27 @@
-import setting
 import tables
-import struct
 
 class Run:
-
 
     def __init__(self, run_id, ps_id, seed):
         self.id = run_id
         self.ps_id = ps_id
         self.seed = seed
-        self.place_id = -1
-        self.start_at = -1
-        self.finish_at = -1
-        self.results = [0.0] * setting.num_outputs
+        self.rc = None
+        self.place_id = None
+        self.start_at = None
+        self.finish_at = None
+        self.results = None
 
     def is_finished(self):
-        return (self.place_id != -1)
+        return not (self.rc is None)
 
     def parameter_set(self):
         return tables.ps_table[self.ps_id]
 
-    def store_result(self, results, place_id, start_at, finish_at):
+    def store_result(self, results, rc, place_id, start_at, finish_at):
         self.results = results
+        self.rc = rc
         self.place_id = place_id
         self.start_at = start_at
         self.finish_at = finish_at
-
-    def pack_binary(self):
-        fmt = ">qqq" + "d" * setting.num_outputs + "qqq"
-        args = [self.id, self.ps_id, self.seed] + self.results + [self.place_id, self.start_at, self.finish_at]
-        return struct.pack(fmt, *args)
-
-    @classmethod
-    def byte_size(cls):
-        return 24 + 8*setting.num_outputs + 24
-
-    @classmethod
-    def unpack_binary(cls, bytes):
-        fmt = ">qqq" + "d" * setting.num_outputs + "qqq"
-        t = struct.unpack(fmt, bytes)
-        r = cls( *t[0:3] )
-        results = list( t[3:(3+setting.num_outputs)] )
-        r.store_result(results, *t[-3:] )
-        return r
 
