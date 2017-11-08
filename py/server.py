@@ -65,9 +65,9 @@ class Server:
 
     def _receive_result(self):
         line = sys.stdin.readline()
+        if not line: return None
         line = line.rstrip()
-        if not line:
-            return None
+        if not line: return None
         l = line.split(' ')
         rid,rc,place_id,start_at,finish_at = [ int(x) for x in l[:5] ]
         results = [ float(x) for x in l[5:] ]
