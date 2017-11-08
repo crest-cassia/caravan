@@ -1,4 +1,3 @@
-import search_engine
 import server
 from search_engines.test_searcher import TestSearcher as Engine
 import tables
