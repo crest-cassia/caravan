@@ -47,10 +47,7 @@ class ParameterSet:
         return [tables.runs_table[rid] for rid in self.run_ids if tables.runs_table[rid].is_finished()]
 
     def is_finished(self):
-        for r in self.runs():
-            if not r.is_finished():
-                return False
-        return True
+        return all([r.is_finished() for r in self.runs()])
 
     def averaged_result(self):
         runs = [ r for r in self.finished_runs() if r.rc == 0 ]
@@ -64,4 +61,8 @@ class ParameterSet:
                 avg = sum(results) / len(results)
                 averages.append(avg)
             return averages
+
+    def dumps(self):
+        runs_str = ",\n".join( [ "    " + r.dumps() for r in self.runs()] )
+        return "{\"id\": %d, \"point\": %s, \"runs\": [\n%s\n]}" % (self.id, str(self.point), runs_str)
 

@@ -25,3 +25,7 @@ class Run:
         self.start_at = start_at
         self.finish_at = finish_at
 
+    def dumps(self):
+        results_str = str(self.results)
+        return "{\"id\": %d, \"seed\": %s, \"rc\": %s, \"place_id\": %s, \"start_at\": %s, \"finish_at\" %s, \"results\": %s}" % (self.id, self.seed, self.rc, self.place_id, self.start_at, self.finish_at, results_str)
+

@@ -35,3 +35,7 @@ def load(path):
         ps_point_table = obj["ps_point_table"]
         runs_table = obj["runs_table"]
 
+def dumps():
+    ps_str = ",\n".join( [ ps.dumps() for ps in ps_table ])
+    return "[\n%s\n]\n" % ps_str
+
