@@ -1,3 +1,5 @@
+from collections import OrderedDict
+import json
 import tables
 
 class Run:
@@ -25,7 +27,24 @@ class Run:
         self.start_at = start_at
         self.finish_at = finish_at
 
+    def to_dict(self):
+        o = OrderedDict()
+        o["id"] = self.id
+        o["ps_id"] = self.ps_id
+        o["seed"] = self.seed
+        o["rc"] = self.rc
+        o["place_id"] = self.place_id
+        o["start_at"] = self.start_at
+        o["finish_at"] = self.finish_at
+        o["results"] = self.results
+        return o
+
+    @classmethod
+    def new_from_dict(cls, o):
+        r = cls( o["id"], o["ps_id"], o["seed"] )
+        r.store_result(o["results"], o["rc"], o["place_id"], o["start_at"], o["finish_at"])
+        return r
+
     def dumps(self):
-        results_str = str(self.results)
-        return "{\"id\": %d, \"seed\": %s, \"rc\": %s, \"place_id\": %s, \"start_at\": %s, \"finish_at\" %s, \"results\": %s}" % (self.id, self.seed, self.rc, self.place_id, self.start_at, self.finish_at, results_str)
+        return json.dumps( self.to_dict() )
 

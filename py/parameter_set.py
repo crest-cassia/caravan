@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import tables
 import run
 
@@ -5,7 +6,7 @@ class ParameterSet:
 
     def __init__(self, ps_id, point):
         self.id = ps_id
-        self.point = point
+        self.point = tuple(point)
         self.run_ids = []
 
     @classmethod
@@ -14,7 +15,7 @@ class ParameterSet:
         if p in tables.ps_point_table:
             return tables.ps_point_table[p]
         next_id = len(tables.ps_table)
-        ps = ParameterSet(next_id, p)
+        ps = cls(next_id, p)
         tables.ps_table.append(ps)
         tables.ps_point_table[p] = ps
         return ps
@@ -61,6 +62,19 @@ class ParameterSet:
                 avg = sum(results) / len(results)
                 averages.append(avg)
             return averages
+
+    def to_dict(self):
+        o = OrderedDict()
+        o["id"] = self.id
+        o["point"] = self.point
+        o["run_ids"] = self.run_ids
+        return o
+
+    @classmethod
+    def new_from_dict(cls, o):
+        ps = cls( o["id"], o["point"] )
+        ps.run_ids = o["run_ids"]
+        return ps
 
     def dumps(self):
         runs_str = ",\n".join( [ "    " + r.dumps() for r in self.runs()] )
