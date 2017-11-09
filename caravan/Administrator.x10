@@ -77,6 +77,7 @@ public class Administrator {
       else {
         Console.ERR.println("All the tasks completed.");
       }
+      refJobProducer().dumpResults("tasks.bin");
     }
 
     Console.ERR.println("Elapsed times ---");

@@ -11,6 +11,7 @@ import caravan.util.Deque;
 class JobProducer {
 
   val m_taskQueue: Deque[Task];
+  val m_taskResults: ArrayList[TaskResult];
   val m_freeBuffers: HashMap[Place, GlobalRef[JobBuffer]];
   val m_numBuffers: Long;
   val m_timer = new Timer();
@@ -21,6 +22,7 @@ class JobProducer {
   def this( cmd_args: Rail[String], _numBuffers: Long, _refTimeForLogger: Long ) {
     m_logger = new MyLogger( _refTimeForLogger );
     m_taskQueue = new Deque[Task]();
+    m_taskResults = new ArrayList[TaskResult]();
     m_numRunning = 0;
 
     val ret = SearchEngine.launchSearcher( cmd_args );
@@ -71,6 +73,7 @@ class JobProducer {
         for( task in local_tasks ) {
           tasks.add( task );
         }
+        m_taskResults.add(res);
       }
       d("Producer saved " + results.size() + " results sent by " + caller);
 
@@ -136,6 +139,15 @@ class JobProducer {
       target = m_taskQueue.size();
     }
     return target;
+  }
+
+  public atomic def dumpResults(path: String): void {
+    val f = new File(path);
+    val p = f.printer();
+    for(r in m_taskResults) {
+      r.writeBinary(p, m_refTimeForLogger);
+    }
+    p.flush();
   }
 }
 
