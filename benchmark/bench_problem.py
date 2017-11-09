@@ -34,8 +34,9 @@ def print_tasks(num):
     sys.stdout.write("\n")
 
 print_tasks(num_static_jobs)
-while num_todo > 0:
+while num_running > 0:
     line = sys.stdin.readline()
+    # sys.stderr.write("[debug] %s\n" % line)
     if not line: break
     line = line.rstrip()
     if not line: break
@@ -45,4 +46,6 @@ while num_todo > 0:
     if random.random() < job_gen_prob or num_running == 0:
         num_tasks = num_jobs_per_gen if num_jobs_per_gen < num_todo else num_todo
         print_tasks(num_tasks)
+    else:
+        print_tasks(0)
 
