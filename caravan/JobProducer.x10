@@ -25,6 +25,7 @@ class JobProducer {
     m_taskResults = new ArrayList[TaskResult]();
     m_numRunning = 0;
 
+    d("Launching subprocess: " + cmd_args.toString() );
     val ret = SearchEngine.launchSearcher( cmd_args );
     if( ret != 0 ) {
       Console.ERR.println("[E] Failed to create a subprocess." + cmd_args);
