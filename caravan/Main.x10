@@ -1,3 +1,4 @@
+import x10.lang.System;
 import caravan.Administrator;
 
 class Main {
@@ -7,10 +8,22 @@ class Main {
       Console.ERR.println("  Usage: ./a.out [command of searcher]");
       throw new Exception("Invalid argument");
     }
-    val numProcPerBuf = 4;
-    val timeOut = 3600;
+
+    val numProcPerBuf: Long = getLongOption("CARAVAN_NUM_PROC_PRE_BUF", 384);
+    val timeOut: Long = getLongOption("CARAVAN_TIMEOUT", 86400);
+
     val m = new Administrator();
     m.run( args, timeOut, numProcPerBuf );
+  }
+
+  static def getLongOption( envKey:String, defaultValue: Long ):Long {
+    val n = System.getenv(envKey);
+    if( n == null ) {
+      return defaultValue;
+    }
+    else {
+      return Long.parse(n);
+    }
   }
 }
 
