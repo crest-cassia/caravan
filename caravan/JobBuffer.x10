@@ -99,8 +99,8 @@ class JobBuffer {
     return Math.ceil((m_taskQueue.size() as Double) / (2.0*m_numConsumers)) as Long;
   }
 
-  def saveResults( results: Rail[TaskResult] ) {
-    d("Buffer is saving " + results.size + " results");
+  def saveResults( results: Rail[TaskResult], consPlace: Place ) {
+    d("Buffer is saving " + results.size + " results from " + consPlace);
     val resultsToSave: ArrayList[TaskResult] = new ArrayList[TaskResult]();
     atomic {
       m_resultsBuffer.addAll( results );
@@ -118,7 +118,7 @@ class JobBuffer {
       sendResultsToProducer( resultsToSave );
     }
 
-    d("Buffer has saved " + results.size + " results");
+    d("Buffer has saved " + results.size + " results from " + consPlace);
   }
 
   private def sendResultsToProducer( results: ArrayList[TaskResult] ) {

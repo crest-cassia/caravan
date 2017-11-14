@@ -51,7 +51,7 @@ class JobConsumer {
         val results = m_results.toRail();
         m_results.clear();
         at( refBuf ) {
-          refBuf().saveResults( results );
+          refBuf().saveResults( results, here );
         }
       }
       if( isExpired() ) { return; }
