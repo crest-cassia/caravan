@@ -5,6 +5,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <x10/lang/Rail.h>
+#include <x10/util/ArrayList.h>
 #include <x10/lang/String.h>
 
 int popen2(char*const* argv, int *fd_r, int *fd_w) {
@@ -68,26 +69,20 @@ x10::lang::Rail<x10::lang::String*>* readLinesUntilEmpty(FILE* fp_r) {
   size_t buf_size = 512;
   char* buf = (char*) malloc(buf_size);
 
-  std::vector<x10::lang::String*> lines;
+  x10::util::ArrayList<x10::lang::String*>* lines = x10::util::ArrayList<x10::lang::String*>::_make();
 
   int len = getline( &buf, &buf_size, fp_r );
   lntrim(buf);
   while( strlen(buf) > 0 ) {
     // std::cerr << "[DEBUG] reading: " << buf << std::endl;
     x10::lang::String* val = x10::lang::String::_make(buf, false);
-    lines.push_back(val);
+    lines->add(val);
     len = getline( &buf, &buf_size, fp_r );
     lntrim(buf);
   }
-  // std::cerr << "[DEBUG] reading task end" << std::endl;
   free(buf);
 
-  size_t num_lines = lines.size();
-  x10::lang::Rail<x10::lang::String*>* arr(x10::lang::Rail<x10::lang::String*>::_make(num_lines));
-  for (int i = 0; i < num_lines; i++) {
-    arr->__set(i, lines[i]);
-  }
-  return arr;
+  return lines->toRail();
 }
 
 void writeLine(FILE* fp_w, x10::lang::String* line) {
