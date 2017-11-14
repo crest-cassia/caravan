@@ -13,6 +13,7 @@ class JobBuffer {
 
   val m_refProducer: GlobalRef[JobProducer];
   val m_logger: MyLogger;
+  val m_timer: Timer = new Timer();
   val m_taskQueue = new Deque[Task]();
   val m_resultsBuffer = new ArrayList[TaskResult]();
   var m_numRunning: AtomicLong = new AtomicLong(0);
@@ -28,6 +29,19 @@ class JobBuffer {
 
   private def d(s:String) {
     if( here.id == 1 ) { m_logger.d(s); }
+  }
+
+  private def w(s:String) {
+    m_logger.d(s);
+  }
+
+  def warnForLongProc( t: Long, msg: String, proc: ()=>void ) {
+    val m_from = m_timer.milliTime();
+    proc();
+    val m_to = m_timer.milliTime();
+    if( (m_to - m_from) > t*1000 ) {
+      w("[Warning] " + msg + " takes more than " + t + " sec");
+    }
   }
 
   public def getInitialTasks() {
@@ -51,19 +65,21 @@ class JobBuffer {
     val refBuf = new GlobalRef[JobBuffer]( this );
     val numCons = m_numConsumers;
 
-    val reducer = new ReducibleTaskRail();
-    val rtasks = finish (reducer) {
-      at( refProd ) async {
-        val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
-        offer tasks;
+    warnForLongProc(5,"fillTaskQueue", () => {
+      val reducer = new ReducibleTaskRail();
+      val rtasks = finish (reducer) {
+        at( refProd ) async {
+          val tasks = refProd().popTasksOrRegisterFreeBuffer( refBuf, numCons );
+          offer tasks;
+        }
+      };
+      d("adding tasks to TaskFolder");
+      atomic {
+        for( task in rtasks ) {
+          m_taskQueue.pushLast( task );
+        }
       }
-    };
-    d("adding tasks to TaskFolder");
-    atomic {
-      for( task in rtasks ) {
-        m_taskQueue.pushLast( task );
-      }
-    }
+    });
   }
 
   // return tasks
@@ -115,7 +131,9 @@ class JobBuffer {
     }
 
     if( resultsToSave.size() > 0 ) {
-      sendResultsToProducer( resultsToSave );
+      warnForLongProc(5, "sendResultsToProducer", () => {
+        sendResultsToProducer( resultsToSave );
+      });
     }
 
     d("Buffer has saved " + results.size + " results from " + consPlace);

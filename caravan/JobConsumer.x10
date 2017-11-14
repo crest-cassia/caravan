@@ -29,6 +29,10 @@ class JobConsumer {
     if( here.id == 2 ) { m_logger.d(s); }
   }
 
+  private def w(s:String) {
+    m_logger.d(s);
+  }
+
   def setExpiration( timeOutMilliTime: Long ) {
     m_timeOut = timeOutMilliTime;
   }
@@ -38,7 +42,7 @@ class JobConsumer {
     proc();
     val m_to = m_timer.milliTime();
     if( (m_to - m_from) > 5000 ) {
-      d("[Warning] proc takes more than 5 sec");
+      w("[Warning] proc takes more than 5 sec");
     }
   }
 
