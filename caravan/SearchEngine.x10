@@ -32,7 +32,9 @@ public class SearchEngine {
   private static def readTasks(): ArrayList[Task] {
     val lines: Rail[String] = readLinesUntilEmpty( pidFilePointers(1) );
     val tasks = new ArrayList[Task]();
+    // Console.ERR.println("[debug] got " + lines.size + " lines");
     for( l in lines ) {
+      // Console.ERR.println("[debug] parsing " + l);
       val task = parseLine(l);
       tasks.add(task);
     }
