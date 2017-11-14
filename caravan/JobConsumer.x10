@@ -1,5 +1,6 @@
 package caravan;
 
+import x10.lang.System;
 import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.Timer;
@@ -25,11 +26,20 @@ class JobConsumer {
   }
 
   private def d(s:String) {
-    if( here.id == 1 ) { m_logger.d(s); }
+    if( here.id == 2 ) { m_logger.d(s); }
   }
 
   def setExpiration( timeOutMilliTime: Long ) {
     m_timeOut = timeOutMilliTime;
+  }
+
+  def warnForLongProc( proc: ()=>void ) {
+    val m_from = m_timer.milliTime();
+    proc();
+    val m_to = m_timer.milliTime();
+    if( (m_to - m_from) > 5000 ) {
+      d("[Warning] proc takes more than 5 sec");
+    }
   }
 
   def run() {
@@ -50,9 +60,11 @@ class JobConsumer {
       if( hasEnoughResults() ) {
         val results = m_results.toRail();
         m_results.clear();
-        at( refBuf ) {
-          refBuf().saveResults( results, here );
-        }
+        warnForLongProc( () => {
+          at( refBuf ) {
+            refBuf().saveResults( results, here );
+          }
+        });
       }
       if( isExpired() ) { return; }
 
@@ -91,12 +103,14 @@ class JobConsumer {
     val timeOut = m_timeOut;
     val consPlace = here;
     val refCons = new GlobalRef[JobConsumer]( this );
-    finish at( refBuf ) async {
-      val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
-      at( refCons ) async {
-        refCons().m_tasks.pushLast( tasks );
+    warnForLongProc( () => {
+      finish at( refBuf ) async {
+        val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
+        at( refCons ) async {
+          refCons().m_tasks.pushLast( tasks );
+        }
       }
-    }
+    });
   }
 
   private def isExpired(): Boolean {
