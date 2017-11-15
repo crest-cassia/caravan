@@ -19,6 +19,7 @@ class JobConsumer {
   val m_results: ArrayList[TaskResult];
   val m_sendInterval: Long;
   var m_lastResultSendTime: Long;
+  var m_sendingResults: Boolean;
 
   def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long, sendInterval: Long ) {
     m_refBuffer = _refBuffer;
@@ -26,7 +27,7 @@ class JobConsumer {
     m_tasks = new Deque[Task]();
     m_results = new ArrayList[TaskResult]();
     m_sendInterval = sendInterval;
-    updateResultSendTime();
+    saveResultsDone();
   }
 
   private def d(s:String) {
@@ -41,8 +42,11 @@ class JobConsumer {
     m_timeOut = timeOutMilliTime;
   }
 
-  private def updateResultSendTime() {
-    atomic { m_lastResultSendTime = m_timer.milliTime(); }
+  private def saveResultsDone() {
+    atomic {
+      m_lastResultSendTime = m_timer.milliTime();
+      m_sendingResults = false;
+    }
   }
 
   def warnForLongProc( msg: String, proc: ()=>void ) {
@@ -70,16 +74,18 @@ class JobConsumer {
       d("Consumer finished task " + task.taskId);
 
       if( readyToSendResults() || isExpired() ) {
+        atomic { m_sendingResults = true; }
         val results = m_results.toRail();
         m_results.clear();
         warnForLongProc("saveResutls", () => {
           val refCons = new GlobalRef[JobConsumer]( this );
           at( refBuf ) async {
             refBuf().saveResults( results, refCons.home );
-            at( refCons ) {
-              refCons().updateResultSendTime();
+            at( refCons ) async {
+              refCons().saveResultsDone();
             }
           }
+          when( m_sendingResults == false ) { d("saveResults done"); };
         });
       }
       if( isExpired() ) { return; }
@@ -118,7 +124,7 @@ class JobConsumer {
     val consPlace = here;
     val refCons = new GlobalRef[JobConsumer]( this );
     warnForLongProc("popTasks", () => {
-      at( refBuf ) {
+      finish at( refBuf ) async {
         val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
         at( refCons ) async {
           refCons().m_tasks.pushLast( tasks );
