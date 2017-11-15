@@ -41,12 +41,12 @@ class JobConsumer {
     m_timeOut = timeOutMilliTime;
   }
 
-  def warnForLongProc( proc: ()=>void ) {
-    val m_from = m_timer.milliTime();
+  def warnForLongProc( msg: String, proc: ()=>void ) {
+    val from = m_timer.milliTime() - m_logger.m_refTime;
     proc();
-    val m_to = m_timer.milliTime();
-    if( (m_to - m_from) > 5000 ) {
-      w("[Warning] proc takes more than 5 sec");
+    val to = m_timer.milliTime() - m_logger.m_refTime;
+    if( (to - from) > 5000 ) {
+      w("[Warning] proc takes more than 5 sec: " + from + " - " + to + " : " + msg);
     }
   }
 
@@ -68,7 +68,7 @@ class JobConsumer {
       if( readyToSendResults() || isExpired() ) {
         val results = m_results.toRail();
         m_results.clear();
-        warnForLongProc( () => {
+        warnForLongProc("saveResutls", () => {
           at( refBuf ) {
             refBuf().saveResults( results, here );
           }
@@ -109,7 +109,7 @@ class JobConsumer {
     val timeOut = m_timeOut;
     val consPlace = here;
     val refCons = new GlobalRef[JobConsumer]( this );
-    warnForLongProc( () => {
+    warnForLongProc("popTasks", () => {
       finish at( refBuf ) async {
         val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
         at( refCons ) async {
