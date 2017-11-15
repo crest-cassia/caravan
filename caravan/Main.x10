@@ -10,7 +10,7 @@ class Main {
     }
 
     val numProcPerBuf: Long = getLongOption("CARAVAN_NUM_PROC_PRE_BUF", 384);
-    val timeOut: Long = getLongOption("CARAVAN_TIMEOUT", 86400);
+    val timeOut: Long = getLongOption("CARAVAN_TIMEOUT", 86400) * 1000;
 
     val m = new Administrator();
     m.run( args, timeOut, numProcPerBuf );
