@@ -20,6 +20,7 @@ class JobBuffer {
   val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
   val m_isSendingResults: AtomicBoolean = new AtomicBoolean(false);
+  var m_inAtomic: Boolean = false;
 
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
     m_refProducer = _refProducer;
@@ -35,7 +36,7 @@ class JobBuffer {
     m_logger.d(s);
   }
 
-  def warnForLongProc( t: Long, msg: String, proc: ()=>void ) {
+  private def warnForLongProc( t: Long, msg: String, proc: ()=>void ) {
     val m_from = m_timer.milliTime();
     proc();
     val m_to = m_timer.milliTime();
@@ -44,8 +45,20 @@ class JobBuffer {
     }
   }
 
+  private def atomicDo( proc: ()=>void ) {
+    when( m_inAtomic == false ) {
+      m_inAtomic = true;
+    }
+    proc();
+    atomic {
+      m_inAtomic = false;
+    }
+  }
+
   public def getInitialTasks() {
-    fillTaskQueue();
+    atomicDo( ()=> {
+      fillTaskQueue();
+    });
     finish {
       launchConsumerAtFreePlace();
     }
@@ -73,42 +86,36 @@ class JobBuffer {
           offer tasks;
         }
       };
-      d("adding tasks to TaskFolder");
-      atomic {
-        for( task in rtasks ) {
-          m_taskQueue.pushLast( task );
-        }
+      for( task in rtasks ) {
+        m_taskQueue.pushLast( task );
       }
     });
   }
 
   // return tasks
   // if there is no tasks to return, register consumer as free place
-  def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
-    var needToFillTask: Boolean = false;
+  public def popTasksOrRegisterFreePlace( freePlace: Place, timeOut: Long ): Rail[Task] {
     d("Buffer popTasks is called by " + freePlace);
 
-    val tasks: Rail[Task];
-    atomic {
+    val tasks = new ArrayList[Task]();
+    atomicDo( ()=> {
+      d("Buffer popTasks called by " + freePlace + " started");
+      if( m_taskQueue.size() == 0 ) {
+        fillTaskQueue();
+      }
       val n = calcNumTasksToPop();
-      tasks = m_taskQueue.popFirst( n );
-      m_numRunning.addAndGet( tasks.size );
-
-      if( tasks.size == 0 ) {
-        if( m_freePlaces.isEmpty() ) {
-          needToFillTask = true;  // true only for the first consumer which retrieved no task
-        }
+      tasks.addAll( m_taskQueue.popFirst( n ) );
+      if( tasks.size() == 0 ) {
         registerFreePlace( freePlace, timeOut );
       }
+      m_numRunning.addAndGet( tasks.size() );
 
-      d("Buffer is sending " + tasks.size + " tasks to consumer " + freePlace );
-    }
-
-    if( needToFillTask ) {
-      fillTaskQueue();
-      launchConsumerAtFreePlace();
-    }
-    return tasks;
+      if( tasks.size() > 0 && m_freePlaces.size() > 0 ) {
+        launchConsumerAtFreePlace();
+      }
+    });
+    d("Buffer is sending " + tasks.size() + " tasks to consumer " + freePlace );
+    return tasks.toRail();
   }
 
   private def calcNumTasksToPop(): Long {
