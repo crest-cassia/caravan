@@ -206,8 +206,8 @@ class JobBuffer {
         consumer.setExpiration( timeOut );
         consumer.run();
       }
-      d("Buffer launched all free consumers");
     }
+    d("Buffer launched all free consumers");
   }
 }
 
