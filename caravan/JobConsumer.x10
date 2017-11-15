@@ -17,12 +17,16 @@ class JobConsumer {
   val m_logger: MyLogger;
   val m_tasks: Deque[Task];
   val m_results: ArrayList[TaskResult];
+  val m_sendInterval: Long;
+  val m_lastResultSendTime: Long;
 
-  def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long ) {
+  def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long, sendInterval: Long ) {
     m_refBuffer = _refBuffer;
     m_logger = new MyLogger( refTimeForLogger );
     m_tasks = new Deque[Task]();
     m_results = new ArrayList[TaskResult]();
+    m_sendInterval = sendInterval;
+    m_lastResultSendTime = m_timer.milliTime();
   }
 
   private def d(s:String) {
@@ -61,7 +65,7 @@ class JobConsumer {
       m_results.add( result );
       d("Consumer finished task " + task.taskId);
 
-      if( hasEnoughResults() ) {
+      if( readyToSendResults() || isExpired() ) {
         val results = m_results.toRail();
         m_results.clear();
         warnForLongProc( () => {
@@ -94,12 +98,10 @@ class JobConsumer {
     return tr;
   }
 
-  private def hasEnoughResults(): Boolean {
-    val taskSize = m_tasks.size();
-    if( taskSize == 0 ) { return true; }
-    val minSize = 3;
-    val numResults = m_results.size();
-    return (numResults >= taskSize && numResults >= minSize );
+  private def readyToSendResults(): Boolean {
+    if( m_tasks.size() == 0 ) { return true; }
+    val now = m_timer.milliTime();
+    return ( now - m_lastResultSendTime > m_sendInterval );
   }
 
   def getTasksFromBufferOrRegisterFreePlace() {

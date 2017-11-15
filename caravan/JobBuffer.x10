@@ -202,7 +202,7 @@ class JobBuffer {
       d("Buffer launching consumers at " + place);
       val refTime = m_logger.m_refTime;
       at( place ) async {
-        val consumer = new JobConsumer( refMe, refTime );
+        val consumer = new JobConsumer( refMe, refTime, 10000 );
         consumer.setExpiration( timeOut );
         consumer.run();
       }
