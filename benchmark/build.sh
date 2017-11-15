@@ -2,7 +2,7 @@
 
 X10CPP=${X10CPP:-x10c++}
 SCRIPTDIR=$(cd $(dirname $BASH_SOURCE); pwd)
-BUILD=${BUILD:-build}
+BUILD=${BUILD:-$SCRIPTDIR/build}
 mkdir -p ${BUILD}
 BUILD=$(cd $BUILD && pwd) # get absolute path
 IS_MPI=${IS_MPI:-0}
