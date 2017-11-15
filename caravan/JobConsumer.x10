@@ -18,7 +18,7 @@ class JobConsumer {
   val m_tasks: Deque[Task];
   val m_results: ArrayList[TaskResult];
   val m_sendInterval: Long;
-  val m_lastResultSendTime: Long;
+  var m_lastResultSendTime: Long;
 
   def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long, sendInterval: Long ) {
     m_refBuffer = _refBuffer;
@@ -26,7 +26,7 @@ class JobConsumer {
     m_tasks = new Deque[Task]();
     m_results = new ArrayList[TaskResult]();
     m_sendInterval = sendInterval;
-    m_lastResultSendTime = m_timer.milliTime();
+    updateResultSendTime();
   }
 
   private def d(s:String) {
@@ -39,6 +39,10 @@ class JobConsumer {
 
   def setExpiration( timeOutMilliTime: Long ) {
     m_timeOut = timeOutMilliTime;
+  }
+
+  private def updateResultSendTime() {
+    atomic { m_lastResultSendTime = m_timer.milliTime(); }
   }
 
   def warnForLongProc( msg: String, proc: ()=>void ) {
@@ -69,9 +73,12 @@ class JobConsumer {
         val results = m_results.toRail();
         m_results.clear();
         warnForLongProc("saveResutls", () => {
-          val consPlace = here;
-          at( refBuf ) {
-            refBuf().saveResults( results, consPlace );
+          val refCons = new GlobalRef[JobConsumer]( this );
+          at( refBuf ) async {
+            refBuf().saveResults( results, refCons.home );
+            at( refCons ) {
+              refCons().updateResultSendTime();
+            }
           }
         });
       }
