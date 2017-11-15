@@ -60,7 +60,9 @@ class JobBuffer {
       fillTaskQueue();
     });
     finish {
-      launchConsumerAtFreePlace();
+      atomicDo( ()=> {
+        launchConsumerAtFreePlace();
+      });
     }
   }
 
@@ -100,7 +102,8 @@ class JobBuffer {
     val tasks = new ArrayList[Task]();
     atomicDo( ()=> {
       d("Buffer popTasks called by " + freePlace + " started");
-      if( m_taskQueue.size() == 0 ) {
+      if( m_taskQueue.size() == 0 && m_freePlaces.isEmpty() ) {
+        // retrieve tasks only for the first consumer which retrieved no task
         fillTaskQueue();
       }
       val n = calcNumTasksToPop();
@@ -109,10 +112,6 @@ class JobBuffer {
         registerFreePlace( freePlace, timeOut );
       }
       m_numRunning.addAndGet( tasks.size() );
-
-      if( tasks.size() > 0 && m_freePlaces.size() > 0 ) {
-        launchConsumerAtFreePlace();
-      }
     });
     d("Buffer is sending " + tasks.size() + " tasks to consumer " + freePlace );
     return tasks.toRail();
@@ -122,10 +121,10 @@ class JobBuffer {
     return Math.ceil((m_taskQueue.size() as Double) / (2.0*m_numConsumers)) as Long;
   }
 
-  def saveResults( results: Rail[TaskResult], consPlace: Place ) {
+  public def saveResults( results: Rail[TaskResult], consPlace: Place ) {
     d("Buffer is saving " + results.size + " results from " + consPlace);
     val resultsToSave: ArrayList[TaskResult] = new ArrayList[TaskResult]();
-    atomic {
+    atomicDo ( ()=>{
       m_resultsBuffer.addAll( results );
       m_numRunning.addAndGet( -results.size );
       if( isReadyToSendResults() ) {
@@ -135,15 +134,15 @@ class JobBuffer {
         m_resultsBuffer.clear();
         m_isSendingResults.set(true);  // avoid sending results from multiple activities
       }
-    }
+      d("Buffer has saved " + results.size + " results from " + consPlace);
 
-    if( resultsToSave.size() > 0 ) {
-      warnForLongProc(5, "sendResultsToProducer", () => {
-        sendResultsToProducer( resultsToSave );
-      });
-    }
-
-    d("Buffer has saved " + results.size + " results from " + consPlace);
+      if( resultsToSave.size() > 0 ) {
+        warnForLongProc(5, "sendResultsToProducer", () => {
+          d("Buffer is sending " + resultsToSave.size() + " results to Producer");
+          sendResultsToProducer( resultsToSave );
+        });
+      }
+    });
   }
 
   private def sendResultsToProducer( results: ArrayList[TaskResult] ) {
@@ -189,20 +188,22 @@ class JobBuffer {
     d("Buffer registered free consumer " + freePlace );
   }
 
-  def wakeUp() {
-    d("Buffer waking up");
-    fillTaskQueue();
-    launchConsumerAtFreePlace();
+  public def wakeUp() {
+    atomicDo( ()=> {
+      d("Buffer waking up");
+      fillTaskQueue();
+      launchConsumerAtFreePlace();
+    });
   }
 
   private def launchConsumerAtFreePlace() {
     val refMe = new GlobalRef[JobBuffer]( this );
     val consumerPlaces: ArrayList[ Pair[Place,Long] ];
-    atomic {
-      if( m_taskQueue.size() == 0 ) { return; }
-      consumerPlaces = m_freePlaces.clone();
-      m_freePlaces.clear();
-    }
+
+    if( m_taskQueue.size() == 0 ) { return; }
+    consumerPlaces = m_freePlaces.clone();
+    m_freePlaces.clear();
+
     for( pair in consumerPlaces ) {
       val place = pair.first;
       val timeOut = pair.second;
