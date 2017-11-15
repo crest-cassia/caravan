@@ -69,8 +69,9 @@ class JobConsumer {
         val results = m_results.toRail();
         m_results.clear();
         warnForLongProc("saveResutls", () => {
+          val consPlace = here;
           at( refBuf ) {
-            refBuf().saveResults( results, here );
+            refBuf().saveResults( results, consPlace );
           }
         });
       }
