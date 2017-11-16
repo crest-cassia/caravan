@@ -133,40 +133,33 @@ class JobBuffer {
 
   public def saveResults( results: Rail[TaskResult], consPlace: Place ) {
     d("Buffer is saving " + results.size + " results from " + consPlace);
-    val resultsToSave: ArrayList[TaskResult] = new ArrayList[TaskResult]();
     atomicDo ( ()=>{
       m_resultsBuffer.addAll( results );
       m_numRunning.addAndGet( -results.size );
-      if( isReadyToSendResults() ) {
-        atomic { m_sendingResults = true; }
-        for( res in m_resultsBuffer ) {
-          resultsToSave.add( res );
-        }
-        m_resultsBuffer.clear();
-        if( resultsToSave.size() > 0 ) {
-          warnForLongProc(5, "sendResultsToProducer", () => {
-            d("Buffer is sending " + resultsToSave.size() + " results to Producer");
-            sendResultsToProducer( resultsToSave );
-          });
-        }
+      if( m_resultsBuffer.size() > 0 && isReadyToSendResults() ) {
+        warnForLongProc(5, "asyncSendResultsToProducer", () => {
+          asyncSendResultsToProducer();
+        });
       }
       d("Buffer has saved " + results.size + " results from " + consPlace);
-
     });
   }
 
-  private def sendResultsToProducer( results: ArrayList[TaskResult] ) {
-    d("Buffer is sending " + results.size() + " results to Producer");
+  private def asyncSendResultsToProducer() {
+    atomic { m_sendingResults = true; }
+    d("Buffer is sending " + m_resultsBuffer.size() + " results to Producer");
+    val results: ArrayList[TaskResult] = new ArrayList[TaskResult]();
+    for( res in m_resultsBuffer ) { results.add( res ); }
+    m_resultsBuffer.clear();
     val refProd = m_refProducer;
     val refBuf = new GlobalRef[JobBuffer](this);
-    val bufPlace = here;
     at( refProd ) async {
       refProd().saveResults( results, refBuf.home );
       at( refBuf ) async {
         refBuf().saveResultsDone(); // notify the finish of saving
+        refBuf().d("Buffer finished sending results to Producer");
       }
     }
-    d("Buffer has sent " + results.size() + " results to Producer");
   }
 
   private def isReadyToSendResults(): Boolean {
