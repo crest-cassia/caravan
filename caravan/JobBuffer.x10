@@ -5,7 +5,6 @@ import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicLong;
-import x10.util.concurrent.AtomicBoolean;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -17,15 +16,19 @@ class JobBuffer {
   val m_taskQueue = new Deque[Task]();
   val m_resultsBuffer = new ArrayList[TaskResult]();
   var m_numRunning: AtomicLong = new AtomicLong(0);
+  val m_sendInterval: Long;
+  var m_lastResultSendTime: Long;
+  var m_sendingResults: Boolean;
   val m_freePlaces = new ArrayList[ Pair[Place,Long] ]();
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
-  val m_isSendingResults: AtomicBoolean = new AtomicBoolean(false);
   var m_inAtomic: Boolean = false;
 
-  def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long ) {
+  def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long, sendInterval: Long ) {
     m_refProducer = _refProducer;
     m_numConsumers = _numConsumers;
     m_logger = new MyLogger( refTimeForLogger );
+    m_sendInterval = sendInterval;
+    saveResultsDone();
   }
 
   private def d(s:String) {
@@ -42,6 +45,13 @@ class JobBuffer {
     val m_to = m_timer.milliTime();
     if( (m_to - m_from) > t*1000 ) {
       w("[Warning] " + msg + " takes more than " + t + " sec");
+    }
+  }
+
+  private def saveResultsDone() {
+    atomic {
+      m_lastResultSendTime = m_timer.milliTime();
+      m_sendingResults = false;
     }
   }
 
@@ -128,31 +138,34 @@ class JobBuffer {
       m_resultsBuffer.addAll( results );
       m_numRunning.addAndGet( -results.size );
       if( isReadyToSendResults() ) {
+        atomic { m_sendingResults = true; }
         for( res in m_resultsBuffer ) {
           resultsToSave.add( res );
         }
         m_resultsBuffer.clear();
-        m_isSendingResults.set(true);  // avoid sending results from multiple activities
+        if( resultsToSave.size() > 0 ) {
+          warnForLongProc(5, "sendResultsToProducer", () => {
+            d("Buffer is sending " + resultsToSave.size() + " results to Producer");
+            sendResultsToProducer( resultsToSave );
+          });
+        }
       }
       d("Buffer has saved " + results.size + " results from " + consPlace);
 
-      if( resultsToSave.size() > 0 ) {
-        warnForLongProc(5, "sendResultsToProducer", () => {
-          d("Buffer is sending " + resultsToSave.size() + " results to Producer");
-          sendResultsToProducer( resultsToSave );
-        });
-      }
     });
   }
 
   private def sendResultsToProducer( results: ArrayList[TaskResult] ) {
     d("Buffer is sending " + results.size() + " results to Producer");
     val refProd = m_refProducer;
+    val refBuf = new GlobalRef[JobBuffer](this);
     val bufPlace = here;
     at( refProd ) async {
-      refProd().saveResults( results, bufPlace );
+      refProd().saveResults( results, refBuf.home );
+      at( refBuf ) async {
+        refBuf().saveResultsDone(); // notify the finish of saving
+      }
     }
-    m_isSendingResults.set(false);  // Producer is ready to receive other results
     d("Buffer has sent " + results.size() + " results to Producer");
   }
 
@@ -161,25 +174,9 @@ class JobBuffer {
     // we have to send results whenever all tasks have finished.
     val qSize = m_taskQueue.size();
     if( m_numRunning.get() + qSize == 0 ) { return true; }
-
-    if( m_isSendingResults.get() == false ) {
-      // depending on the size of results, we determine whether send or not.
-      val size = m_resultsBuffer.size();
-
-      // send results if size is larger than the maximum capacity (m_numConsumers)
-      if( size >= m_numConsumers ) { return true; }
-
-      val minimumBulkSize = m_numConsumers * 0.2;
-      if( size >= m_numRunning.get() + qSize && size >= minimumBulkSize ) {
-        return true;
-      }
-      else {
-        return false;
-      }
-    }
-    else {
-      return false;
-    }
+    if( m_sendingResults == true ) { return false; }
+    val now = m_timer.milliTime();
+    return ( now - m_lastResultSendTime > m_sendInterval );
   }
 
   private def registerFreePlace( freePlace: Place, timeOut: Long ) {
@@ -210,7 +207,7 @@ class JobBuffer {
       d("Buffer launching consumers at " + place);
       val refTime = m_logger.m_refTime;
       at( place ) async {
-        val consumer = new JobConsumer( refMe, refTime, 10000 );
+        val consumer = new JobConsumer( refMe, refTime, m_sendInterval );
         consumer.setExpiration( timeOut );
         consumer.run();
       }
