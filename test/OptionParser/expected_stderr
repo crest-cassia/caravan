@@ -1,0 +1,7 @@
+Available Options:
+  CARAVAN_NUM_PROC_PER_BUF	: # of consumer processes for each buffer proc (default:384)
+  CARAVAN_TIMEOUT	: timeout duration in sec (default:86400)
+  CARAVAN_SEND_RESULT_INTERVAL	: interval to send results in sec (default:3)
+  CARAVAN_LOG_LEVEL	: log level (default:1)
+Option CARAVAN_NUM_PROC_PER_BUF is detected : 4
+Option CARAVAN_SEND_RESULT_INTERVAL is detected : 2
