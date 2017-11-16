@@ -5,6 +5,7 @@ import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicLong;
+import caravan.OptionParser;
 import caravan.util.MyLogger;
 import caravan.util.Deque;
 
@@ -23,11 +24,11 @@ class JobBuffer {
   val m_numConsumers: Long;  // number of consumers belonging to this buffer
   var m_inAtomic: Boolean = false;
 
-  def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long, sendInterval: Long ) {
+  def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long) {
     m_refProducer = _refProducer;
     m_numConsumers = _numConsumers;
     m_logger = new MyLogger( refTimeForLogger );
-    m_sendInterval = sendInterval;
+    m_sendInterval = OptionParser.get("CARAVAN_SEND_RESULT_INTERVAL") * 1000;
     saveResultsDone();
   }
 

@@ -52,8 +52,7 @@ public class Administrator {
         val minConsPlace = here.id+1;
         val maxConsPlace = Math.min( (i+1)*numProcPerBuf, Place.numPlaces() ) - 1;
         if( i==0 ) { logger.d("JobBuffer is being initialized"); }
-        val resultSendInterval = 10000;
-        val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin, resultSendInterval );
+        val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
         if( i==0 ) { logger.d("JobBuffer has been initialized"); }
 
         val consumerPlaceTimeoutPairs = new ArrayList[ Pair[Place,Long] ]();
