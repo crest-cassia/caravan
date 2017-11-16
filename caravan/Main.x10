@@ -9,7 +9,7 @@ class Main {
       throw new Exception("Invalid argument");
     }
 
-    val numProcPerBuf: Long = getLongOption("CARAVAN_NUM_PROC_PRE_BUF", 384);
+    val numProcPerBuf: Long = getLongOption("CARAVAN_NUM_PROC_PER_BUF", 384);
     val timeOut: Long = getLongOption("CARAVAN_TIMEOUT", 86400) * 1000;
 
     val m = new Administrator();
