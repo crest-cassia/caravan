@@ -16,20 +16,45 @@ class JobConsumer {
   val m_logger: MyLogger;
   val m_tasks: Deque[Task];
   val m_results: ArrayList[RunResult];
+  val m_sendInterval: Long;
+  var m_lastResultSendTime: Long;
+  var m_sendingResults: Boolean;
 
-  def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long ) {
+  def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long, sendInterval: Long ) {
     m_refBuffer = _refBuffer;
     m_logger = new MyLogger( refTimeForLogger );
     m_tasks = new Deque[Task]();
     m_results = new ArrayList[RunResult]();
+    m_sendInterval = sendInterval;
+    saveResultsDone();
   }
 
   private def d(s:String) {
     if( here.id == 1 ) { m_logger.d(s); }
   }
 
+  private def w(s:String) {
+    m_logger.d(s);
+  }
+
   def setExpiration( timeOutMilliTime: Long ) {
     m_timeOut = timeOutMilliTime;
+  }
+
+  private def saveResultsDone() {
+    atomic {
+      m_lastResultSendTime = m_timer.milliTime();
+      m_sendingResults = false;
+    }
+  }
+
+  def warnForLongProc( msg: String, proc: ()=>void ) {
+    val from = m_timer.milliTime() - m_logger.m_refTime;
+    proc();
+    val to = m_timer.milliTime() - m_logger.m_refTime;
+    if( (to - from) > 5000 ) {
+      w("[Warning] proc takes more than 5 sec: " + from + " - " + to + " : " + msg);
+    }
   }
 
   static struct RunResult(
@@ -55,12 +80,20 @@ class JobConsumer {
       m_results.add( result );
       d("Consumer finished task " + task.runId);
 
-      if( hasEnoughResults() ) {
+      if( readyToSendResults() || isExpired() ) {
+        atomic { m_sendingResults = true; }
         val results = m_results.toRail();
         m_results.clear();
-        at( refBuf ) {
-          refBuf().saveResults( results );
-        }
+        warnForLongProc("saveResutls", () => {
+          val refCons = new GlobalRef[JobConsumer]( this );
+          at( refBuf ) async {
+            refBuf().saveResults( results, refCons.home );
+            at( refCons ) async {
+              refCons().saveResultsDone();
+            }
+          }
+          when( m_sendingResults == false ) { d("saveResults done"); };
+        });
       }
       if( isExpired() ) { return; }
 
@@ -84,12 +117,10 @@ class JobConsumer {
     return result;
   }
 
-  private def hasEnoughResults(): Boolean {
-    val taskSize = m_tasks.size();
-    if( taskSize == 0 ) { return true; }
-    val minSize = 3;
-    val numResults = m_results.size();
-    return (numResults >= taskSize && numResults >= minSize );
+  private def readyToSendResults(): Boolean {
+    if( m_tasks.size() == 0 ) { return true; }
+    val now = m_timer.milliTime();
+    return ( now - m_lastResultSendTime > m_sendInterval );
   }
 
   def getTasksFromBufferOrRegisterFreePlace() {
@@ -97,12 +128,14 @@ class JobConsumer {
     val timeOut = m_timeOut;
     val consPlace = here;
     val refCons = new GlobalRef[JobConsumer]( this );
-    finish at( refBuf ) async {
-      val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
-      at( refCons ) async {
-        refCons().m_tasks.pushLast( tasks );
+    warnForLongProc("popTasks", () => {
+      finish at( refBuf ) async {
+        val tasks = refBuf().popTasksOrRegisterFreePlace( consPlace, timeOut );
+        at( refCons ) async {
+          refCons().m_tasks.pushLast( tasks );
+        }
       }
-    }
+    });
   }
 
   private def isExpired(): Boolean {
