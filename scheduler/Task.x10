@@ -1,4 +1,4 @@
-package caravan;
+package scheduler;
 
 import x10.io.File;
 import x10.util.Timer;

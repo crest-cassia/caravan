@@ -1,4 +1,4 @@
-package caravan;
+package scheduler;
 
 import x10.lang.System;
 

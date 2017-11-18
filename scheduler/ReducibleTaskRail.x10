@@ -1,4 +1,4 @@
-package caravan;
+package scheduler;
 
 public struct ReducibleTaskRail implements Reducible[Rail[Task]] {
 

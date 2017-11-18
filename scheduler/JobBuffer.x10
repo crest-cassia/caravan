@@ -1,13 +1,10 @@
-package caravan;
+package scheduler;
 
 import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Timer;
 import x10.util.concurrent.AtomicLong;
-import caravan.OptionParser;
-import caravan.util.MyLogger;
-import caravan.util.Deque;
 
 class JobBuffer {
 

@@ -1,4 +1,4 @@
-package caravan;
+package scheduler;
 
 import x10.io.Console;
 import x10.util.HashMap;
@@ -11,8 +11,6 @@ import x10.util.Timer;
 import x10.io.File;
 import x10.xrx.Runtime;
 import x10.compiler.*;
-
-import caravan.util.MyLogger;
 
 public class Administrator {
 

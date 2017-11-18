@@ -1,12 +1,10 @@
-package caravan;
+package scheduler;
 
 import x10.compiler.*;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.io.File;
 import x10.util.Timer;
-import caravan.util.MyLogger;
-import caravan.util.Deque;
 
 class JobProducer {
 

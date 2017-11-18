@@ -1,4 +1,4 @@
-package caravan;
+package scheduler;
 
 import x10.util.ArrayList;
 import x10.compiler.Native;

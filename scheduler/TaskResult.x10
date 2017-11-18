@@ -1,4 +1,4 @@
-package caravan;
+package scheduler;
 import x10.io.Printer;
 import x10.io.Marshal.LongMarshal;
 import x10.io.Marshal.DoubleMarshal;

@@ -8,8 +8,8 @@ BUILD=$(cd $BUILD && pwd) # get absolute path
 IS_MPI=${IS_MPI:-0}
 
 if [ $IS_MPI = 1 ]; then
-  ${X10CPP} -v -report postcompile=1 -O -x10rt mpi -d ${BUILD} ${SCRIPTDIR}/caravan/Main.x10 -VERBOSE_CHECKS
+  ${X10CPP} -v -report postcompile=1 -O -x10rt mpi -d ${BUILD} ${SCRIPTDIR}/scheduler/Main.x10 -VERBOSE_CHECKS
 else
-  ${X10CPP} -v -report postcompile=1 -O            -d ${BUILD} ${SCRIPTDIR}/caravan/Main.x10 -VERBOSE_CHECKS
+  ${X10CPP} -v -report postcompile=1 -O            -d ${BUILD} ${SCRIPTDIR}/scheduler/Main.x10 -VERBOSE_CHECKS
 fi
 
