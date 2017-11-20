@@ -15,6 +15,9 @@ public class SearchEngine {
   @Native("c++", "launchSubProcessWithPipes( #1, (long*) &((#2)->raw[0]) )")
   private native static def launchSubProcessWithPipes( argv: Rail[String], pid_fps: Rail[Long] ): Long;
 
+  @Native("c++", "waitPid( #1 )")
+  private native static def waitPid( pid: Long ): void;
+
   @Native("c++", "readLinesUntilEmpty( (FILE*)(#1) )")
   private native static def readLinesUntilEmpty( fp_r: Long ): Rail[String];
 
@@ -23,6 +26,11 @@ public class SearchEngine {
 
   public static def launchSearcher( argv: Rail[String] ): Long {
     return launchSubProcessWithPipes( argv, pidFilePointers );
+  }
+
+  public static def waitSearcher() {
+    val pid = pidFilePointers(0);
+    waitPid(pid);
   }
 
   public static def createInitialTasks(): ArrayList[Task] {

@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <x10/lang/Rail.h>
 #include <x10/util/ArrayList.h>
 #include <x10/lang/String.h>
@@ -126,5 +128,9 @@ x10::lang::String* getCWD() {
   else {
     return x10::lang::String::_make("", false);
   }
+}
+
+void waitPid(long pid) {
+  waitpid(pid, NULL, 0);
 }
 

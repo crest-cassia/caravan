@@ -36,46 +36,55 @@ public class Administrator {
     val numBuffers = Math.ceil( Place.numPlaces() as Double / numProcPerBuf ) as Long;
     val timer = new Timer();
     val initializationBegin = timer.milliTime();
+    val jobExecutionBegin: Long;
+    val terminationBegin: Long;
     val logger = new MyLogger( initializationBegin );
     val refJobProducer = new GlobalRef[JobProducer](
-      new JobProducer( cmd_args, numBuffers, initializationBegin )
+      new JobProducer( numBuffers, initializationBegin )
     );
-    logger.d("JobProducer has been initialized");
+    at(refJobProducer ) { refJobProducer().launchSearcher(cmd_args); }
+    try {
+      at( refJobProducer ) { refJobProducer().enqueueInitialTasks(); }
+      logger.d("JobProducer has been initialized");
 
-    val jobExecutionBegin = timer.milliTime();
+      jobExecutionBegin = timer.milliTime();
 
-    finish for( i in 0..(numBuffers-1) ) {
-      val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
-      at( Place(bufPlace) ) async {
-        val minConsPlace = here.id+1;
-        val maxConsPlace = Math.min( (i+1)*numProcPerBuf, Place.numPlaces() ) - 1;
-        if( i==0 ) { logger.d("JobBuffer is being initialized"); }
-        val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
-        if( i==0 ) { logger.d("JobBuffer has been initialized"); }
+      finish for( i in 0..(numBuffers-1) ) {
+        val bufPlace = (i==0) ? 1 : i*numProcPerBuf;
+        at( Place(bufPlace) ) async {
+          val minConsPlace = here.id+1;
+          val maxConsPlace = Math.min( (i+1)*numProcPerBuf, Place.numPlaces() ) - 1;
+          if( i==0 ) { logger.d("JobBuffer is being initialized"); }
+          val buffer = new JobBuffer( refJobProducer, (maxConsPlace-minConsPlace+1), initializationBegin );
+          if( i==0 ) { logger.d("JobBuffer has been initialized"); }
 
-        val consumerPlaceTimeoutPairs = new ArrayList[ Pair[Place,Long] ]();
-        for( j in minConsPlace..maxConsPlace ) {
-          val place = Place(j);
-          val t = initializationBegin + timeOut;
-          consumerPlaceTimeoutPairs.add( Pair[Place,Long]( place, t ) );
+          val consumerPlaceTimeoutPairs = new ArrayList[ Pair[Place,Long] ]();
+          for( j in minConsPlace..maxConsPlace ) {
+            val place = Place(j);
+            val t = initializationBegin + timeOut;
+            consumerPlaceTimeoutPairs.add( Pair[Place,Long]( place, t ) );
+          }
+          buffer.registerConsumerPlaces( consumerPlaceTimeoutPairs );
+          if( i==0 ) { logger.d("JobConsumers are registered to Buffer"); }
+          buffer.getInitialTasks();
         }
-        buffer.registerConsumerPlaces( consumerPlaceTimeoutPairs );
-        if( i==0 ) { logger.d("JobConsumers are registered to Buffer"); }
-        buffer.getInitialTasks();
+      }
+
+      terminationBegin = timer.milliTime();
+
+      at( refJobProducer ) {
+        val numUnfinished = refJobProducer().numUnfinished();
+        if( numUnfinished > 0 ) {
+          Console.ERR.println("There are " + numUnfinished + " unfinished tasks.");
+        }
+        else {
+          Console.ERR.println("All the tasks completed.");
+        }
+        refJobProducer().dumpResults("tasks.bin");
       }
     }
-
-    val terminationBegin = timer.milliTime();
-
-    at( refJobProducer ) {
-      val numUnfinished = refJobProducer().numUnfinished();
-      if( numUnfinished > 0 ) {
-        Console.ERR.println("There are " + numUnfinished + " unfinished tasks.");
-      }
-      else {
-        Console.ERR.println("All the tasks completed.");
-      }
-      refJobProducer().dumpResults("tasks.bin");
+    finally {
+      at( refJobProducer ) { refJobProducer().waitSearcher(); }
     }
 
     Console.ERR.println("Elapsed times ---");

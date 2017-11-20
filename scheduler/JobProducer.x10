@@ -17,27 +17,28 @@ class JobProducer {
   val m_logger: MyLogger;
   var m_numRunning: Long;
 
-  def this( cmd_args: Rail[String], _numBuffers: Long, _refTimeForLogger: Long ) {
+  def this( _numBuffers: Long, _refTimeForLogger: Long ) {
     m_logger = new MyLogger( _refTimeForLogger );
     m_taskQueue = new Deque[Task]();
     m_taskResults = new ArrayList[TaskResult]();
     m_numRunning = 0;
+    m_freeBuffers = new HashMap[Place, GlobalRef[JobBuffer]]();
+    m_numBuffers = _numBuffers;
+    m_refTimeForLogger = _refTimeForLogger;
+  }
 
+  public def launchSearcher( cmd_args: Rail[String] ) {
     d("Launching subprocess: " + cmd_args.toString() );
     val ret = SearchEngine.launchSearcher( cmd_args );
     if( ret != 0 ) {
       Console.ERR.println("[E] Failed to create a subprocess." + cmd_args);
       throw new Exception("failed to launch a searcher");
     }
+  }
 
-    enqueueInitialTasks();
-    if( m_taskQueue.empty() ) {
-      Console.ERR.println("[E] No task was created when initializing JobProducer");
-      throw new Exception("no task to execute");
-    }
-    m_freeBuffers = new HashMap[Place, GlobalRef[JobBuffer]]();
-    m_numBuffers = _numBuffers;
-    m_refTimeForLogger = _refTimeForLogger;
+  public def waitSearcher() {
+    d("Waiting subprocess");
+    SearchEngine.waitSearcher();
   }
 
   public def numUnfinished(): Long {
@@ -48,9 +49,13 @@ class JobProducer {
     m_logger.d(s);
   }
 
-  private def enqueueInitialTasks() {
+  public def enqueueInitialTasks() {
     val tasks = SearchEngine.createInitialTasks();
     m_taskQueue.pushLast( tasks.toRail() );
+    if( m_taskQueue.empty() ) {
+      Console.ERR.println("[E] No task was created when initializing JobProducer");
+      throw new Exception("no task to execute");
+    }
   }
 
   private def registerFreeBuffer( refBuffer: GlobalRef[JobBuffer] ) {
