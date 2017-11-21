@@ -32,8 +32,8 @@ class Tables:
     @classmethod
     def unpack(cls,path):
         import msgpack
-        from parameter_set import ParameterSet
-        from run import Run
+        from .parameter_set import ParameterSet
+        from .run import Run
         t = cls.get()
         t.clear()
         with open(path, 'rb') as f:

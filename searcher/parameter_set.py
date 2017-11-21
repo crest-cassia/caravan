@@ -1,6 +1,6 @@
 from collections import OrderedDict
-import run
-import tables
+from . import run
+from . import tables
 
 class ParameterSet:
 

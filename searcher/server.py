@@ -1,6 +1,6 @@
 import sys
 from collections import defaultdict
-import tables
+from . import tables
 
 class Server:
 

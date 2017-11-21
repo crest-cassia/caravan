@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import json
-import tables
+from . import tables
 
 class Run:
 
