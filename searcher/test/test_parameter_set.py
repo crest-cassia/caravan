@@ -6,7 +6,8 @@ from parameter_set import ParameterSet
 class ParameterSetTest(unittest.TestCase):
 
     def setUp(self):
-        tables.clear()
+        self.t = tables.Tables.get()
+        self.t.clear()
 
     def test_ps(self):
         ps = ParameterSet(500, (2, 3, 4, 5))
@@ -18,17 +19,17 @@ class ParameterSetTest(unittest.TestCase):
         ps = ParameterSet.find_or_create((0, 1, 2, 3))
         self.assertEqual(ps.id,0)
         self.assertEqual(ps.point,(0,1,2,3))
-        self.assertEqual(len(tables.ps_table),1)
-        self.assertEqual(len(tables.ps_point_table),1)
+        self.assertEqual(len(self.t.ps_table),1)
+        self.assertEqual(len(self.t.ps_point_table),1)
         ps2 = ParameterSet.find_or_create((3, 4, 5, 6))
-        self.assertEqual(len(tables.ps_table),2)
-        self.assertEqual(len(tables.ps_point_table),2)
-        self.assertEqual(tables.ps_point_table[(3,4,5,6)], ps2)
+        self.assertEqual(len(self.t.ps_table),2)
+        self.assertEqual(len(self.t.ps_point_table),2)
+        self.assertEqual(self.t.ps_point_table[(3,4,5,6)], ps2)
 
         ps3 = ParameterSet.find_or_create((0, 1, 2, 3))
         self.assertEqual(ps,ps3)
-        self.assertEqual(len(tables.ps_table), 2)
-        self.assertEqual(len(tables.ps_point_table), 2)
+        self.assertEqual(len(self.t.ps_table), 2)
+        self.assertEqual(len(self.t.ps_point_table), 2)
 
     def test_create_runs(self):
         ps = ParameterSet.find_or_create((0, 1, 2, 3))

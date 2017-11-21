@@ -1,6 +1,6 @@
 from collections import OrderedDict
-import tables
 import run
+import tables
 
 class ParameterSet:
 
@@ -12,21 +12,23 @@ class ParameterSet:
     @classmethod
     def find_or_create(cls, point):
         p = tuple(point)
-        if p in tables.ps_point_table:
-            return tables.ps_point_table[p]
-        next_id = len(tables.ps_table)
+        t = tables.Tables.get()
+        if p in t.ps_point_table:
+            return t.ps_point_table[p]
+        next_id = len(t.ps_table)
         ps = cls(next_id, p)
-        tables.ps_table.append(ps)
-        tables.ps_point_table[p] = ps
+        t.ps_table.append(ps)
+        t.ps_point_table[p] = ps
         return ps
 
     def create_runs(self, num_runs):
+        t = tables.Tables.get()
         def create_a_run():
             next_seed = len(self.run_ids)
-            next_id = len(tables.runs_table)
+            next_id = len(t.runs_table)
             r = run.Run(next_id, self.id, next_seed)
             self.run_ids.append(r.id)
-            tables.runs_table.append(r)
+            t.runs_table.append(r)
             return r
 
         created = []
@@ -42,10 +44,11 @@ class ParameterSet:
         return self.runs()[:target_num]
 
     def runs(self):
-        return [tables.runs_table[rid] for rid in self.run_ids]
+        return [tables.Tables.get().runs_table[rid] for rid in self.run_ids]
 
     def finished_runs(self):
-        return [tables.runs_table[rid] for rid in self.run_ids if tables.runs_table[rid].is_finished()]
+        t = tables.Tables.get()
+        return [t.runs_table[rid] for rid in self.run_ids if t.runs_table[rid].is_finished()]
 
     def is_finished(self):
         return all([r.is_finished() for r in self.runs()])
@@ -72,7 +75,7 @@ class ParameterSet:
 
     @classmethod
     def new_from_dict(cls, o):
-        ps = cls( o["id"], o["point"] )
+        ps = cls( o["id"], o["point"])
         ps.run_ids = o["run_ids"]
         return ps
 

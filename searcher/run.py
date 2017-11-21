@@ -18,7 +18,7 @@ class Run:
         return not (self.rc is None)
 
     def parameter_set(self):
-        return tables.ps_table[self.ps_id]
+        return tables.Tables.get().ps_table[self.ps_id]
 
     def store_result(self, results, rc, place_id, start_at, finish_at):
         self.results = results

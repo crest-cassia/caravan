@@ -6,7 +6,8 @@ import tables
 class TestRun(unittest.TestCase):
 
     def setUp(self):
-        tables.clear()
+        self.t = tables.Tables.get()
+        self.t.clear()
 
     def test_run(self):
         r = run.Run(1234, 104, 5678)
