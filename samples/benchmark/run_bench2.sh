@@ -1,0 +1,12 @@
+#!/bin/bash -eux
+
+SCRIPTDIR=$(cd $(dirname $BASH_SOURCE); pwd)
+
+export X10_NPLACES=16
+CARAVAN_DIR=$SCRIPTDIR/../..
+SCHEDULER=$CARAVAN_DIR/build/a.out
+export PYTHONPATH=$CARAVAN_DIR:$PYTHONPATH
+export CARAVAN_SEND_RESULT_INTERVAL=0
+
+$SCHEDULER python -u $SCRIPTDIR/bench2.py 40 20 5 20 1.0 0.8
+

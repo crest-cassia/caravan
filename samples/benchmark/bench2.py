@@ -1,4 +1,6 @@
 import sys,random
+from searcher.server import Server
+from searcher.parameter_set import ParameterSet
 
 if len(sys.argv) != 7:
     sys.stderr.write(str(sys.argv))
@@ -8,42 +10,48 @@ if len(sys.argv) != 7:
     sys.stderr.write("Usage: python %s %s\n" % (__file__, " ".join(args)))
     raise RuntimeError("invalid number of arguments")
 
-num_max_job = int(sys.argv[1])
-num_min_job = int(sys.argv[2])
-iteration = float(sys.argv[3])
-num_jobs_per_gen = int(sys.argv[4])
-sleep_mu = float(sys.argv[5])
-sleep_sigma = float(sys.argv[6])
-sleep_range = ( sleep_mu - sleep_sigma, sleep_mu + sleep_sigma )
+class BenchSearcher2:
 
-#sys.stderr.write(str([num_static_jobs, num_dynamic_jobs, job_gen_prob, num_jobs_per_gen, sleep_range]))
+    def __init__(self, w):
+        self.num_max_job = int(sys.argv[1])
+        self.num_min_job = int(sys.argv[2])
+        self.iteration = int(sys.argv[3])
+        self.num_jobs_per_gen = int(sys.argv[4])
+        sleep_mu = float(sys.argv[5])
+        sleep_sigma = float(sys.argv[6])
+        self.sleep_range = ( sleep_mu - sleep_sigma, sleep_mu + sleep_sigma )
+        random.seed(1234)
+        self.ps_count = 0
+        self.num_running = 0
+        self.w = w
 
-random.seed(1234)
-ps_count = 0
-num_running = 0
+    def _create_one(self):
+        t = random.uniform( self.sleep_range[0], self.sleep_range[1] )
+        point = (int(t*10), self.ps_count)
+        ps = ParameterSet.find_or_create( point )
+        self.ps_count += 1
+        self.num_running += 1
+        ps.create_runs_upto(1)
+        self.w.watch_ps( ps, self.on_ps_finished )
 
-def print_tasks(num):
-    global ps_count, num_running, num_todo
-    for i in range(num):
-        t = random.uniform( sleep_range[0], sleep_range[1] )
-        sys.stdout.write("%d sleep %f\n" % (ps_count,t))
-        ps_count += 1
-        num_running += 1
-    sys.stdout.write("\n")
+    def create_initial_runs(self):
+        for i in range(self.num_max_job):
+            self._create_one()
 
-print_tasks(num_max_job)
-while num_running > 0:
-    line = sys.stdin.readline()
-    # sys.stderr.write("[debug] %s\n" % line)
-    if not line: break
-    line = line.rstrip()
-    if not line: break
-    l = line.split(' ')
-    rid,rc,place_id,start_at,finish_at = [ int(x) for x in l[:5] ]
-    num_running -= 1
-    if num_running == num_min_job and iteration > 0:
-        print_tasks(num_jobs_per_gen)
-        iteration -= 1
-    else:
-        print_tasks(0)
+    def on_ps_finished(self, ps):
+        self.num_running -= 1
+        if self.num_running == self.num_min_job and self.iteration > 0:
+            for i in range(self.num_jobs_per_gen):
+                self._create_one()
+            self.iteration -= 1
+
+def map_point_to_cmd(point, seed):
+    t = point[0] * 0.1
+    return "sleep %f" % t
+
+w = Server( map_point_to_cmd )
+se = BenchSearcher2(w)
+se.create_initial_runs()
+w.loop()
+sys.stderr.write("DONE\n")
 
