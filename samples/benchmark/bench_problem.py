@@ -12,7 +12,7 @@ if len(sys.argv) != 7:
 
 class BenchSearcher:
 
-    def __init__(self, w):
+    def __init__(self):
         self.num_static_jobs = int(sys.argv[1])
         self.num_dynamic_jobs = int(sys.argv[2])
         self.job_gen_prob = float(sys.argv[3])
@@ -24,7 +24,6 @@ class BenchSearcher:
         self.ps_count = 0
         self.num_running = 0
         self.num_todo = self.num_static_jobs + self.num_dynamic_jobs
-        self.w = w
 
     def _create_one(self):
         t = random.uniform( self.sleep_range[0], self.sleep_range[1] )
@@ -34,7 +33,7 @@ class BenchSearcher:
         self.num_running += 1
         self.num_todo -= 1
         ps.create_runs_upto(1)
-        self.w.watch_ps( ps, self.on_ps_finished )
+        Server.watch_ps( ps, self.on_ps_finished )
 
     def create_initial_runs(self):
         for i in range(self.num_static_jobs):
@@ -51,9 +50,8 @@ def map_point_to_cmd(point, seed):
     t = point[0] * 0.1
     return "sleep %f" % t
 
-w = Server( map_point_to_cmd )
-se = BenchSearcher(w)
+se = BenchSearcher()
 se.create_initial_runs()
-w.loop()
+Server.loop( map_point_to_cmd )
 sys.stderr.write("DONE\n")
 

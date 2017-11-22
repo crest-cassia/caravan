@@ -4,22 +4,34 @@ from . import tables
 
 class Server:
 
-    def __init__(self, map_func):
-        self.map_func = map_func
+    _instance = None
+
+    @classmethod
+    def get(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def __init__(self):
         self.tables = tables.Tables.get()
         self.observed_ps = defaultdict(list)
         self.observed_all_ps = defaultdict(list)
         self.max_submitted_run_id = 0
 
-    def watch_ps(self, ps, callback):
-        self.observed_ps[ ps.id ].append(callback)
+    @classmethod
+    def watch_ps(cls, ps, callback):
+        cls.get().observed_ps[ ps.id ].append(callback)
 
-    def watch_all_ps(self, ps_set, callback ):
+    @classmethod
+    def watch_all_ps(cls, ps_set, callback ):
         ids = [ ps.id for ps in ps_set ]
         key = tuple( sorted(ids) )
-        self.observed_all_ps[key].append(callback)
+        cls.get().observed_all_ps[key].append(callback)
 
-    def loop(self):
+    @classmethod
+    def loop(cls, map_func):
+        self = cls.get()
+        self.map_func = map_func
         self._submit()
         while self._has_unfinished_runs():
             r = self._receive_result()
@@ -83,5 +95,4 @@ class Server:
     def _debug(self):
         sys.stderr.write(str(self.observed_ps)+"\n")
         sys.stderr.write(str(self.observed_all_ps)+"\n")
-
 
