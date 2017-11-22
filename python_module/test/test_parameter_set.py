@@ -1,12 +1,12 @@
 import unittest
-import tables
-from parameter_set import ParameterSet
+from searcher.tables import Tables
+from searcher.parameter_set import ParameterSet
 
 
 class ParameterSetTest(unittest.TestCase):
 
     def setUp(self):
-        self.t = tables.Tables.get()
+        self.t = Tables.get()
         self.t.clear()
 
     def test_ps(self):

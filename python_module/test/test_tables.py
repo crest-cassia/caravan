@@ -1,14 +1,14 @@
 import unittest
 import pickle
-import tables
-from parameter_set import ParameterSet
 import os.path
+from searcher.tables import Tables
+from searcher.parameter_set import ParameterSet
 
 
 class TestTables(unittest.TestCase):
 
     def setUp(self):
-        self.t = tables.Tables.get()
+        self.t = Tables.get()
         self.t.clear()
         self.dump_path = "test.pkl"
         self.msgpack_path = "test.msg"

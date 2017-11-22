@@ -1,16 +1,15 @@
 import unittest
-import run
-import tables
-
+from searcher.run import Run
+from searcher.tables import Tables
 
 class TestRun(unittest.TestCase):
 
     def setUp(self):
-        self.t = tables.Tables.get()
+        self.t = Tables.get()
         self.t.clear()
 
     def test_run(self):
-        r = run.Run(1234, 104, 5678)
+        r = Run(1234, 104, 5678)
         self.assertEqual(r.id,1234)
         self.assertEqual(r.ps_id,104)
         self.assertEqual(r.seed,5678)
