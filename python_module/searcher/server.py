@@ -25,7 +25,7 @@ class Server:
     @classmethod
     def watch_all_ps(cls, ps_set, callback ):
         ids = [ ps.id for ps in ps_set ]
-        key = tuple( sorted(ids) )
+        key = tuple( ids )
         cls.get().observed_all_ps[key].append(callback)
 
     @classmethod
@@ -38,7 +38,7 @@ class Server:
             if r:
                 ps = r.parameter_set()
                 if ps.is_finished():
-                    self._exec_callback(ps)
+                    self._exec_callback()
                 self._submit()
             else:
                 break
@@ -60,25 +60,36 @@ class Server:
         sys.stdout.write("\n")
         self.max_submitted_run_id = len(self.tables.runs_table)
 
-    def _exec_callback(self, ps):
-        if ps.id in self.observed_ps:
-            callbacks = self.observed_ps[ps.id]
-            while callbacks:
+    def _exec_callback(self):
+        while self._check_completed_ps() or self._check_completed_ps_all():
+            pass
+
+    def _check_completed_ps(self):
+        executed = False
+        for psid in list(self.observed_ps.keys()):
+            callbacks = self.observed_ps[psid]
+            ps = self.tables.ps_table[psid]
+            while ps.is_finished() and len(callbacks)>0:
                 f = callbacks.pop(0)
                 f(ps)
-                if not ps.is_finished(): return
-            self.observed_ps.pop( ps.id )
-        for psids in self.observed_all_ps:
-            if ps.id in psids:
-                pss = [self.tables.ps_table[psid] for psid in psids]
-                callbacks = self.observed_all_ps[psids]
-                while callbacks:
-                    if all([ps.is_finished() for ps in pss]):
-                        f = callbacks.pop(0)
-                        f(pss)
-                    else: break
+                executed = True
+        empty_keys = [k for k,v in self.observed_ps.items() if len(v)==0 ]
+        for k in empty_keys:
+            self.observed_ps.pop(k)
+        return executed
+
+    def _check_completed_ps_all(self):
+        executed = False
+        for psids in list(self.observed_all_ps.keys()):
+            pss = [self.tables.ps_table[psid] for psid in psids]
+            callbacks = self.observed_all_ps[psids]
+            while len(callbacks)>0 and all([ps.is_finished() for ps in pss]):
+                f = callbacks.pop(0)
+                f(pss)
+                executed = True
         empty_keys = [k for k,v in self.observed_all_ps.items() if len(v) == 0]
         for k in empty_keys: self.observed_all_ps.pop(k)
+        return executed
 
     def _receive_result(self):
         line = sys.stdin.readline()

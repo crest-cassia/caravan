@@ -7,6 +7,7 @@ CARAVAN_DIR=$SCRIPTDIR/../..
 SCHEDULER=$CARAVAN_DIR/build/a.out
 export PYTHONPATH=$CARAVAN_DIR/python_module:$PYTHONPATH
 export CARAVAN_SEND_RESULT_INTERVAL=0
+export CARAVAN_LOG_LEVEL=0
 
-$SCHEDULER python -u $CARAVAN_DIR/python_module/searcher/search_engine/de_optimization.py
+$SCHEDULER python -u $CARAVAN_DIR/python_module/searcher/search_engines/de_optimizer/de_optimizer.py
 

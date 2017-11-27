@@ -1,3 +1,4 @@
+import sys
 import random
 from searcher.server import Server
 from searcher.parameter_set import ParameterSet
@@ -21,17 +22,16 @@ class DE_Optimizer():
     def generate_initial_runs(self):
         self.population = []
         for i in range(self.n):
-            r = self.random.random()
-            point = [ r*(d[1]-d[0])+d[0] for d in self.domains ]
+            point = [ self.random.random()*(d[1]-d[0])+d[0] for d in self.domains ]
             self.population.append( point )
         pss = [ self._find_or_create_ps_from_point(p) for p in self.population]
 
         self._generate_new_positions()
         new_pss = [ self._find_or_create_ps_from_point(p) for p in self.new_positions]
-        Server.watch_all_ps(pss+new_pss, self.proceed)
+        Server.watch_all_ps(pss+new_pss, self._proceed)
 
     def _find_or_create_ps_from_point(self,point):
-        int_point = [ int(x) for x in point ]
+        int_point = [ round(x) for x in point ]
         ps = ParameterSet.find_or_create(int_point)
         ps.create_runs_upto(1)
         return ps
@@ -45,19 +45,23 @@ class DE_Optimizer():
     def _average_f(self):
         return sum( self.current_fs ) / len( self.current_fs )
 
+    def _d(self,x):
+        sys.stderr.write(repr(x)+"\n")
+
     def _proceed(self, pss):
         self.t += 1
         current_pss = pss[:self.n]
         new_pss = pss[self.n:]
-        current_fs = [ ps.averaged_result[0] for ps in current_pss ]
-        new_fs = [ ps.averaged_result[0] for ps in new_pss ]
+        current_fs = [ ps.averaged_result()[0] for ps in current_pss ]
+        self.current_fs = current_fs
+        new_fs = [ ps.averaged_result()[0] for ps in new_pss ]
 
         # selection
         for i in range(self.n):
             if new_fs[i] < current_fs[i]:
                 self.population[i] = self.new_positions[i]
                 if new_fs[i] < self.best_f:
-                    self.best_point = self.new_positions[i]
+                    self.best_point = self.new_positions[i].copy()
                     self.best_f = new_fs[i]
 
         if not self.on_each_generation is None:
@@ -67,7 +71,7 @@ class DE_Optimizer():
             pss = [ self._find_or_create_ps_from_point(p) for p in self.population]
             self._generate_new_positions()
             new_pss = [ self._find_or_create_ps_from_point(p) for p in self.new_positions]
-            Server.watch_all_ps(pss+new_pss, self.proceed)
+            Server.watch_all_ps(pss+new_pss, self._proceed)
 
     def _generate_candidate(self, i):
         """
@@ -98,7 +102,7 @@ class DE_Optimizer():
 if __name__ == "__main__":
     def main():
         def map_point_to_cmd(point, seed):
-            v = (point[0]-1.0)**2 + (x[1]-2.0)**2
+            v = (point[0]-1.0)**2 + (point[1]-2.0)**2
             cmd = "bash -c 'echo %f > _results.txt'" % v
             return cmd
 
@@ -108,11 +112,13 @@ if __name__ == "__main__":
                 ]
 
 
-        de = DE_Optimizer( domains, n=30, f=0.8 cr=0.9, t_max=3, rand_seed=1234 )
+        de = DE_Optimizer( domains, n=30, f=0.8, cr=0.9, t_max=100, rand_seed=1234 )
 
         def print_logs():
-            sys.stderr.write("t=%d  %s, %f, %f" % (de.t, repr(de.best_point), de.best_f, de._average_f() ) )
+            sys.stderr.write("t=%d  %s, %f, %f\n" % (de.t, repr(de.best_point), de.best_f, de._average_f() ) )
         de.on_each_generation = print_logs
-        de.create_initial_runs()
+        de.generate_initial_runs()
         Server.loop( map_point_to_cmd )
+
+    main()
 

@@ -61,7 +61,7 @@ class ParameterSet:
             n = len( runs[0].results )
             averages = []
             for i in range(n):
-                results = [r.results[i] for r in runs if r.results[i] ]
+                results = [r.results[i] for r in runs ]
                 avg = sum(results) / len(results)
                 averages.append(avg)
             return averages
