@@ -53,7 +53,7 @@ class DE_Optimizer():
         current_pss = pss[:self.n]
         new_pss = pss[self.n:]
         current_fs = [ ps.averaged_result()[0] for ps in current_pss ]
-        self.current_fs = current_fs
+
         new_fs = [ ps.averaged_result()[0] for ps in new_pss ]
 
         # selection
@@ -89,7 +89,7 @@ class DE_Optimizer():
         while c == i or c == a or c == b:
             c = self.random.randrange(self.n)
 
-        new_pos = self.population[i].copy()
+        new_pos = self.population[i][:]
 
         dim = len(self.domains)
         r = self.random.randrange( dim )
