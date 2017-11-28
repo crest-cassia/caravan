@@ -45,6 +45,14 @@ class Run:
         r.store_result(o["results"], o["rc"], o["place_id"], o["start_at"], o["finish_at"])
         return r
 
+    @classmethod
+    def all(cls):
+        return tables.Tables.get().runs_table
+
+    @classmethod
+    def find(cls,id):
+        return tables.Tables.get().runs_table[id]
+
     def dumps(self):
         return json.dumps( self.to_dict() )
 

@@ -1,6 +1,7 @@
 import unittest
 from searcher.run import Run
 from searcher.tables import Tables
+from searcher.parameter_set import ParameterSet
 
 class TestRun(unittest.TestCase):
 
@@ -20,6 +21,21 @@ class TestRun(unittest.TestCase):
         self.assertEqual( r.place_id, 3 )
         self.assertEqual( r.start_at, 111 )
         self.assertEqual( r.finish_at, 222 )
+
+    def test_all(self):
+        ps = ParameterSet.find_or_create((0, 1, 2, 3))
+        runs = ps.create_runs_upto(3)
+        self.assertEqual( Run.all(), runs )
+        ps2 = ParameterSet.find_or_create((0, 1, 2, 4))
+        runs2 = ps2.create_runs_upto(3)
+        self.assertEqual( len(Run.all()), 6 )
+
+    def test_find(self):
+        ps = ParameterSet.find_or_create((0, 1, 2, 3))
+        runs = ps.create_runs_upto(3)
+        rid = runs[1].id
+        self.assertEqual(rid,1)
+        self.assertEqual(Run.find(rid),runs[1])
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,7 @@
 import sys
 from collections import defaultdict
-from . import tables
+from .run import Run
+from .parameter_set import ParameterSet
 
 class Server:
 
@@ -13,7 +14,6 @@ class Server:
         return cls._instance
 
     def __init__(self):
-        self.tables = tables.Tables.get()
         self.observed_ps = defaultdict(list)
         self.observed_all_ps = defaultdict(list)
         self.max_submitted_run_id = 0
@@ -47,18 +47,18 @@ class Server:
         return ( len( self.observed_ps ) + len( self.observed_all_ps ) ) > 0
 
     def _has_unfinished_runs(self):
-        for r in self.tables.runs_table[:self.max_submitted_run_id]:
+        for r in Run.all()[:self.max_submitted_run_id]:
             if not r.is_finished():
                 return True
         return False
 
     def _submit(self):
-        for r in self.tables.runs_table[self.max_submitted_run_id:]:
+        for r in Run.all()[self.max_submitted_run_id:]:
             if r.is_finished: next
             line = "%d %s\n" % (r.id, self.map_func( r.parameter_set().point, r.seed ))
             sys.stdout.write(line)
         sys.stdout.write("\n")
-        self.max_submitted_run_id = len(self.tables.runs_table)
+        self.max_submitted_run_id = len(Run.all())
 
     def _exec_callback(self):
         while self._check_completed_ps() or self._check_completed_ps_all():
@@ -68,7 +68,7 @@ class Server:
         executed = False
         for psid in list(self.observed_ps.keys()):
             callbacks = self.observed_ps[psid]
-            ps = self.tables.ps_table[psid]
+            ps = ParameterSet.find(psid)
             while ps.is_finished() and len(callbacks)>0:
                 f = callbacks.pop(0)
                 f(ps)
@@ -81,7 +81,7 @@ class Server:
     def _check_completed_ps_all(self):
         executed = False
         for psids in list(self.observed_all_ps.keys()):
-            pss = [self.tables.ps_table[psid] for psid in psids]
+            pss = [ParameterSet.find(psid) for psid in psids]
             callbacks = self.observed_all_ps[psids]
             while len(callbacks)>0 and all([ps.is_finished() for ps in pss]):
                 f = callbacks.pop(0)
@@ -99,7 +99,7 @@ class Server:
         l = line.split(' ')
         rid,rc,place_id,start_at,finish_at = [ int(x) for x in l[:5] ]
         results = [ float(x) for x in l[5:] ]
-        r = self.tables.runs_table[rid]
+        r = Run.find(rid)
         r.store_result( results, rc, place_id, start_at, finish_at )
         return r
 

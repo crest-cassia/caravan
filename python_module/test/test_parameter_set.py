@@ -59,6 +59,19 @@ class ParameterSetTest(unittest.TestCase):
             r.store_result([1.0+i, 2.0+i, 3.0+1], 0, 3, 111, 222)
         self.assertEqual( ps.averaged_result(), [2.0, 3.0, 4.0] )
 
+    def test_all(self):
+        ps = ParameterSet.find_or_create((0, 1, 2, 3))
+        self.assertEqual( ParameterSet.all(), [ps] )
+        ps2 = ParameterSet.find_or_create((0, 1, 2, 4))
+        self.assertEqual( ParameterSet.all(), [ps,ps2] )
+        self.assertEqual( len(ParameterSet.all()), 2 )
+
+    def test_find(self):
+        ps = ParameterSet.find_or_create((0, 1, 2, 3))
+        ps2 = ParameterSet.find_or_create((0, 1, 2, 4))
+        pid = ps2.id
+        self.assertEqual(pid,1)
+        self.assertEqual(ParameterSet.find(1), ps2)
 
 if __name__ == '__main__':
     unittest.main()

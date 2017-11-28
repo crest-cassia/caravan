@@ -79,6 +79,14 @@ class ParameterSet:
         ps.run_ids = o["run_ids"]
         return ps
 
+    @classmethod
+    def all(cls):
+        return tables.Tables.get().ps_table
+
+    @classmethod
+    def find(cls,id):
+        return tables.Tables.get().ps_table[id]
+
     def dumps(self):
         runs_str = ",\n".join( [ "    " + r.dumps() for r in self.runs()] )
         return "{\"id\": %d, \"point\": %s, \"runs\": [\n%s\n]}" % (self.id, str(self.point), runs_str)
