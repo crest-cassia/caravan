@@ -32,14 +32,14 @@ class Server:
     def loop(cls, map_func):
         self = cls.get()
         self.map_func = map_func
-        self._submit()
+        self._submit_all()
         while self._has_unfinished_runs():
             r = self._receive_result()
             if r:
                 ps = r.parameter_set()
                 if ps.is_finished():
                     self._exec_callback()
-                self._submit()
+                self._submit_all()
             else:
                 break
 
@@ -52,13 +52,16 @@ class Server:
                 return True
         return False
 
-    def _submit(self):
-        for r in Run.all()[self.max_submitted_run_id:]:
-            if r.is_finished: next
+    def _submit_all(self):
+        runs_to_be_submitted = [r for r in Run.all()[self.max_submitted_run_id:] if not r.is_finished()]
+        self._print_tasks(runs_to_be_submitted)
+        self.max_submitted_run_id = len(Run.all())
+
+    def _print_tasks(self,runs):
+        for r in runs:
             line = "%d %s\n" % (r.id, self.map_func( r.parameter_set().point, r.seed ))
             sys.stdout.write(line)
         sys.stdout.write("\n")
-        self.max_submitted_run_id = len(Run.all())
 
     def _exec_callback(self):
         while self._check_completed_ps() or self._check_completed_ps_all():
