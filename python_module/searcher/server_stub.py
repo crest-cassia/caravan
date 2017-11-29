@@ -10,7 +10,6 @@ class EventQueue:
 
     def push_all(self,runs):
         self.runs.extend(runs)
-        #print([r.parameter_set().point for r in runs])
 
     def pop(self):
         while None in self.running and len(self.runs)>0:
