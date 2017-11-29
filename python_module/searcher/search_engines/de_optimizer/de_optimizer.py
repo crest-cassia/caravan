@@ -6,7 +6,9 @@ from searcher.parameter_set import ParameterSet
 class DE_Optimizer():
 
     def __init__( self, domains, n=None, f=0.8, cr=0.9, t_max=10, rand_seed=None, on_each_generation=None ):
-        self.n = (n or len(domains)*10)
+        self.n = n
+        if n is None:
+            self.n = len(domains)*10
         self.f = f
         self.cr = cr
         self.random = random.Random()
