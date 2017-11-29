@@ -1,4 +1,5 @@
 import sys
+import logging
 from collections import defaultdict
 from .run import Run
 from .parameter_set import ParameterSet
@@ -13,10 +14,11 @@ class Server:
             cls._instance = cls()
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, logger = None):
         self.observed_ps = defaultdict(list)
         self.observed_all_ps = defaultdict(list)
         self.max_submitted_run_id = 0
+        self._logger = logger or self._default_logger()
 
     @classmethod
     def watch_ps(cls, ps, callback):
@@ -33,6 +35,7 @@ class Server:
         self = cls.get()
         self.map_func = map_func
         self._submit_all()
+        self._logger.debug("start polling")
         while self._has_unfinished_runs():
             r = self._receive_result()
             if r:
@@ -42,6 +45,18 @@ class Server:
                 self._submit_all()
             else:
                 break
+
+    def _default_logger(self):
+        logger = logging.getLogger(__name__)
+        logger.setLevel( logging.INFO )
+        logger.propagate = False
+        if not logger.handlers:
+            ch = logging.StreamHandler()
+            ch.setLevel( logging.INFO )
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            ch.setFormatter(formatter)
+            logger.addHandler(ch)
+        return logger
 
     def _has_callbacks(self):
         return ( len( self.observed_ps ) + len( self.observed_all_ps ) ) > 0
