@@ -52,13 +52,13 @@ class DE_Optimizer():
         self.t += 1
         current_pss = pss[:self.n]
         new_pss = pss[self.n:]
-        current_fs = [ ps.averaged_result()[0] for ps in current_pss ]
+        self.current_fs = [ ps.averaged_result()[0] for ps in current_pss ]
 
         new_fs = [ ps.averaged_result()[0] for ps in new_pss ]
 
         # selection
         for i in range(self.n):
-            if new_fs[i] < current_fs[i]:
+            if new_fs[i] < self.current_fs[i]:
                 self.population[i] = self.new_positions[i]
                 if new_fs[i] < self.best_f:
                     self.best_point = self.new_positions[i].copy()
