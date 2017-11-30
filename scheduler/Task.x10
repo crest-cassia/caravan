@@ -82,7 +82,7 @@ public struct Task( taskId: Long, cmd: String ) {
   }
 
   public def workDirPath(): String {
-    return String.format("./w%03d/w%08d", [taskId%1000, taskId as Any]);
+    return String.format("./w%04d/w%07d", [taskId/1000, taskId as Any]);
   }
 
   public def resultsFilePath(): String {
