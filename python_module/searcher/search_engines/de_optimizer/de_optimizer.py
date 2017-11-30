@@ -105,11 +105,11 @@ if __name__ == "__main__":
     from searcher.server_stub import ServerStub
 
     domains = [
-        (-10, 10),
-        (-10, 10)
+        (-100, 100),
+        (-100, 100)
     ]
 
-    de = DE_Optimizer(domains, n=30, f=0.8, cr=0.9, t_max=100, rand_seed=1234)
+    de = DE_Optimizer(domains, n=20, f=0.8, cr=0.9, t_max=20, rand_seed=1234)
 
     def print_logs():
         sys.stderr.write("t=%d  %s, %f, %f\n" % (de.t, repr(de.best_point), de.best_f, de._average_f()))
