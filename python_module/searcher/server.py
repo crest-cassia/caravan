@@ -1,10 +1,11 @@
 import sys
 import logging
 from collections import defaultdict
+from threading import Thread,Condition
 from .run import Run
 from .parameter_set import ParameterSet
 
-class Server:
+class Server(object):
 
     _instance = None
 
@@ -19,6 +20,8 @@ class Server:
         self.observed_all_ps = defaultdict(list)
         self.max_submitted_run_id = 0
         self._logger = logger or self._default_logger()
+        self._threads = []
+        self._gc = Condition()
 
     @classmethod
     def watch_ps(cls, ps, callback):
@@ -31,9 +34,41 @@ class Server:
         cls.get().observed_all_ps[key].append(callback)
 
     @classmethod
+    def async(cls, func, *args, **kwargs):
+        gc = cls.get()._gc
+        def _f():
+            func(*args, **kwargs)
+            with gc: gc.notify()
+        t = Thread(target=_f)
+        cls.get()._threads.append(t)
+
+    @classmethod
+    def await_ps(cls, ps):
+        cv = Condition()
+        gc = cls.get()._gc
+        def _callback(ps):
+            with cv: cv.notify()
+            with gc: gc.wait()
+        cls.watch_ps(ps, _callback)
+        with gc: gc.notify()
+        with cv: cv.wait()
+
+    @classmethod
+    def await_all_ps(cls, ps_set):
+        cv = Condition()
+        gc = cls.get()._gc
+        def _callback(pss):
+            with cv: cv.notify()
+            with gc: gc.wait()
+        cls.watch_all_ps(ps_set, _callback)
+        with gc: gc.notify()
+        with cv: cv.wait()
+
+    @classmethod
     def loop(cls, map_func):
         self = cls.get()
         self.map_func = map_func
+        self._launch_all_threads()
         self._submit_all()
         self._logger.debug("start polling")
         while self._has_unfinished_runs():
@@ -78,6 +113,12 @@ class Server:
             sys.stdout.write(line)
         sys.stdout.write("\n")
 
+    def _launch_all_threads(self):
+        while self._threads:
+            t = self._threads.pop(0)
+            t.start()
+            with self._gc: self._gc.wait()
+
     def _exec_callback(self):
         while self._check_completed_ps() or self._check_completed_ps_all():
             pass
@@ -90,6 +131,7 @@ class Server:
             while ps.is_finished() and len(callbacks)>0:
                 f = callbacks.pop(0)
                 f(ps)
+                self._launch_all_threads()
                 executed = True
         empty_keys = [k for k,v in self.observed_ps.items() if len(v)==0 ]
         for k in empty_keys:
@@ -104,6 +146,7 @@ class Server:
             while len(callbacks)>0 and all([ps.is_finished() for ps in pss]):
                 f = callbacks.pop(0)
                 f(pss)
+                self._launch_all_threads()
                 executed = True
         empty_keys = [k for k,v in self.observed_all_ps.items() if len(v) == 0]
         for k in empty_keys: self.observed_all_ps.pop(k)

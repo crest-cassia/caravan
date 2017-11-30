@@ -31,10 +31,10 @@ class EventQueue:
             return next_run
 
 
-class ServerStub:
-
-    _map_point_to_results = None
-    _map_point_to_duration = None
+class ServerStub(Server):
+    @classmethod
+    def get(cls):
+        return Server.get()
 
     @classmethod
     def loop(cls, map_point_to_results, map_point_to_duration, num_proc=1):
@@ -56,6 +56,5 @@ class ServerStub:
             r.rc = 0
             return r
         Server._receive_result = receive_result_stub
-
         Server.loop(None)
 
