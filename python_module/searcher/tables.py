@@ -20,10 +20,12 @@ class Tables:
         self.ps_point_table = {}
         self.runs_table = []
 
-    def pack(self,path):
+    @classmethod
+    def pack(cls,path):
         import msgpack
-        ps_dict = [ps.to_dict() for ps in self.ps_table]
-        run_dict = [r.to_dict() for r in self.runs_table]
+        t = cls.get()
+        ps_dict = [ps.to_dict() for ps in t.ps_table]
+        run_dict = [r.to_dict() for r in t.runs_table]
         obj = {"parameter_sets": ps_dict, "runs": run_dict}
         with open(path, 'wb') as f:
             msgpack.pack(obj, f, use_bin_type=True)

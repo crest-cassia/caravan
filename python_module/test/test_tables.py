@@ -68,10 +68,10 @@ class TestTables(unittest.TestCase):
         runs[2].store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
         self.assertEqual( len(self.t.runs_table), 6 )
 
-        self.t.pack( self.msgpack_path )
+        Tables.pack( self.msgpack_path )
         self.assertTrue( os.path.exists(self.msgpack_path) )
         self.t.clear()
-        self.t.unpack( self.msgpack_path )
+        Tables.unpack( self.msgpack_path )
         self.assertEqual( len(self.t.ps_table), 2 )
         self.assertEqual( len(self.t.runs_table), 6 )
         self.assertEqual( len(self.t.ps_point_table), 2 )
