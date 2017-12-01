@@ -73,6 +73,7 @@ public class Administrator {
       terminationBegin = timer.milliTime();
 
       at( refJobProducer ) {
+        refJobProducer().terminateSearcher();
         val numUnfinished = refJobProducer().numUnfinished();
         if( numUnfinished > 0 ) {
           Console.ERR.println("There are " + numUnfinished + " unfinished tasks.");

@@ -61,5 +61,9 @@ public class SearchEngine {
     writeLine( pidFilePointers(2), resultLine );
     return readTasks();
   }
+
+  public static def sendEmptyLine() {
+    writeLine(pidFilePointers(2), "");
+  }
 }
 

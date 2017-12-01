@@ -41,6 +41,11 @@ class JobProducer {
     SearchEngine.waitSearcher();
   }
 
+  public def terminateSearcher() {
+    d("Terminating subprocess");
+    SearchEngine.sendEmptyLine();
+  }
+
   public def numUnfinished(): Long {
     return m_taskQueue.size() + m_numRunning;
   }

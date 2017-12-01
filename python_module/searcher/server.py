@@ -71,15 +71,13 @@ class Server(object):
         self._launch_all_threads()
         self._submit_all()
         self._logger.debug("start polling")
-        while self._has_unfinished_runs():
+        r = self._receive_result()
+        while r:
+            ps = r.parameter_set()
+            if ps.is_finished():
+                self._exec_callback()
+            self._submit_all()
             r = self._receive_result()
-            if r:
-                ps = r.parameter_set()
-                if ps.is_finished():
-                    self._exec_callback()
-                self._submit_all()
-            else:
-                break
 
     def _default_logger(self):
         logger = logging.getLogger(__name__)
