@@ -51,6 +51,8 @@ class ServerStub(Server):
         Server._print_tasks = print_tasks_stub
         def receive_result_stub(self):
             r = queue.pop()
+            if r is None:
+                return None
             point = r.parameter_set().point
             r.results = map_point_to_results(point, r.seed)
             r.rc = 0
