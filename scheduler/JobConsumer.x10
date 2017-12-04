@@ -11,7 +11,7 @@ class JobConsumer {
   val m_refBuffer: GlobalRef[JobBuffer];
   val m_timer = new Timer();
   var m_timeOut: Long = -1;
-  val m_logger: MyLogger;
+  val m_logger: Logger;
   val m_tasks: Deque[Task];
   val m_results: ArrayList[TaskResult];
   val m_sendInterval: Long;
@@ -20,7 +20,7 @@ class JobConsumer {
 
   def this( _refBuffer: GlobalRef[JobBuffer], refTimeForLogger: Long, sendInterval: Long ) {
     m_refBuffer = _refBuffer;
-    m_logger = new MyLogger( refTimeForLogger );
+    m_logger = new Logger( refTimeForLogger );
     m_tasks = new Deque[Task]();
     m_results = new ArrayList[TaskResult]();
     m_sendInterval = sendInterval;
@@ -32,7 +32,7 @@ class JobConsumer {
   }
 
   private def w(s:String) {
-    m_logger.d(s);
+    m_logger.w(s);
   }
 
   def setExpiration( timeOutMilliTime: Long ) {

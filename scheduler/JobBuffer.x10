@@ -9,7 +9,7 @@ import x10.util.concurrent.AtomicLong;
 class JobBuffer {
 
   val m_refProducer: GlobalRef[JobProducer];
-  val m_logger: MyLogger;
+  val m_logger: Logger;
   val m_timer: Timer = new Timer();
   val m_taskQueue = new Deque[Task]();
   val m_resultsBuffer = new ArrayList[TaskResult]();
@@ -24,7 +24,7 @@ class JobBuffer {
   def this( _refProducer: GlobalRef[JobProducer], _numConsumers: Long, refTimeForLogger: Long) {
     m_refProducer = _refProducer;
     m_numConsumers = _numConsumers;
-    m_logger = new MyLogger( refTimeForLogger );
+    m_logger = new Logger( refTimeForLogger );
     m_sendInterval = OptionParser.get("CARAVAN_SEND_RESULT_INTERVAL") * 1000;
     saveResultsDone();
   }
@@ -34,7 +34,7 @@ class JobBuffer {
   }
 
   private def w(s:String) {
-    m_logger.d(s);
+    m_logger.w(s);
   }
 
   private def warnForLongProc( t: Long, msg: String, proc: ()=>void ) {

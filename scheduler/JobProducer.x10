@@ -14,11 +14,11 @@ class JobProducer {
   val m_numBuffers: Long;
   val m_timer = new Timer();
   val m_refTimeForLogger: Long;
-  val m_logger: MyLogger;
+  val m_logger: Logger;
   var m_numRunning: Long;
 
   def this( _numBuffers: Long, _refTimeForLogger: Long ) {
-    m_logger = new MyLogger( _refTimeForLogger );
+    m_logger = new Logger( _refTimeForLogger );
     m_taskQueue = new Deque[Task]();
     m_taskResults = new ArrayList[TaskResult]();
     m_numRunning = 0;
@@ -31,7 +31,7 @@ class JobProducer {
     d("Launching subprocess: " + cmd_args.toString() );
     val ret = SearchEngine.launchSearcher( cmd_args );
     if( ret != 0 ) {
-      Console.ERR.println("[E] Failed to create a subprocess." + cmd_args);
+      e("Failed to create a subprocess." + cmd_args);
       throw new Exception("failed to launch a searcher");
     }
   }
@@ -54,11 +54,15 @@ class JobProducer {
     m_logger.d(s);
   }
 
+  private def e(s:String) {
+    m_logger.e(s);
+  }
+
   public def enqueueInitialTasks() {
     val tasks = SearchEngine.createInitialTasks();
     m_taskQueue.pushLast( tasks.toRail() );
     if( m_taskQueue.empty() ) {
-      Console.ERR.println("[E] No task was created when initializing JobProducer");
+      e("No task was created when initializing JobProducer");
       throw new Exception("no task to execute");
     }
   }
@@ -76,7 +80,6 @@ class JobProducer {
     atomic {
       var tasks: ArrayList[Task] = new ArrayList[Task]();
       for( res in results ) {
-        // IMPLEMENT ME
         val local_tasks = SearchEngine.sendResult(res.toLine(m_refTimeForLogger));
         m_numRunning -= 1;
         for( task in local_tasks ) {
