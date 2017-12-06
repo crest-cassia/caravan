@@ -10,9 +10,8 @@ SCHEDULER=$CARAVAN_DIR/build/a.out
 export PYTHONPATH=$CARAVAN_DIR/python_module:$PYTHONPATH
 export CARAVAN_SEND_RESULT_INTERVAL=0
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-2}
-export CARAVAN_TIMEOUT=20
 
-CMD="$SCHEDULER python -u $SCRIPTDIR/main.py $SCRIPTDIR/commands"
+CMD="$SCHEDULER python -u $SCRIPTDIR/main.py $SCRIPTDIR/commands table.msgpack"
 
 if [ $IS_MPI = 1 ]; then
   mpiexec -n $X10_NPLACES $CMD

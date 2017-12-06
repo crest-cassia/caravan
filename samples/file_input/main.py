@@ -13,10 +13,6 @@ class Searcher:
             ps = ParameterSet.find_or_create((i,))
             ps.create_runs_upto(1)
 
-    def restart(self):
-        pass
-
-
 if len(sys.argv) != 2 and len(sys.argv) != 3:
     sys.stderr.write(str(sys.argv))
     sys.stderr.write("invalid number of argument\n")
@@ -39,7 +35,7 @@ def map_point_to_cmd(point, seed):
 if len(sys.argv) == 2:
     s.create_initial_runs()
 else:
-    s.restart()
+    Tables.unpack(sys.argv[2])
 
 Server.loop( map_point_to_cmd )
 
