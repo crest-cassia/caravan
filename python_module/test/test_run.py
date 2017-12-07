@@ -23,15 +23,15 @@ class TestRun(unittest.TestCase):
         self.assertEqual( r.finish_at, 222 )
 
     def test_all(self):
-        ps = ParameterSet.find_or_create((0, 1, 2, 3))
+        ps = ParameterSet.create((0, 1, 2, 3))
         runs = ps.create_runs_upto(3)
         self.assertEqual( Run.all(), runs )
-        ps2 = ParameterSet.find_or_create((0, 1, 2, 4))
+        ps2 = ParameterSet.create((0, 1, 2, 4))
         runs2 = ps2.create_runs_upto(3)
         self.assertEqual( len(Run.all()), 6 )
 
     def test_find(self):
-        ps = ParameterSet.find_or_create((0, 1, 2, 3))
+        ps = ParameterSet.create((0, 1, 2, 3))
         runs = ps.create_runs_upto(3)
         rid = runs[1].id
         self.assertEqual(rid,1)

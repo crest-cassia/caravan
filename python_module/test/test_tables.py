@@ -33,13 +33,12 @@ class TestTables(unittest.TestCase):
         with open(path, 'rb') as f:
             self.t = pickle.load(f)
         self.assertEqual( len(self.t.ps_table), 0 )
-        self.assertEqual( len(self.t.ps_point_table), 0 )
 
     def test_dump(self):
-        ps = ParameterSet.find_or_create((0,1,2,3))
+        ps = ParameterSet.create((0,1,2,3))
         runs = ps.create_runs_upto(3)
         runs[0].store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
-        ps = ParameterSet.find_or_create((4,5,6,7))
+        ps = ParameterSet.create((4,5,6,7))
         self.assertEqual( len(self.t.ps_table), 2 )
         runs = ps.create_runs_upto(3)
         runs[2].store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
@@ -59,10 +58,10 @@ class TestTables(unittest.TestCase):
         self.assertTrue( self.t.runs_table[5].is_finished() )
 
     def test_pack_unpack(self):
-        ps = ParameterSet.find_or_create((0,1,2,3))
+        ps = ParameterSet.create((0,1,2,3))
         runs = ps.create_runs_upto(3)
         runs[0].store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
-        ps = ParameterSet.find_or_create((4,5,6,7))
+        ps = ParameterSet.create((4,5,6,7))
         self.assertEqual( len(self.t.ps_table), 2 )
         runs = ps.create_runs_upto(3)
         runs[2].store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
@@ -74,7 +73,6 @@ class TestTables(unittest.TestCase):
         Tables.unpack( self.msgpack_path )
         self.assertEqual( len(self.t.ps_table), 2 )
         self.assertEqual( len(self.t.runs_table), 6 )
-        self.assertEqual( len(self.t.ps_point_table), 2 )
         self.assertTrue( self.t.runs_table[0].is_finished() )
         self.assertTrue( self.t.runs_table[5].is_finished() )
 

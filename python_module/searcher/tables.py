@@ -12,12 +12,10 @@ class Tables:
         if self.__class__._instance is not None:
             raise "do not call constructor directly"
         self.ps_table = []
-        self.ps_point_table = {}  # find PS from points
         self.runs_table = []
 
     def clear(self):
         self.ps_table = []
-        self.ps_point_table = {}
         self.runs_table = []
 
     @classmethod
@@ -42,8 +40,6 @@ class Tables:
             obj = msgpack.unpack(f, encoding='utf-8')
             t.ps_table = [ ParameterSet.new_from_dict(o) for o in obj["parameter_sets"] ]
             t.runs_table = [ Run.new_from_dict(o) for o in obj["runs"] ]
-            for ps in t.ps_table:
-                t.ps_point_table[ ps.point ] = ps
         return t
 
     def dumps(self):

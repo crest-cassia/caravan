@@ -4,21 +4,17 @@ from . import tables
 
 class ParameterSet:
 
-    def __init__(self, ps_id, point):
+    def __init__(self, ps_id, params):
         self.id = ps_id
-        self.point = tuple(point)
+        self.params = params
         self.run_ids = []
 
     @classmethod
-    def find_or_create(cls, point):
-        p = tuple(point)
+    def create(cls, params):
         t = tables.Tables.get()
-        if p in t.ps_point_table:
-            return t.ps_point_table[p]
         next_id = len(t.ps_table)
-        ps = cls(next_id, p)
+        ps = cls(next_id, params)
         t.ps_table.append(ps)
-        t.ps_point_table[p] = ps
         return ps
 
     def create_runs(self, num_runs):
@@ -30,7 +26,6 @@ class ParameterSet:
             self.run_ids.append(r.id)
             t.runs_table.append(r)
             return r
-
         created = []
         for i in range(num_runs):
             r = create_a_run()
@@ -69,13 +64,13 @@ class ParameterSet:
     def to_dict(self):
         o = OrderedDict()
         o["id"] = self.id
-        o["point"] = self.point
+        o["params"] = self.params
         o["run_ids"] = self.run_ids
         return o
 
     @classmethod
     def new_from_dict(cls, o):
-        ps = cls( o["id"], o["point"])
+        ps = cls( o["id"], o["params"])
         ps.run_ids = o["run_ids"]
         return ps
 
@@ -89,5 +84,5 @@ class ParameterSet:
 
     def dumps(self):
         runs_str = ",\n".join( [ "    " + r.dumps() for r in self.runs()] )
-        return "{\"id\": %d, \"point\": %s, \"runs\": [\n%s\n]}" % (self.id, str(self.point), runs_str)
+        return "{\"id\": %d, \"params\": %s, \"runs\": [\n%s\n]}" % (self.id, str(self.params), runs_str)
 
