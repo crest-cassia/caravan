@@ -37,9 +37,12 @@ class Server(object):
     def async(cls, func, *args, **kwargs):
         gc = cls.get()._gc
         def _f():
-            func(*args, **kwargs)
-            with gc: gc.notify()
+            try:
+                func(*args, **kwargs)
+            finally:
+                with gc: gc.notify()
         t = Thread(target=_f)
+        t.daemon = True
         cls.get()._threads.append(t)
 
     @classmethod
