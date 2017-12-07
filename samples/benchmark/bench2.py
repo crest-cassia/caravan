@@ -26,8 +26,7 @@ class BenchSearcher2:
 
     def _create_one(self):
         t = random.uniform( self.sleep_range[0], self.sleep_range[1] )
-        point = (int(t*10), self.ps_count)
-        ps = ParameterSet.find_or_create( point )
+        ps = ParameterSet.create(t)
         self.ps_count += 1
         self.num_running += 1
         ps.create_runs_upto(1)
@@ -44,12 +43,11 @@ class BenchSearcher2:
                 self._create_one()
             self.iteration -= 1
 
-def map_point_to_cmd(point, seed):
-    t = point[0] * 0.1
+def map_params_to_cmd(t, seed):
     return "sleep %f" % t
 
 se = BenchSearcher2()
 se.create_initial_runs()
-Server.loop(map_point_to_cmd)
+Server.loop(map_params_to_cmd)
 sys.stderr.write("DONE\n")
 

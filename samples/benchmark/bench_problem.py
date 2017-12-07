@@ -18,8 +18,7 @@ class BenchSearcher:
 
     def _create_one(self):
         t = random.uniform( self.sleep_range[0], self.sleep_range[1] )
-        point = (int(t*10), self.ps_count)
-        ps = ParameterSet.find_or_create( point )
+        ps = ParameterSet.create(t)
         self.ps_count += 1
         self.num_running += 1
         self.num_todo -= 1
@@ -62,8 +61,7 @@ sleep_sigma = float(sys.argv[6])
 
 se = BenchSearcher(num_static_jobs,num_dynamic_jobs,job_gen_prob,num_jobs_per_gen,sleep_mu,sleep_sigma)
 
-def map_point_to_cmd(point, seed):
-    t = point[0] * 0.1
+def map_params_to_cmd(t, seed):
     return "sleep %f" % t
 
 if len(sys.argv) == 7:
@@ -72,7 +70,7 @@ else:
     Tables.unpack(sys.argv[7])
     se.restart()
 
-Server.loop( map_point_to_cmd )
+Server.loop( map_params_to_cmd )
 
 if all([ps.is_finished() for ps in ParameterSet.all()]):
     sys.stderr.write("DONE\n")

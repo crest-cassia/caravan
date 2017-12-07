@@ -5,13 +5,16 @@ from searcher.tables import Tables
 
 class Searcher:
 
-    def __init__(self,n):
-        self.n = n
+    def __init__(self):
+        pass
 
-    def create_initial_runs(self):
-        for i in range(self.n):
-            ps = ParameterSet.find_or_create((i,))
-            ps.create_runs_upto(1)
+    def create_initial_runs(self, cmd_file):
+        with open(cmd_file) as f:
+            for line in f:
+                cmd = line.rstrip()
+                if not cmd: break
+                ps = ParameterSet.create(cmd)
+                ps.create_runs_upto(1)
 
 if len(sys.argv) != 2 and len(sys.argv) != 3:
     sys.stderr.write(str(sys.argv))
@@ -21,23 +24,18 @@ if len(sys.argv) != 2 and len(sys.argv) != 3:
     raise RuntimeError("invalid number of arguments")
 
 cmd_file_path = sys.argv[1]
-commands = []
 
-with open(cmd_file_path) as f:
-    commands = f.readlines()
-
-s = Searcher(len(commands))
-
-def map_point_to_cmd(point, seed):
-    cmd = commands[point[0]]
-    return cmd.rstrip()
+s = Searcher()
 
 if len(sys.argv) == 2:
-    s.create_initial_runs()
+    s.create_initial_runs(sys.argv[1])
 else:
     Tables.unpack(sys.argv[2])
 
-Server.loop( map_point_to_cmd )
+def map_params_to_cmd(params, seed):
+    return params
+
+Server.loop( map_params_to_cmd )
 
 if all([ps.is_finished() for ps in ParameterSet.all()]):
     sys.stderr.write("DONE\n")

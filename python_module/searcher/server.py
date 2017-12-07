@@ -107,7 +107,7 @@ class Server(object):
 
     def _print_tasks(self,runs):
         for r in runs:
-            line = "%d %s\n" % (r.id, self.map_func( r.parameter_set().point, r.seed ))
+            line = "%d %s\n" % (r.id, self.map_func( r.parameter_set().params, r.seed ))
             sys.stdout.write(line)
         sys.stdout.write("\n")
 
