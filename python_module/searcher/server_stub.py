@@ -45,16 +45,16 @@ class ServerStub(Server):
         # override the methods
         def print_tasks_stub(self,runs):
             for r in runs:
-                point = r.parameter_set().point
-                r.dt = map_point_to_duration(point, r.seed)
+                params = r.parameter_set().params
+                r.dt = map_point_to_duration(params, r.seed)
             queue.push_all(runs)
         Server._print_tasks = print_tasks_stub
         def receive_result_stub(self):
             r = queue.pop()
             if r is None:
                 return None
-            point = r.parameter_set().point
-            r.results = map_point_to_results(point, r.seed)
+            params = r.parameter_set().params
+            r.results = map_point_to_results(params, r.seed)
             r.rc = 0
             return r
         Server._receive_result = receive_result_stub

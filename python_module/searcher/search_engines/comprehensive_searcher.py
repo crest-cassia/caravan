@@ -10,7 +10,7 @@ class ComprehensiveSearcher:
 
     def create_initial_runs(self):
         for point in itertools.product( *self.ranges ):
-            ps = ParameterSet.find_or_create(point)
+            ps = ParameterSet.create(point)
             ps.create_runs_upto(self.num_runs)
 
 if __name__ == "__main__":
@@ -23,16 +23,16 @@ if __name__ == "__main__":
 
     s = ComprehensiveSearcher(ranges, num_runs=2)
 
-    def map_point_to_result(point, seed):
-        return [point[0]**2 + point[1]**2]
+    def map_params_to_result(params, seed):
+        return [params[0]**2 + params[1]**2]
 
-    def map_point_to_duration(point, seed):
+    def map_params_to_duration(params, seed):
         return 1.0
 
     s.create_initial_runs()
-    ServerStub.loop(map_point_to_result, map_point_to_duration)
+    ServerStub.loop(map_params_to_result, map_params_to_duration)
 
-    points = [ ps.point for ps in ParameterSet.all() ]
+    points = [ ps.params for ps in ParameterSet.all() ]
     print("result: %s" % str(points))
     print("# of runs: %d" % len(Run.all()))
 

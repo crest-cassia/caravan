@@ -78,7 +78,7 @@ class DE_Optimizer():
         while c == i or c == a or c == b:
             c = self.random.randrange(self.n)
 
-        new_pos = self.population[i].copy()
+        new_pos = self.population[i][:]
 
         dim = len(self.domains)
         r = self.random.randrange( dim )
@@ -99,8 +99,7 @@ if __name__ == "__main__":
             (-100, 100)
         ]
         def _find_or_create_ps_from_point(point):
-            int_point = [ round(x) for x in point ]
-            ps = ParameterSet.find_or_create(int_point)
+            ps = ParameterSet.create(point)
             ps.create_runs_upto(1)
             return ps
 

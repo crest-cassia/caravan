@@ -33,8 +33,7 @@ class DE_Optimizer():
         Server.watch_all_ps(pss+new_pss, self._proceed)
 
     def _find_or_create_ps_from_point(self,point):
-        int_point = [ round(x) for x in point ]
-        ps = ParameterSet.find_or_create(int_point)
+        ps = ParameterSet.create(point)
         ps.create_runs_upto(1)
         return ps
 
@@ -63,7 +62,7 @@ class DE_Optimizer():
             if new_fs[i] < self.current_fs[i]:
                 self.population[i] = self.new_positions[i]
                 if new_fs[i] < self.best_f:
-                    self.best_point = self.new_positions[i].copy()
+                    self.best_point = self.new_positions[i][:]
                     self.best_f = new_fs[i]
 
         if not self.on_each_generation is None:
