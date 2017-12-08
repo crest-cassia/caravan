@@ -1,7 +1,8 @@
 import sys
 import logging
 from collections import defaultdict
-from threading import Thread,Condition
+from threading import Thread
+from queue import Queue
 from .run import Run
 from .parameter_set import ParameterSet
 
@@ -21,7 +22,7 @@ class Server(object):
         self.max_submitted_run_id = 0
         self._logger = logger or self._default_logger()
         self._threads = []
-        self._gc = Condition()
+        self._q = Queue()
 
     @classmethod
     def watch_ps(cls, ps, callback):
@@ -35,37 +36,37 @@ class Server(object):
 
     @classmethod
     def async(cls, func, *args, **kwargs):
-        gc = cls.get()._gc
+        q = cls.get()._q
         def _f():
             try:
                 func(*args, **kwargs)
             finally:
-                with gc: gc.notify()
+                q.put(0)
         t = Thread(target=_f)
         t.daemon = True
         cls.get()._threads.append(t)
 
     @classmethod
     def await_ps(cls, ps):
-        cv = Condition()
-        gc = cls.get()._gc
+        local_q = Queue()
+        q = cls.get()._q
         def _callback(ps):
-            with cv: cv.notify()
-            with gc: gc.wait()
+            local_q.put(0)
+            q.get()
         cls.watch_ps(ps, _callback)
-        with gc: gc.notify()
-        with cv: cv.wait()
+        q.put(0)
+        local_q.get()
 
     @classmethod
     def await_all_ps(cls, ps_set):
-        cv = Condition()
-        gc = cls.get()._gc
+        local_q = Queue()
+        q = cls.get()._q
         def _callback(pss):
-            with cv: cv.notify()
-            with gc: gc.wait()
+            local_q.put(0)
+            q.get()
         cls.watch_all_ps(ps_set, _callback)
-        with gc: gc.notify()
-        with cv: cv.wait()
+        q.put(0)
+        local_q.get()
 
     @classmethod
     def loop(cls, map_func):
@@ -117,8 +118,9 @@ class Server(object):
     def _launch_all_threads(self):
         while self._threads:
             t = self._threads.pop(0)
+            self._logger.debug("starting thread")
             t.start()
-            with self._gc: self._gc.wait()
+            self._q.get()
 
     def _exec_callback(self):
         while self._check_completed_ps() or self._check_completed_ps_all():
