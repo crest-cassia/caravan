@@ -1,38 +1,133 @@
 import sys
+import random
 from caravan.server import Server
-from caravan.search_engines.de_optimizer.de_optimizer import DE_Optimizer
+from caravan.parameter_set import ParameterSet
 
-def main(n,f,cr,tmax):
-    def map_point_to_cmd(point, seed):
-        v = (point[0]-1.0)**2 + (point[1]-2.0)**2
-        cmd = "bash -c 'echo %f > _results.txt'" % v
-        return cmd
+class Domain():
+    def __init__(self, minimum, maximum):
+        self.min = minimum
+        self.max = maximum
+        assert self.min < self.max
 
+    def scale(self, r):
+        """
+        give [0,1] value and returns the scaled value
+        """
+        return r * (self.max - self.min) + self.min
+
+class DE_Optimizer():
+
+    def __init__( self, map_func, domains, n=None, f=0.8, cr=0.9, rand_seed=None ):
+        self.n = (n or len(domains)*10)
+        self.f = f
+        self.cr = cr
+        self.random = random.Random()
+        if rand_seed:
+            self.random.seed( rand_seed )
+        self.domains = [ Domain(d[0],d[1]) for d in domains ]
+        self.map_func = map_func
+        self.t = 0
+        self.best_point = None
+        self.best_f = float('inf')
+
+        self.generate_initial_points()
+
+    def generate_initial_points(self):
+        self.population = []
+        for i in range(self.n):
+            point = [ d.scale( self.random.random() ) for d in self.domains ]
+            self.population.append( point )
+        self.current_fs = self.map_func( self.population )
+
+    def average_f(self):
+        return sum( self.current_fs ) / len( self.current_fs )
+
+    def proceed(self):
+        new_positions = []
+        for i in range(self.n):
+            new_pos = self._generate_candidate(i)
+            new_positions.append( new_pos )
+
+        new_fs = self.map_func( new_positions )
+
+        # selection
+        for i in range(self.n):
+            if new_fs[i] < self.current_fs[i]:
+                self.population[i] = new_positions[i]
+                self.current_fs[i] = new_fs[i]
+                if new_fs[i] < self.best_f:
+                    self.best_point = new_positions[i]
+                    self.best_f = new_fs[i]
+
+        self.t += 1
+
+    def _generate_candidate(self, i):
+        """
+        generate a candidate for population[i]
+        based on DE/rand/1/binom algorithm
+        """
+
+        a = i
+        while a == i:
+            a = self.random.randrange(self.n)
+        b = i
+        while b == i or b == a:
+            b = self.random.randrange(self.n)
+        c = i
+        while c == i or c == a or c == b:
+            c = self.random.randrange(self.n)
+
+        new_pos = self.population[i][:]
+
+        dim = len(self.domains)
+        r = self.random.randrange( dim )
+
+        for d in range(dim):
+            if d == r or self.random.random() < self.cr:
+                new_pos[d] = self.population[a][d] + self.f * (self.population[b][d] - self.population[c][d])
+        return new_pos
+
+if len(sys.argv) != 5:
+    sys.stderr.write("invalid number of arguments\n")
+    sys.stderr.write("[Usage] python -u %s <n> <f> <cr> <tmax>\n" % __file__)
+    raise Exception("invalid number of arguments")
+
+def run_optimization(n,f,cr,tmax):
     domains = [
             (-1000, 1000),
             (-1000, 1000)
             ]
 
-    de = DE_Optimizer( domains, n=n, f=f, cr=cr, t_max=tmax, rand_seed=1234 )
+    def _find_or_create_ps_from_point(point):
+        ps = ParameterSet.create(point)
+        ps.create_runs_upto(1)
+        return ps
 
-    f = open("opt_log.txt", "w")
-    f.write("### t [best_point] best_f average_f\n")
+    def map_agents(agents):
+        parameter_sets = [_find_or_create_ps_from_point(point) for point in agents]
+        Server.await_all_ps(parameter_sets)
+        results = [ps.averaged_result()[0] for ps in parameter_sets]
+        return results
 
-    def print_logs():
-        f.write("%d %s %f %f\n" % (de.t, repr(de.best_point), de.best_f, de._average_f() ) )
-    de.on_each_generation = print_logs
-    de.generate_initial_runs()
-    Server.loop( map_point_to_cmd )
-    f.close()
+    de = DE_Optimizer(map_agents, domains, n=n, f=f, cr=cr, rand_seed=1234 )
 
-if len(sys.argv) != 5:
-    sys.stderr.write("invalid number of arguments\n")
-    sys.stderr.write("[Usage] python -u %s <n> <f> <cr> <tmax>\n" % __file__)
-else:
-    n = int(sys.argv[1])
-    f = float(sys.argv[2])
-    cr = float(sys.argv[3])
-    tmax = int(sys.argv[4])
-    sys.stderr.write("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n,f,cr,tmax))
-    main(n,f,cr,tmax)
+    with open("opt_log.txt", "w") as fout:
+        fout.write("### t [best_point] best_f average_f\n")
+        for t in range(tmax):
+            de.proceed()
+            fout.write("%d %s %f %f\n" % (de.t, repr(de.best_point), de.best_f, de.average_f() ) )
+
+def map_point_to_cmd(point, seed):
+    v = (point[0]-1.0)**2 + (point[1]-2.0)**2
+    cmd = "bash -c 'echo %f > _results.txt'" % v
+    return cmd
+
+n = int(sys.argv[1])
+f = float(sys.argv[2])
+cr = float(sys.argv[3])
+tmax = int(sys.argv[4])
+sys.stderr.write("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n,f,cr,tmax))
+
+Server.async(lambda: run_optimization(n,f,cr,tmax))
+Server.loop( map_point_to_cmd )
 
