@@ -39,8 +39,11 @@ class Server(object):
         q = cls.get()._q
         def _f():
             try:
+                #raise Exception("foobar")
                 func(*args, **kwargs)
-            finally:
+            except:
+                q.put(sys.exc_info())
+            else:
                 q.put(0)
         t = Thread(target=_f)
         t.daemon = True
@@ -49,23 +52,21 @@ class Server(object):
     @classmethod
     def await_ps(cls, ps):
         local_q = Queue()
-        q = cls.get()._q
         def _callback(ps):
             local_q.put(0)
-            q.get()
+            cls.get()._get_from_global_q()
         cls.watch_ps(ps, _callback)
-        q.put(0)
+        cls.get()._q.put(0)
         local_q.get()
 
     @classmethod
     def await_all_ps(cls, ps_set):
         local_q = Queue()
-        q = cls.get()._q
         def _callback(pss):
             local_q.put(0)
-            q.get()
+            cls.get()._get_from_global_q()
         cls.watch_all_ps(ps_set, _callback)
-        q.put(0)
+        cls.get()._q.put(0)
         local_q.get()
 
     @classmethod
@@ -82,6 +83,16 @@ class Server(object):
                 self._exec_callback()
             self._submit_all()
             r = self._receive_result()
+
+    def _get_from_global_q(self):
+        q = self._q
+        ret = q.get()
+        if ret != 0:
+            exc_type, exc_obj, exc_trace = ret
+            self._logger.error(exc_type)
+            self._logger.error(exc_obj)
+            self._logger.error(exc_trace)
+            raise exc_obj
 
     def _default_logger(self):
         logger = logging.getLogger(__name__)
@@ -120,7 +131,7 @@ class Server(object):
             t = self._threads.pop(0)
             self._logger.debug("starting thread")
             t.start()
-            self._q.get()
+            self._get_from_global_q()
 
     def _exec_callback(self):
         while self._check_completed_ps() or self._check_completed_ps_all():
