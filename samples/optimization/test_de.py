@@ -1,6 +1,6 @@
 import sys
-from searcher.server import Server
-from searcher.search_engines.de_optimizer.de_optimizer import DE_Optimizer
+from caravan.server import Server
+from caravan.search_engines.de_optimizer.de_optimizer import DE_Optimizer
 
 def main(n,f,cr,tmax):
     def map_point_to_cmd(point, seed):

@@ -1,7 +1,7 @@
 import unittest
-from searcher.run import Run
-from searcher.tables import Tables
-from searcher.parameter_set import ParameterSet
+from caravan.run import Run
+from caravan.tables import Tables
+from caravan.parameter_set import ParameterSet
 
 class TestRun(unittest.TestCase):
 

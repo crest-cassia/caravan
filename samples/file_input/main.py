@@ -1,7 +1,7 @@
 import sys,random
-from searcher.server import Server
-from searcher.parameter_set import ParameterSet
-from searcher.tables import Tables
+from caravan.server import Server
+from caravan.parameter_set import ParameterSet
+from caravan.tables import Tables
 
 class Searcher:
 

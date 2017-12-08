@@ -1,6 +1,6 @@
 import unittest
-from searcher.tables import Tables
-from searcher.parameter_set import ParameterSet
+from caravan.tables import Tables
+from caravan.parameter_set import ParameterSet
 
 
 class ParameterSetTest(unittest.TestCase):

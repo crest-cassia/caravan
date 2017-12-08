@@ -1,7 +1,7 @@
 import sys
 import random
-from searcher.server import Server
-from searcher.parameter_set import ParameterSet
+from caravan.server import Server
+from caravan.parameter_set import ParameterSet
 
 
 class Domain():

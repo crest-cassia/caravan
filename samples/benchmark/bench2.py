@@ -1,6 +1,6 @@
 import sys,random
-from searcher.server import Server
-from searcher.parameter_set import ParameterSet
+from caravan.server import Server
+from caravan.parameter_set import ParameterSet
 
 if len(sys.argv) != 7:
     sys.stderr.write(str(sys.argv))

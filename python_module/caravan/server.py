@@ -2,7 +2,10 @@ import sys
 import logging
 from collections import defaultdict
 from threading import Thread
-from queue import Queue
+if sys.version[0] == '2':
+    from Queue import Queue  # Python 2
+else:
+    from queue import Queue  # Python 3
 from .run import Run
 from .parameter_set import ParameterSet
 
@@ -39,7 +42,6 @@ class Server(object):
         q = cls.get()._q
         def _f():
             try:
-                #raise Exception("foobar")
                 func(*args, **kwargs)
             except:
                 q.put(sys.exc_info())

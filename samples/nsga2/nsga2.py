@@ -29,9 +29,9 @@ from deap.benchmarks.tools import diversity, convergence, hypervolume
 from deap import creator
 from deap import tools
 
-from searcher.server import Server
-from searcher.parameter_set import ParameterSet
-from searcher.server_stub import ServerStub
+from caravan.server import Server
+from caravan.parameter_set import ParameterSet
+from caravan.server_stub import ServerStub
 
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))
