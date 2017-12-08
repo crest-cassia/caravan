@@ -152,7 +152,6 @@ if __name__ == "__main__":
     stats = None
     def _main():
         global pop,stats
-        #eprint(ngen,pop_size,cxpb,seed)
         pop,stats = main(ngen,pop_size,cxpb,seed)
     Server.async(_main)
     use_scheduler = True
