@@ -1,6 +1,7 @@
 package scheduler;
 
 import x10.io.File;
+import x10.io.FileReader;
 import x10.util.Timer;
 import x10.util.ArrayList;
 import x10.util.Pair;
@@ -68,7 +69,8 @@ public struct Task( taskId: Long, cmd: String ) {
   private def parseResults(): Rail[Double] {
     val results = new ArrayList[Double]();
     val f = new File( resultsFilePath() );
-    for( line in f.lines() ) {
+    val reader = new FileReader(f);
+    for( line in reader.lines() ) {
       val trimmed = line.trim();
       if( trimmed.length() > 0 ) {
         val parsed = trimmed.split(" "); // split by white space
@@ -78,6 +80,7 @@ public struct Task( taskId: Long, cmd: String ) {
         }
       }
     }
+    reader.close();
     return results.toRail();
   }
 
