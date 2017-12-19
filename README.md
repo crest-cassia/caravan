@@ -14,7 +14,7 @@ Possible applications include
 
 The following figure illustrates the whole architecture of CARAVAN.
 
-![caravan_overview](figs/caravan_overview.png)
+<p align="center"><img src="figs/caravan_overview.png" alt="caravan_overview" width="640"></p>
 
 CARAVAN consists of three parts: **search engine**, **scheduler**, and **simulator**.
 
