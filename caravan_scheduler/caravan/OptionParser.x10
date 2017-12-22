@@ -1,6 +1,7 @@
 package caravan;
 
 import x10.lang.System;
+import x10.util.ArrayList;
 
 public class OptionParser {
 
@@ -18,14 +19,23 @@ public class OptionParser {
     }
   }
 
-  static public def printDetectedOptions() {
+  static public def detectedOptions(): ArrayList[String] {
+    val ret = new ArrayList[String]();
     for( opt in availableOptions ) {
       val key = opt(0) as String;
       val n = System.getenv(key);
       if( n != null ) {
-        Console.ERR.println("Option " + key + " is detected : " + n);
-        val parsed = Long.parse(n);
+        ret.add(key);
       }
+    }
+    return ret;
+  }
+
+  static public def printDetectedOptions() {
+    for( key in detectedOptions() ) {
+      val n = System.getenv(key);
+      assert n != null;
+      Console.ERR.println("Option " + key + " is detected : " + n);
     }
   }
 
