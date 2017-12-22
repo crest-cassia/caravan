@@ -1,4 +1,4 @@
-package scheduler;
+package caravan;
 import x10.util.Timer;
 
 public class Logger {

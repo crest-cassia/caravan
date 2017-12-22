@@ -1,4 +1,4 @@
-package scheduler;
+package caravan;
 
 import x10.util.GrowableRail;
 
@@ -32,6 +32,10 @@ public class Deque[T] {
     else {
       return end - begin;
     }
+  }
+
+  public def capacity(): Long {
+    return capacity;
   }
 
   public def first(): T {
