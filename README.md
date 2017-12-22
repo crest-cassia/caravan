@@ -46,13 +46,13 @@ Instead, the scheduler of CARAVAN is designed such that it realizes an ideal loa
 ### Building the scheduler
 
 ```
-./build.sh
+./caravan_scheduler/build.sh
 ```
 
 By default, "Socket" is selected as X10RT. If you are going to build an MPI-backed program, set environment variable "IS\_MPI" to "1" when building it.
 
 ```
-env IS_MPI=1 ./build.sh
+env IS_MPI=1 ./caravan_scheduler/build.sh
 ```
 
 The executables are built in the `build/` directory.
