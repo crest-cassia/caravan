@@ -104,7 +104,7 @@ class Server(object):
             s = os.environ['CARAVAN_SEARCH_ENGINE_LOGLEVEL']
             levels = {'DEBUG': logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR': logging.ERROR, 'CRITICAL': logging.CRITICAL}
             log_level = levels[s]
-        logger.setLevel(log_levels)
+        logger.setLevel(log_level)
         logger.propagate = False
         if not logger.handlers:
             ch = logging.StreamHandler()
