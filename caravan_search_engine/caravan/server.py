@@ -131,7 +131,6 @@ class Server(object):
     def _print_tasks(self,runs):
         for r in runs:
             line = "%d %s\n" % (r.id, self.map_func( r.parameter_set().params, r.seed ))
-            self._logger.debug("printing task: %s" % line)
             sys.stdout.write(line)
         sys.stdout.write("\n")
 
