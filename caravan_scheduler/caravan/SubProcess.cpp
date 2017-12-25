@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/poll.h>
+#include <signal.h>
 #include <x10/lang/Rail.h>
 #include <x10/util/ArrayList.h>
 #include <x10/lang/String.h>
@@ -67,6 +69,26 @@ void lntrim(char *str) {
   }  
 }
 
+long waitIncomingData(long fd_r, long timeout, long pid) {
+  int rc = 0;
+  struct pollfd fds[1];
+  fds[0].fd = (int)fd_r;
+  fds[0].events = POLLIN;
+  fds[0].revents = 0;
+
+  rc = poll(fds,1,timeout);
+  while( rc == 0 ) {
+    if( kill(pid,0) != 0 ) {
+      return 1; // sub-process is dead
+    }
+  }
+
+  if( rc < 0 ) {
+    return -1; // poll call failed
+  }
+  return 0;  // ready to read
+}
+
 x10::lang::Rail<x10::lang::String*>* readLinesUntilEmpty(FILE* fp_r) {
   size_t buf_size = 512;
   char* buf = (char*) malloc(buf_size);
@@ -114,6 +136,8 @@ long launchSubProcessWithPipes( x10::lang::Rail<x10::lang::String*>* x10_argv, l
   fps_pid[0] = pid;
   fps_pid[1] = (long) fp_r;
   fps_pid[2] = (long) fp_w;
+  fps_pid[3] = (long) fd_r;
+  fps_pid[4] = (long) fd_w;
 
   delete [] argv;
 

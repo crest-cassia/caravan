@@ -8,12 +8,17 @@ import x10.compiler.NativeCPPCompilationUnit;
 @NativeCPPInclude("SubProcess.hpp")
 @NativeCPPCompilationUnit("SubProcess.cpp")
 
+class readTaskException extends Exception {}
+
 public class SearchEngine {
 
-  static public val pidFilePointers: Rail[Long] = new Rail[Long](3); // [pid, file pointer for reading, file pointer for writing]
+  static public val pidFilePointers: Rail[Long] = new Rail[Long](5); // [pid, fp for reading, fp for writing, fd for reading, fd for writing]
 
   @Native("c++", "launchSubProcessWithPipes( #1, (long*) &((#2)->raw[0]) )")
   private native static def launchSubProcessWithPipes( argv: Rail[String], pid_fps: Rail[Long] ): Long;
+
+  @Native("c++", "waitIncomingData( #1, #2, #3 )")
+  private native static def waitIncomingData( fd_r: Long, timeout: Long, pid: Long ): Long;
 
   @Native("c++", "waitPid( #1 )")
   private native static def waitPid( pid: Long ): void;
@@ -38,6 +43,8 @@ public class SearchEngine {
   }
 
   private static def readTasks(): ArrayList[Task] {
+    val rc = waitIncomingData( pidFilePointers(3), 3000, pidFilePointers(0) );
+    if( rc != 0 ) { throw new readTaskException(); }
     val lines: Rail[String] = readLinesUntilEmpty( pidFilePointers(1) );
     val tasks = new ArrayList[Task]();
     // Console.ERR.println("[debug] got " + lines.size + " lines");
