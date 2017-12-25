@@ -1,5 +1,5 @@
 import sys
-import logging
+import logging,os
 from collections import defaultdict
 from threading import Thread
 if sys.version[0] == '2':
@@ -82,6 +82,7 @@ class Server(object):
         while r:
             ps = r.parameter_set()
             if ps.is_finished():
+                self._logger.debug("executing callback for ParameterSet %d" % ps.id)
                 self._exec_callback()
             self._submit_all()
             r = self._receive_result()
@@ -98,11 +99,16 @@ class Server(object):
 
     def _default_logger(self):
         logger = logging.getLogger(__name__)
-        logger.setLevel( logging.INFO )
+        log_level = logging.INFO
+        if 'CARAVAN_SEARCH_ENGINE_LOGLEVEL' in os.environ:
+            s = os.environ['CARAVAN_SEARCH_ENGINE_LOGLEVEL']
+            levels = {'DEBUG': logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR': logging.ERROR, 'CRITICAL': logging.CRITICAL}
+            log_level = levels[s]
+        logger.setLevel(log_levels)
         logger.propagate = False
         if not logger.handlers:
             ch = logging.StreamHandler()
-            ch.setLevel( logging.INFO )
+            ch.setLevel(log_level)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             ch.setFormatter(formatter)
             logger.addHandler(ch)
@@ -119,12 +125,14 @@ class Server(object):
 
     def _submit_all(self):
         runs_to_be_submitted = [r for r in Run.all()[self.max_submitted_run_id:] if not r.is_finished()]
+        self._logger.debug("submitting %d Runs" % len(runs_to_be_submitted))
         self._print_tasks(runs_to_be_submitted)
         self.max_submitted_run_id = len(Run.all())
 
     def _print_tasks(self,runs):
         for r in runs:
             line = "%d %s\n" % (r.id, self.map_func( r.parameter_set().params, r.seed ))
+            self._logger.debug("printing task: %s" % line)
             sys.stdout.write(line)
         sys.stdout.write("\n")
 
@@ -169,15 +177,18 @@ class Server(object):
         return executed
 
     def _receive_result(self):
+        self._logger.debug("receiving result")
         line = sys.stdin.readline()
         if not line: return None
         line = line.rstrip()
+        self._logger.debug("received: %s" % line)
         if not line: return None
         l = line.split(' ')
         rid,rc,place_id,start_at,finish_at = [ int(x) for x in l[:5] ]
         results = [ float(x) for x in l[5:] ]
         r = Run.find(rid)
         r.store_result( results, rc, place_id, start_at, finish_at )
+        self._logger.debug("stored result of Run %d" % rid)
         return r
 
     def _debug(self):
