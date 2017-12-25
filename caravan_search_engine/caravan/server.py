@@ -82,7 +82,6 @@ class Server(object):
         while r:
             ps = r.parameter_set()
             if ps.is_finished():
-                self._logger.debug("executing callback for ParameterSet %d" % ps.id)
                 self._exec_callback()
             self._submit_all()
             r = self._receive_result()
@@ -153,6 +152,7 @@ class Server(object):
             callbacks = self.observed_ps[psid]
             ps = ParameterSet.find(psid)
             while ps.is_finished() and len(callbacks)>0:
+                self._logger.debug("executing callback for ParameterSet %d" % ps.id)
                 f = callbacks.pop(0)
                 f(ps)
                 self._launch_all_threads()
@@ -168,6 +168,7 @@ class Server(object):
             pss = [ParameterSet.find(psid) for psid in psids]
             callbacks = self.observed_all_ps[psids]
             while len(callbacks)>0 and all([ps.is_finished() for ps in pss]):
+                self._logger.debug("executing callback for ParameterSet %s" % repr(psids))
                 f = callbacks.pop(0)
                 f(pss)
                 self._launch_all_threads()
@@ -177,7 +178,6 @@ class Server(object):
         return executed
 
     def _receive_result(self):
-        self._logger.debug("receiving result")
         line = sys.stdin.readline()
         if not line: return None
         line = line.rstrip()
