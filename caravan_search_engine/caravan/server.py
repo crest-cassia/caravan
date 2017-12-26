@@ -132,7 +132,9 @@ class Server(object):
         for r in runs:
             line = "%d %s\n" % (r.id, self.map_func( r.parameter_set().params, r.seed ))
             sys.stdout.write(line)
+            sys.stdout.flush()
         sys.stdout.write("\n")
+        sys.stdout.flush()
 
     def _launch_all_threads(self):
         while self._threads:
