@@ -76,16 +76,20 @@ long waitIncomingData(long fd_r, long timeout, long pid) {
   fds[0].events = POLLIN;
   fds[0].revents = 0;
 
+  // std::cerr << "[DEBUG] polling" << std::endl;
+
   rc = poll(fds,1,timeout);
   while( rc == 0 ) {
     if( kill(pid,0) != 0 ) {
       return 1; // sub-process is dead
     }
+    rc = poll(fds,1,timeout);
   }
 
   if( rc < 0 ) {
     return -1; // poll call failed
   }
+  // std::cerr << "[DEBUG] polling end" << std::endl;
   return 0;  // ready to read
 }
 
