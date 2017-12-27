@@ -1,0 +1,9 @@
+[submodule "caravan_scheduler"]
+	path = caravan_scheduler
+	url = ../caravan_scheduler
+[submodule "caravan_search_engine"]
+	path = caravan_search_engine
+	url = ../caravan_search_engine
+[submodule "caravan_viz"]
+	path = caravan_viz
+	url = ../caravan_viz
