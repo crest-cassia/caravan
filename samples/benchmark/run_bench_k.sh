@@ -6,7 +6,7 @@
 #PJM --mpi "proc=18432"
 #PJM --stg-transfiles all
 #PJM --mpi "use-rankdir"
-#PJM --stgin  "rank=* ../../build/a.out %r:./"
+#PJM --stgin  "rank=* ../../caravan_scheduler/scheduler %r:./"
 #PJM --stgin  "rank=0 ./bench_problem.py %r:./"
 #PJM --stgin "rank=0 ../../python_module.tar %r:./"
 #PJM --stgout-dir "rank=0 %r:./ %j"
@@ -30,5 +30,5 @@ tar xf python_module.tar
 export PYTHONPATH=python_module:$PYTHONPATH
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-1}
 
-mpiexec -ofout-proc stdout.txt -oferr-proc stderr.txt ./a.out python -u ./bench_problem.py 184320 0 0.25 4 20.0 8.0
+mpiexec -ofout-proc stdout.txt -oferr-proc stderr.txt ./scheduler python -u ./bench_problem.py 184320 0 0.25 4 20.0 8.0
 
