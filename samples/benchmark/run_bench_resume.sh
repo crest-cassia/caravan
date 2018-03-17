@@ -12,7 +12,7 @@ export CARAVAN_SEND_RESULT_INTERVAL=0
 export CARAVAN_TIMEOUT=10
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-2}
 
-CMD="$SCHEDULER python -u $SCRIPTDIR/bench_problem.py 10 90 0.25 4 3.0 0.8 table.msgpack"
+CMD="$SCHEDULER python $SCRIPTDIR/bench_problem.py 10 90 0.25 4 3.0 0.8 table.pickle"
 
 if [ $IS_MPI = 1 ]; then
   mpiexec -n $X10_NPLACES $CMD

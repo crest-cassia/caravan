@@ -1,4 +1,4 @@
-import sys,random
+import sys,random,pickle
 from caravan.server import Server
 from caravan.parameter_set import ParameterSet
 from caravan.tables import Tables
@@ -18,7 +18,7 @@ class BenchSearcher:
 
     def _create_one(self):
         t = random.uniform( self.sleep_range[0], self.sleep_range[1] )
-        ps = ParameterSet.create(t)
+        ps = ParameterSet.find_or_create(t)
         self.ps_count += 1
         self.num_running += 1
         self.num_todo -= 1
@@ -48,7 +48,7 @@ if len(sys.argv) != 7 and len(sys.argv) != 8:
     sys.stderr.write(str(sys.argv))
     sys.stderr.write("invalid number of argument\n")
     args = ["num_static_jobs", "num_dynamic_jobs", "job_gen_prob",
-            "num_jobs_per_gen", "sleep_mu", "sleep_sigma", "[table.msgpack]"]
+            "num_jobs_per_gen", "sleep_mu", "sleep_sigma", "[table.pickle]"]
     sys.stderr.write("Usage: python %s %s\n" % (__file__, " ".join(args)))
     raise RuntimeError("invalid number of arguments")
 
@@ -59,23 +59,24 @@ num_jobs_per_gen = int(sys.argv[4])
 sleep_mu = float(sys.argv[5])
 sleep_sigma = float(sys.argv[6])
 
-se = BenchSearcher(num_static_jobs,num_dynamic_jobs,job_gen_prob,num_jobs_per_gen,sleep_mu,sleep_sigma)
 
 def map_params_to_cmd(t, seed):
     return "sleep %f" % t
 
-if len(sys.argv) == 7:
-    ParameterSet.set_command_func(map_params_to_cmd)
-    with Server.start(redirect_stdout=True):
+ParameterSet.set_command_func(map_params_to_cmd)
+with Server.start(redirect_stdout=True):
+    se = BenchSearcher(num_static_jobs,num_dynamic_jobs,job_gen_prob,num_jobs_per_gen,sleep_mu,sleep_sigma)
+    if len(sys.argv) == 7:
         print("starting")
         se.create_initial_runs()
-else:
-    Tables.unpack(sys.argv[7])
-    se.restart()
+    else:
+        print("restarting")
+        Tables.load(sys.argv[7])
+        se.restart()
 
 if all([ps.is_finished() for ps in ParameterSet.all()]):
     sys.stderr.write("DONE\n")
 else:
-    sys.stderr.write("There are unfinished tasks. Writing data to table.msgpack\n")
-    Tables.pack("table.msgpack")
+    sys.stderr.write("There are unfinished tasks. Writing data to table.pickle\n")
+    Tables.dump("table.pickle")
 

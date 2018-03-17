@@ -343,10 +343,10 @@ def make_cmd( params, seed ):
     args = " ".join( [str(x) for x in params] )
     return "python ../../mc_simulator.py %s %d" % (args, seed)
 
-Run.set_cmd_func( make_cmd )                        # set `make_cmd`. When runs are created, `make_cmd` is called when Runs are created.
+ParameterSet.set_command_func(make_cmd)                        # set `make_cmd`. When runs are created, `make_cmd` is called when Runs are created.
 
 with Server.start():
-    ps = ParameterSet.find_or_create( (1.0,2.0) )   # create a ParameterSet whose parameters are (1.0,2.0).
+    ps = ParameterSet.find_or_create(1.0, 2.0)      # create a ParameterSet whose parameters are (1.0,2.0).
     ps.create_runs_upto(10)                         # create ten Runs. In the background, `make_cmd` is called to generate actual commands.
     Server.await_ps( ps )                           # wait until all the Runs of this ParameterSet finishes
     x = ps.average_results()                        # results are averaged over the Runs
