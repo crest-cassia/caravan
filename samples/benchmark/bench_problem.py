@@ -65,7 +65,9 @@ def map_params_to_cmd(t, seed):
     return "sleep %f" % t
 
 if len(sys.argv) == 7:
-    with Server.start( map_params_to_cmd ):
+    ParameterSet.set_command_func(map_params_to_cmd)
+    with Server.start(redirect_stdout=True):
+        print("starting")
         se.create_initial_runs()
 else:
     Tables.unpack(sys.argv[7])

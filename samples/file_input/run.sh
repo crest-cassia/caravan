@@ -10,7 +10,7 @@ SCHEDULER=$CARAVAN_DIR/caravan_scheduler/scheduler
 export PYTHONPATH=$CARAVAN_DIR/caravan_search_engine:$PYTHONPATH
 export CARAVAN_SEND_RESULT_INTERVAL=0
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-2}
-export CARAVAN_TIMEOUT=20
+#export CARAVAN_TIMEOUT=20
 
 CMD="$SCHEDULER python -u $SCRIPTDIR/main.py $SCRIPTDIR/commands"
 

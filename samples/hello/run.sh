@@ -11,7 +11,7 @@ export PYTHONPATH=$CARAVAN_DIR/caravan_search_engine:$PYTHONPATH
 export CARAVAN_SEND_RESULT_INTERVAL=0
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-2}
 
-CMD="$SCHEDULER python -u $SCRIPTDIR/main.py $SCRIPTDIR/commands table.msgpack"
+CMD="$SCHEDULER python $SCRIPTDIR/hello_caravan.py"
 
 if [ $IS_MPI = 1 ]; then
   mpiexec -n $X10_NPLACES $CMD
