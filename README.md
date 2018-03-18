@@ -325,10 +325,16 @@ To simplify the integration of MC simulators to CARAVAN, `ParameterSet` and `Run
 `ParameterSet` (PS) class corresponds to a set of parameters for the simulator while `Run` corresponds to a MC run. Thus, each PS may have multiple Runs.
 Run is a sub-class of Task class.
 
-Here is an example. This sample simulator takes two parameters and one random-number seed. It prints two output values to "_results.txt" file.
+Here is an example. This sample simulator takes two parameters and one random-number seed. It prints one output values to "_results.txt" file.
 
 ```mc_simulator.py
+import sys,random
 
+with open('_results.txt', 'w') as f:
+    mu = float(sys.argv[1])
+    sigma = float(sys.argv[2])
+    f.write("%f\n" % random.normalvariate(mu, sigma))
+    f.flush()
 ```
 
 To run this simulator, use the following search engine.
@@ -383,7 +389,7 @@ def converged(ps):
     return np.all( errs < 0.1 )
 
 with Server.start():
-    ps = ParameterSet.find_or_create( (1.0,2.0) )
+    ps = ParameterSet.find_or_create(1.0, 2.0)
     ps.create_runs_upto(4)
     Server.await_ps(ps)
     while not converged(ps):
@@ -396,20 +402,20 @@ It is also possible to do the same thing for other parameters concurrently using
 
 
 ```hello_ps_convergence_concurrent.py
-def do_until_convergence( params ):
-    ps = ParameterSet.find_or_create( params )
+def do_until_convergence(params):
+    ps = ParameterSet.find_or_create(params)
     ps.create_runs_upto(4)
     Server.await_ps(ps)
     while not converged(ps):
-        ps.create_runs_upto( len(ps.runs())+4 )     # add four runs
+        ps.create_runs_upto(len(ps.runs())+4)     # add four runs
         Server.await_ps(ps)
     print(ps.average_results(), file=sys.stderr)
 
 
 with Server.start():
-    for p1 in [1.0,1.5,2.0,2.5]:
-        for p2 in [2.0,3.0]:
-            Server.async( do_until_convergence )
+    for p1 in [1.0, 1.5, 2.0, 2.5]:
+        for p2 in [2.0, 3.0]:
+            Server.async(lambda: do_until_convergence(p1, p2))
 ```
 
 ## License
