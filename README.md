@@ -244,12 +244,16 @@ In many applications such as optimization, new tasks must be generated based on 
 ```hello_callback.py
 with Server.start():
     for i in range(10):
-        task = Task.create("sleep %d" % (i%3+1) )
-        task.add_callback(lambda t: Task.create("sleep %d" % (i%3+1) )
+        task = Task.create("sleep %d" % (i%3+1))
+        task.add_callback(lambda t, ii=i: Task.create("sleep %d" % (ii%3+1)))
 ```
 
 Run this program with the scheduler and visualize it using caravan_viz.
 You'll find that 10 tasks are created and 10 tasks are created after each of the initial tasks finished.
+
+Please note that `ii=i` in the last line is a technique to bind the variable `i`.
+`ii` is an argument of the lambda, whose default value is `i` evaluated when the lambda is defined.
+If you refer to `i` directly from inside of the lambda, all the lambda refers to the same value of `i`, which is 9 in this case.
 
 ### Async/Await
 
@@ -272,13 +276,13 @@ If you visualize the results of the following program, you will see three concur
 ```hello_async_await.py
 def run_sequential_tasks(n):
     for t in range(5):
-        task = Task.create( "sleep %d" % ((i+n)%3+1) )
-        Server.await_task( task )                     # this method blocks until the task is finished.
+        task = Task.create("sleep %d" % ((t+n)%3+1))
+        Server.await_task(task)                     # this method blocks until the task is finished.
         print("step %d of %d finished" % (t,n), file=sys.stderr)    # show the progress to stderr
 
 with Server.start():
     for n in range(3):
-        Server.async( lambda: run_sequential_tasks(n) )
+        Server.async( lambda n=n: run_sequential_tasks(n) )
 ```
 
 Finally, we show how to define a callback function which is executed when all of the given set of tasks finished.
@@ -287,7 +291,8 @@ Finally, we show how to define a callback function which is executed when all of
 with Server.start():
     tasks = [ Task.create( "sleep %d" % (t%3+1) ) for t in range(5) ]
     Server.await_all_tasks( tasks )                   # this method blocks until all the tasks are finished
-    print("all tasks finished", file=sys.stderr)
+    print("all running tasks finished", file=sys.stderr)
+    tasks = [ Task.create( "sleep %d" % (t%3+1) ) for t in range(5) ]  # append 5 tasks
 ```
 
 ### Getting the results of simulators
