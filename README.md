@@ -335,11 +335,10 @@ Here is an example. This sample simulator takes two parameters and one random-nu
 ```mc_simulator.py
 import sys,random
 
-with open('_results.txt', 'w') as f:
-    mu = float(sys.argv[1])
-    sigma = float(sys.argv[2])
-    f.write("%f\n" % random.normalvariate(mu, sigma))
-    f.flush()
+mu = float(sys.argv[1])
+sigma = float(sys.argv[2])
+random.seed(int(sys.argv[3])
+print(random.normalvariate(mu, sigma))
 ```
 
 To run this simulator, use the following search engine.
@@ -352,7 +351,7 @@ from caravan.parameter_set import ParameterSet
 # define a function which receives a tuple of parameters and a random-number seed, and returns the command to be executed
 def make_cmd( params, seed ):
     args = " ".join( [str(x) for x in params] )
-    return "python ../../mc_simulator.py %s %d" % (args, seed)
+    return "python ../../mc_simulator.py %s %d > _results.txt" % (args, seed)
 
 ParameterSet.set_command_func(make_cmd)                        # set `make_cmd`. When runs are created, `make_cmd` is called when Runs are created.
 
@@ -398,7 +397,7 @@ with Server.start():
     ps.create_runs_upto(4)
     Server.await_ps(ps)
     while not converged(ps):
-        ps.create_runs_upto( len(ps.runs())+4 )     # add four runs
+        ps.create_runs_upto(len(ps.runs())+4)     # add four runs
         Server.await_ps(ps)
     print(ps.average_results(), file=sys.stderr)
 ```
@@ -422,6 +421,37 @@ with Server.start():
         for p2 in [2.0, 3.0]:
             Server.async(lambda: do_until_convergence(p1, p2))
 ```
+
+### Testing your search engine using ServerStub
+
+When you implement a search engine, you should test your algorithm before you run it with your simulator. `ServerStub` class lets you run your search engine with a dummy simulator instead of actually running your simulator.
+By defining a function which returns an expected results and elapsed time, you can verify that your search engine works as expected.
+
+First define a function that receives a task instance and returns a tuple of expected results and elapsed time.
+
+```stub_simulator.py
+def dummy_simulator(task):
+    prm = task.parameter_set().params
+    expected_result = prm[0] + prm[1]
+    expected_elapsed_time = 10.0 * prm[0]
+    return (expected_result, expected_elapsed_time)
+```
+
+Then, replace `Server.start()` with `ServerStub.start(dummy_simulator)` as follows.
+
+```diff
+-with Server.start():
++with start_stub(dummy_simulator):
+```
+
+Run this search engine as a stand-alone python program.
+
+```sh
+$ python my_search_engine.py
+```
+
+Then, your search engine is executed against a pre-defined dummy simulator. A file "tasks.bin" is created, with which you may visualize the task scheduling.
+
 
 ## License
 
