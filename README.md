@@ -453,6 +453,9 @@ $ python my_search_engine.py
 
 Then, your search engine is executed against a pre-defined dummy simulator. A file "tasks.bin" is created, with which you may visualize the task scheduling.
 
+### Serializing Tasks, ParameterSets, and Runs
+
+## Available options
 
 ## License
 
