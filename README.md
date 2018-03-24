@@ -298,7 +298,7 @@ with Server.start():
 
 ### Getting the results of simulators
 
-If the simulator wrotes "_results.txt" file, its contents is parsed by the scheduler and is passed to the search engine.
+If a simulator writes "_results.txt" file, its contents is parsed by the scheduler and is passed to the search engine.
 The results are obtained as lists of float values. The length of the results for each task may vary.
 
 ```hello_results.py
@@ -317,11 +317,13 @@ with Server.start():
     i = 0
     t = Task.create("echo %d > _results.txt" % i)
     while True:
+        print("awaiting Task(%d)" % i, file=sys.stderr, flush=True)
         Server.await_task(t)
         if t.results[0] < 3:
             i += 1
             t = Task.create("echo %d > _results.txt" % i)
-    print("i = %d" % i, file=sys.stderr)
+        else:
+            break
 ```
 
 ### ParameterSet and Run
@@ -338,7 +340,7 @@ import sys,random
 
 mu = float(sys.argv[1])
 sigma = float(sys.argv[2])
-random.seed(int(sys.argv[3])
+random.seed(int(sys.argv[3]))
 print(random.normalvariate(mu, sigma))
 ```
 
@@ -354,16 +356,16 @@ def make_cmd( params, seed ):
     args = " ".join( [str(x) for x in params] )
     return "python ../../mc_simulator.py %s %d > _results.txt" % (args, seed)
 
-ParameterSet.set_command_func(make_cmd)                        # set `make_cmd`. When runs are created, `make_cmd` is called when Runs are created.
+ParameterSet.set_command_func(make_cmd)             # set `make_cmd`. When runs are created, `make_cmd` is called when Runs are created.
 
 with Server.start():
     ps = ParameterSet.find_or_create(1.0, 2.0)      # create a ParameterSet whose parameters are (1.0,2.0).
     ps.create_runs_upto(10)                         # create ten Runs. In the background, `make_cmd` is called to generate actual commands.
-    Server.await_ps( ps )                           # wait until all the Runs of this ParameterSet finishes
+    Server.await_ps(ps)                             # wait until all the Runs of this ParameterSet finishes
     x = ps.average_results()                        # results are averaged over the Runs
-    print(x, file=sys.stderr)
+    print("average: %f" % x, file=sys.stderr, flush=True)
     for r in ps.runs():
-        print(r.results, file=sys.stderr)           # showing results of each Run
+        print(r.results, file=sys.stderr, flush=True)           # showing results of each Run
 ```
 
 This sample creates one PS and 10 Runs. The results of Runs as well as their average are shown.
@@ -371,9 +373,9 @@ This sample creates one PS and 10 Runs. The results of Runs as well as their ave
 The following are the method of `ParameterSet` and `Runs`.
 
 - `ParameterSet` class
-    - `.find_or_create( params )`
-        - Creates a new PS of the parameters `parmas`. `params` must be a tuple. If a PS having the same parameters already exists, the existing PS is returned instead of making a new one.
-    - `#create_runs_upto( num_runs )`
+    - `.find_or_create(params)`
+        - Creates a new PS of the parameters `parmas`. `params` is a tuple of parameter values. If a PS having the same parameters already exists, the existing PS is returned instead of making a new one.
+    - `#create_runs_upto(num_runs)`
         - Runs are created under the PS. Runs are repeatedly created until the number of runs becomes `num_runs`.
     - `#average_results()`
         - returns results averaged over the Runs. Element-wise averaging is conducted assuming the length of the results are same.
@@ -381,24 +383,25 @@ The following are the method of `ParameterSet` and `Runs`.
     - `#parameter_set()`
         - returns its ParameterSet object.
 
-Here, we show another example that incrementally increase number of Runs when the sample average does not coverge enough. (The first half of the code is omitted since it is same as the previous one.)
+Here, we show another example that incrementally increase number of Runs when the sample average does not converge enough. (The first half of the code is omitted since it is same as the previous one.)
 
 ```hello_ps_convergence.py
-import math
-import numpy as np
-
 def converged(ps):
     runs = ps.runs()
-    r1 = [ r.results for r in runs ]
-    errs = np.std(r1, axis=0, ddof=1) / math.sqrt( len(runs) )
-    return np.all( errs < 0.1 )
+    r1 = [r.results for r in runs]
+    errs = np.std(r1, axis=0, ddof=1) / math.sqrt(len(runs))
+    eprint(errs)
+    return np.all(errs < 0.2)
+
 
 with Server.start():
     ps = ParameterSet.find_or_create(1.0, 2.0)
     ps.create_runs_upto(4)
+    eprint("awaiting")
     Server.await_ps(ps)
     while not converged(ps):
-        ps.create_runs_upto(len(ps.runs())+4)     # add four runs
+        ps.create_runs_upto(len(ps.runs()) + 4)  # add four runs
+        eprint("awaiting")
         Server.await_ps(ps)
     print(ps.average_results(), file=sys.stderr)
 ```
@@ -412,15 +415,16 @@ def do_until_convergence(params):
     ps.create_runs_upto(4)
     Server.await_ps(ps)
     while not converged(ps):
+        eprint("results for {params} is not converged".format(**locals()))
         ps.create_runs_upto(len(ps.runs())+4)     # add four runs
         Server.await_ps(ps)
-    print(ps.average_results(), file=sys.stderr)
+    eprint("converged results : {0}, params {1}".format(ps.average_results(), params))
 
 
 with Server.start():
     for p1 in [1.0, 1.5, 2.0, 2.5]:
         for p2 in [2.0, 3.0]:
-            Server.async(lambda: do_until_convergence(p1, p2))
+            Server.async(lambda _param=(p1, p2): do_until_convergence(_param))
 ```
 
 ### Testing your search engine using ServerStub
