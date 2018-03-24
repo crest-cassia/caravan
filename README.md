@@ -430,19 +430,18 @@ By defining a function which returns an expected results and elapsed time, you c
 
 First define a function that receives a task instance and returns a tuple of expected results and elapsed time.
 
-```stub_simulator.py
-def dummy_simulator(task):
-    prm = task.parameter_set().params
-    expected_result = prm[0] + prm[1]
-    expected_elapsed_time = 10.0 * prm[0]
-    return (expected_result, expected_elapsed_time)
+```py
+def stub_sim(task):
+    results = (task.id + 3, task.id + 10)
+    elapsed = 1
+    return results, elapsed
 ```
 
 Then, replace `Server.start()` with `ServerStub.start(dummy_simulator)` as follows.
 
 ```diff
 -with Server.start():
-+with start_stub(dummy_simulator):
++with start_stub(stub_sim, num_proc=4):
 ```
 
 Run this search engine as a stand-alone python program.
@@ -451,9 +450,15 @@ Run this search engine as a stand-alone python program.
 $ python my_search_engine.py
 ```
 
-Then, your search engine is executed against a pre-defined dummy simulator. A file "tasks.bin" is created, with which you may visualize the task scheduling.
+Then, your search engine is executed for a pre-defined dummy simulator without invoking actual tasks.
+A file "tasks.bin" is created, with which you may visualize the task scheduling.
+
 
 ### Serializing Tasks, ParameterSets, and Runs
+
+When each job takes long durations, you probably want to serialize your status of Tasks, Runs and ParameterSets before finishing the whole process.
+To serialize these, call `Table`
+After 
 
 ## Available options
 
