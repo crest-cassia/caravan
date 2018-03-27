@@ -46,7 +46,7 @@ Another limitation of CARAVAN is that a simulator must be a serial program or mu
     - x10 is a parallel programming language. See [official page](http://x10-lang.org/) for installation.
     - tested against native x10 2.5.4 with MPI backend
     - managed x10 is not available since it uses C++ code as well
-- Python 3.4 or later
+- Python 3.6 or later
 - (Optional) python-fibers
     - `pip install fibers`
     - This module supports x86, x86-64, ARM, MIPS64, PPC64 and s390x. Although you may skip the installation of this module, a limitation is imposed in that case.

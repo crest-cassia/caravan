@@ -10,5 +10,5 @@ def run_sequential_tasks(n):
 
 with Server.start():
     for n in range(3):
-        Server.async( lambda n=n: run_sequential_tasks(n) )
+        Server.async( lambda _n=n: run_sequential_tasks(_n) )
 
