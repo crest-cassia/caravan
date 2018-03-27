@@ -29,7 +29,7 @@ def load_binary(path):
 class TutorialSamplesTest(unittest.TestCase):
     def setUp(self):
         self.caravan_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
-        self.se_module_path = self.caravan_dir + "/caravan_serach_engine"
+        self.dt = 30
 
     def assert_task_period(self, task, expected_start_at, expected_finish_at, delta=0.4):
         if expected_start_at is not None:
@@ -40,7 +40,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_01(self):
         script = self.caravan_dir + "/samples/tutorial/01_minimal_code/run.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=5)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             self.assertTrue(os.path.exists(tmpdir + "/tasks.bin"))
             # assert output files exist
             for i in range(10):
@@ -51,7 +51,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_02(self):
         script = self.caravan_dir + "/samples/tutorial/02_visualizing_tasks/run.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=15)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             dump_path = tmpdir + "/tasks.bin"
             self.assertTrue(os.path.exists(dump_path))
             # assert task scheduling
@@ -63,7 +63,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_03(self):
         script = self.caravan_dir + "/samples/tutorial/03_defining_callbacks/run.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=15)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             dump_path = tmpdir + "/tasks.bin"
             self.assertTrue(os.path.exists(dump_path))
             # assert callbacks are executed
@@ -85,7 +85,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_04_1(self):
         script = self.caravan_dir + "/samples/tutorial/04_async_await/run1.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=15)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             dump_path = tmpdir + "/tasks.bin"
             self.assertTrue(os.path.exists(dump_path))
             # assert awaited tasks
@@ -97,7 +97,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_04_2(self):
         script = self.caravan_dir + "/samples/tutorial/04_async_await/run2.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=15)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             dump_path = tmpdir + "/tasks.bin"
             self.assertTrue(os.path.exists(dump_path))
             # assert awaited tasks
@@ -110,7 +110,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_04_3(self):
         script = self.caravan_dir + "/samples/tutorial/04_async_await/run3.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=15)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             dump_path = tmpdir + "/tasks.bin"
             self.assertTrue(os.path.exists(dump_path))
             tasks = load_binary(dump_path)
@@ -120,7 +120,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_05_1(self):
         script = self.caravan_dir + "/samples/tutorial/05_getting_results/run1.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=15)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             dump_path = tmpdir + "/tasks.bin"
             self.assertTrue(os.path.exists(dump_path))
             # assert results
@@ -130,7 +130,7 @@ class TutorialSamplesTest(unittest.TestCase):
     def test_05_2(self):
         script = self.caravan_dir + "/samples/tutorial/05_getting_results/run2.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=15)
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             dump_path = tmpdir + "/tasks.bin"
             self.assertTrue(os.path.exists(dump_path))
             # assert results
