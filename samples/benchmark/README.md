@@ -5,7 +5,7 @@ Make a temporary directory, cd to it, and run the script.
 ```
 mkdir -p temp
 cd temp
-../run_bench.sh
+../run_bench1.sh
 ```
 
 If you have an MPI-backend program, set `IS_MPI=1`.
@@ -53,7 +53,7 @@ The above process iterates `iteration` times.
 
 Each job sleeps for a duration which is randomly drawn from a uniform distribution [`sleepMu`-`sleepSigma`, `sleepMu`+`sleepSigma`].
 
-## run_bench_abort.sh & run_bench_resume.sh
+## run_bench1_abort.sh & run_bench1_resume.sh
 
 The specification of `run_bench_abort.sh` is same as `run_bench.sh` but it sets `CARAVAN_TIMEOUT=5`, indicating the whole process is aborted after 5 seconds.
 The state is dumped to `tables.msgpack` file.
@@ -63,5 +63,18 @@ To restart the process, run `run_bench_resume.sh`. If you run `run_bench_resume.
 ../run_bench_abort.sh          # some of the jobs are executed, and then aborted.
 
 ../run_bench_resume.sh         # the remaining jobs will be executed.
+```
+
+## Testing on the K-computer
+
+Make `tar` file of `caravan_search_engine` directory for stage-in.
+Then submit the job as follows.
+
+```shell-session
+$ cd ~/work/caravan   # chdir to the `caravan` directory
+$ tar cvf caravan_search_engine.tar caravan_search_engine     # make tar
+$ cd samples/benchmark
+$ mv ../../caravan_search_engine.tar .
+$ pjsub run_k_bench1.sh
 ```
 
