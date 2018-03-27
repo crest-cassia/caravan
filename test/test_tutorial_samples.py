@@ -8,7 +8,7 @@ def eprint(*s):
 
 
 def work_dir_path(tid, base_dir="."):
-    return f"{base_dir}/w{int(tid/1000):04d}/w{tid:07d}"
+    return "{base_dir}/w{d1:04d}/w{d2:07d}".format(base_dir=base_dir, d1=int(tid / 1000), d2=tid)
 
 
 def load_binary(path):
@@ -18,7 +18,7 @@ def load_binary(path):
             bytes = f.read(48)
             if bytes:
                 tid, rc, place_id, start_at, finish_at, n_results = struct.unpack(">6q", bytes)
-                results = struct.unpack(f">{n_results:d}d", f.read(8 * n_results))
+                results = struct.unpack(">{n_results:d}d".format(n_results=n_results), f.read(8 * n_results))
                 t = {"id": tid, "rc": rc, "start_at": start_at, "finish_at": finish_at, "results": results}
                 tasks[tid] = t
             else:
