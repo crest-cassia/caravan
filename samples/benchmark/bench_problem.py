@@ -1,6 +1,6 @@
-import sys, random, pickle
+import sys, random
 from caravan.server import Server
-from caravan.parameter_set import ParameterSet
+from caravan.task import Task
 from caravan.tables import Tables
 
 
@@ -18,26 +18,25 @@ class BenchSearcher:
 
     def _create_one(self):
         t = random.uniform(self.sleep_range[0], self.sleep_range[1])
-        ps = ParameterSet.find_or_create(t)
+        task = Task.create("sleep {t}".format(t=t))
         self.ps_count += 1
         self.num_running += 1
         self.num_todo -= 1
-        ps.create_runs_upto(1)
-        Server.watch_ps(ps, self.on_ps_finished)
+        task.add_callback(self._on_task_finished)
 
     def create_initial_runs(self):
         for i in range(self.num_static_jobs):
             self._create_one()
 
     def restart(self):
-        unfinished = [ps for ps in ParameterSet.all() if not ps.is_finished()]
-        self.ps_count = len(ParameterSet.all())
+        unfinished = [t for t in Task.all() if not t.is_finished()]
+        self.ps_count = len(Task.all())
         self.num_running = len(unfinished)
         self.num_todo -= self.ps_count
-        for ps in unfinished:
-            Server.watch_ps(ps, se.on_ps_finished)
+        for t in unfinished:
+            t.add_callback(self._on_task_finished)
 
-    def on_ps_finished(self, ps):
+    def _on_task_finished(self, task):
         self.num_running -= 1
         if random.random() < self.job_gen_prob or self.num_running == 0:
             num_tasks = self.num_jobs_per_gen if self.num_jobs_per_gen < self.num_todo else self.num_todo
@@ -60,23 +59,17 @@ num_jobs_per_gen = int(sys.argv[4])
 sleep_mu = float(sys.argv[5])
 sleep_sigma = float(sys.argv[6])
 
-
-def map_params_to_cmd(t, seed):
-    return "sleep %f" % t
-
-
-ParameterSet.set_command_func(map_params_to_cmd)
 with Server.start(redirect_stdout=True):
     se = BenchSearcher(num_static_jobs, num_dynamic_jobs, job_gen_prob, num_jobs_per_gen, sleep_mu, sleep_sigma)
     if len(sys.argv) == 7:
-        print("starting")
+        print("starting", file=sys.stderr, flush=True)
         se.create_initial_runs()
     else:
-        print("restarting")
+        print("restarting", file=sys.stderr, flush=True)
         Tables.load(sys.argv[7])
         se.restart()
 
-if all([ps.is_finished() for ps in ParameterSet.all()]):
+if all([t.is_finished() for t in Task.all()]):
     sys.stderr.write("DONE\n")
 else:
     sys.stderr.write("There are unfinished tasks. Writing data to table.pickle\n")

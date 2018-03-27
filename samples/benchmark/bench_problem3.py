@@ -1,6 +1,6 @@
 import sys, random
 from caravan.server import Server
-from caravan.parameter_set import ParameterSet
+from caravan.task import Task
 from caravan.tables import Tables
 
 """
@@ -26,8 +26,7 @@ class PowerLawSleep:
 
     def _create_one(self):
         t = self._t()
-        ps = ParameterSet.create(t)
-        ps.create_runs_upto(1)
+        Task.create("sleep {t}".format(t=t))
 
     def create_initial_runs(self):
         for i in range(self.num_jobs):
@@ -41,22 +40,14 @@ if len(sys.argv) != 5 and len(sys.argv) != 6:
     sys.stderr.write("Usage: python %s %s\n" % (__file__, " ".join(args)))
     raise RuntimeError("invalid number of arguments")
 
-se = PowerLawSleep(int(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
+with Server.start():
+    se = PowerLawSleep(int(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
+    if len(sys.argv) == 5:
+        se.create_initial_runs()
+    else:
+        Tables.load(sys.argv[5])
 
-
-def map_params_to_cmd(t, seed):
-    return "sleep %f" % t
-
-
-if len(sys.argv) == 5:
-    se.create_initial_runs()
-else:
-    Tables.load(sys.argv[5])
-
-Server.loop(map_params_to_cmd)
-
-if all([ps.is_finished() for ps in ParameterSet.all()]):
+if all([t.is_finished() for t in Task.all()]):
     sys.stderr.write("DONE\n")
 else:
-    sys.stderr.write("There are unfinished tasks. Writing data to table.msgpack\n")
-    Tables.pack("table.msgpack")
+    Tables.dump("table.pickle")
