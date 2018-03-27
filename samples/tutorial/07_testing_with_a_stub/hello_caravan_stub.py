@@ -7,7 +7,7 @@ def stub_sim(task):
     elapsed = 1
     return results, elapsed
 
+
 with start_stub(stub_sim, num_proc=4):
     for i in range(10):
         Task.create("echo %d > out" % i)
-

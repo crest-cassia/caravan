@@ -17,6 +17,7 @@ import numpy as np
 def eprint(s):
     print(s, file=sys.stderr, flush=True)
 
+
 def converged(ps):
     runs = ps.runs()
     r1 = [r.results for r in runs]
@@ -30,7 +31,7 @@ def do_until_convergence(params):
     Server.await_ps(ps)
     while not converged(ps):
         eprint("results for {params} is not converged".format(**locals()))
-        ps.create_runs_upto(len(ps.runs())+4)     # add four runs
+        ps.create_runs_upto(len(ps.runs()) + 4)  # add four runs
         Server.await_ps(ps)
     eprint("converged results : {0}, params {1}".format(ps.average_results(), params))
 

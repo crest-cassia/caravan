@@ -1,4 +1,4 @@
-import sys,random
+import sys, random
 
 mu = float(sys.argv[1])
 sigma = float(sys.argv[2])

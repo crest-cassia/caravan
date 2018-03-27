@@ -4,5 +4,4 @@ from caravan.task import Task
 
 with Server.start():
     for i in range(40):
-        Task.create("echo %d && sleep %d" % (i,i%3+1) )
-
+        Task.create("echo %d && sleep %d" % (i, i % 3 + 1))

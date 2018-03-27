@@ -17,6 +17,7 @@ import numpy as np
 def eprint(s):
     print(s, file=sys.stderr, flush=True)
 
+
 def converged(ps):
     runs = ps.runs()
     r1 = [r.results for r in runs]

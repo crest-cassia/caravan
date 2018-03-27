@@ -12,4 +12,3 @@ with Server.start():
             Task.create(line.rstrip())
 
 sys.stderr.write("DONE\n")
-

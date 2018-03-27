@@ -31,11 +31,11 @@ class TutorialSamplesTest(unittest.TestCase):
         self.caravan_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
         self.se_module_path = self.caravan_dir + "/caravan_serach_engine"
 
-    def assert_task_period(self, task, expected_start_at, expected_finish_at, delta = 0.4):
+    def assert_task_period(self, task, expected_start_at, expected_finish_at, delta=0.4):
         if expected_start_at is not None:
-            self.assertAlmostEqual(task["start_at"]/1000, expected_start_at, delta=delta)
+            self.assertAlmostEqual(task["start_at"] / 1000, expected_start_at, delta=delta)
         if expected_finish_at is not None:
-            self.assertAlmostEqual(task["finish_at"]/1000, expected_finish_at, delta=delta)
+            self.assertAlmostEqual(task["finish_at"] / 1000, expected_finish_at, delta=delta)
 
     def test_01(self):
         script = self.caravan_dir + "/samples/tutorial/01_minimal_code/run.sh"
@@ -94,7 +94,6 @@ class TutorialSamplesTest(unittest.TestCase):
             self.assert_task_period(tasks[1], 1, 3)
             self.assert_task_period(tasks[2], 3, 6)
 
-
     def test_04_2(self):
         script = self.caravan_dir + "/samples/tutorial/04_async_await/run2.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -116,7 +115,7 @@ class TutorialSamplesTest(unittest.TestCase):
             self.assertTrue(os.path.exists(dump_path))
             tasks = load_binary(dump_path)
             f = [t["finish_at"] for t in tasks.values()]
-            self.assertAlmostEqual(max(f)/1000, 11, delta = 0.4)
+            self.assertAlmostEqual(max(f) / 1000, 11, delta=0.4)
 
     def test_05_1(self):
         script = self.caravan_dir + "/samples/tutorial/05_getting_results/run1.sh"
@@ -139,4 +138,3 @@ class TutorialSamplesTest(unittest.TestCase):
             self.assertEqual(len(tasks), 4)
             for i in range(4):
                 self.assertEqual(tasks[i]["results"][0], float(i))
-

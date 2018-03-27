@@ -3,6 +3,7 @@ import random
 from caravan.server import Server
 from caravan.parameter_set import ParameterSet
 
+
 class Domain():
     def __init__(self, minimum, maximum):
         self.min = minimum
@@ -15,16 +16,16 @@ class Domain():
         """
         return r * (self.max - self.min) + self.min
 
-class DE_Optimizer():
 
-    def __init__( self, map_func, domains, n=None, f=0.8, cr=0.9, rand_seed=None ):
-        self.n = (n or len(domains)*10)
+class DE_Optimizer():
+    def __init__(self, map_func, domains, n=None, f=0.8, cr=0.9, rand_seed=None):
+        self.n = (n or len(domains) * 10)
         self.f = f
         self.cr = cr
         self.random = random.Random()
         if rand_seed:
-            self.random.seed( rand_seed )
-        self.domains = [ Domain(d[0],d[1]) for d in domains ]
+            self.random.seed(rand_seed)
+        self.domains = [Domain(d[0], d[1]) for d in domains]
         self.map_func = map_func
         self.t = 0
         self.best_point = None
@@ -35,20 +36,20 @@ class DE_Optimizer():
     def generate_initial_points(self):
         self.population = []
         for i in range(self.n):
-            point = [ d.scale( self.random.random() ) for d in self.domains ]
-            self.population.append( point )
-        self.current_fs = self.map_func( self.population )
+            point = [d.scale(self.random.random()) for d in self.domains]
+            self.population.append(point)
+        self.current_fs = self.map_func(self.population)
 
     def average_f(self):
-        return sum( self.current_fs ) / len( self.current_fs )
+        return sum(self.current_fs) / len(self.current_fs)
 
     def proceed(self):
         new_positions = []
         for i in range(self.n):
             new_pos = self._generate_candidate(i)
-            new_positions.append( new_pos )
+            new_positions.append(new_pos)
 
-        new_fs = self.map_func( new_positions )
+        new_fs = self.map_func(new_positions)
 
         # selection
         for i in range(self.n):
@@ -80,23 +81,25 @@ class DE_Optimizer():
         new_pos = self.population[i][:]
 
         dim = len(self.domains)
-        r = self.random.randrange( dim )
+        r = self.random.randrange(dim)
 
         for d in range(dim):
             if d == r or self.random.random() < self.cr:
                 new_pos[d] = self.population[a][d] + self.f * (self.population[b][d] - self.population[c][d])
         return new_pos
 
+
 if len(sys.argv) != 5:
     sys.stderr.write("invalid number of arguments\n")
     sys.stderr.write("[Usage] python -u %s <n> <f> <cr> <tmax>\n" % __file__)
     raise Exception("invalid number of arguments")
 
-def run_optimization(n,f,cr,tmax):
+
+def run_optimization(n, f, cr, tmax):
     domains = [
-            (-1000, 1000),
-            (-1000, 1000)
-            ]
+        (-1000, 1000),
+        (-1000, 1000)
+    ]
 
     def _find_or_create_ps_from_point(point):
         ps = ParameterSet.create(point)
@@ -109,25 +112,26 @@ def run_optimization(n,f,cr,tmax):
         results = [ps.averaged_result()[0] for ps in parameter_sets]
         return results
 
-    de = DE_Optimizer(map_agents, domains, n=n, f=f, cr=cr, rand_seed=1234 )
+    de = DE_Optimizer(map_agents, domains, n=n, f=f, cr=cr, rand_seed=1234)
 
     with open("opt_log.txt", "w") as fout:
         fout.write("### t [best_point] best_f average_f\n")
         for t in range(tmax):
             de.proceed()
-            fout.write("%d %s %f %f\n" % (de.t, repr(de.best_point), de.best_f, de.average_f() ) )
+            fout.write("%d %s %f %f\n" % (de.t, repr(de.best_point), de.best_f, de.average_f()))
+
 
 def map_point_to_cmd(point, seed):
-    v = (point[0]-1.0)**2 + (point[1]-2.0)**2
+    v = (point[0] - 1.0) ** 2 + (point[1] - 2.0) ** 2
     cmd = "bash -c 'echo %f > _results.txt'" % v
     return cmd
+
 
 n = int(sys.argv[1])
 f = float(sys.argv[2])
 cr = float(sys.argv[3])
 tmax = int(sys.argv[4])
-sys.stderr.write("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n,f,cr,tmax))
+sys.stderr.write("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n, f, cr, tmax))
 
-Server.async(lambda: run_optimization(n,f,cr,tmax))
-Server.loop( map_point_to_cmd )
-
+Server.async(lambda: run_optimization(n, f, cr, tmax))
+Server.loop(map_point_to_cmd)
