@@ -31,7 +31,7 @@ class TutorialSamplesTest(unittest.TestCase):
         self.caravan_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
         self.se_module_path = self.caravan_dir + "/caravan_serach_engine"
 
-    def assert_task_period(self, task, expected_start_at, expected_finish_at, delta = 0.2):
+    def assert_task_period(self, task, expected_start_at, expected_finish_at, delta = 0.4):
         if expected_start_at is not None:
             self.assertAlmostEqual(task["start_at"]/1000, expected_start_at, delta=delta)
         if expected_finish_at is not None:
@@ -116,7 +116,7 @@ class TutorialSamplesTest(unittest.TestCase):
             self.assertTrue(os.path.exists(dump_path))
             tasks = load_binary(dump_path)
             f = [t["finish_at"] for t in tasks.values()]
-            self.assertAlmostEqual(max(f)/1000, 11, delta = 0.2)
+            self.assertAlmostEqual(max(f)/1000, 11, delta = 0.4)
 
     def test_05_1(self):
         script = self.caravan_dir + "/samples/tutorial/05_getting_results/run1.sh"
