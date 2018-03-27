@@ -3,10 +3,11 @@ python:
   - "3.5"
   - "3.6"
 env:
-  - NPROC=4
+  - CARAVAN_USE_PSEUDO_FIBER=0
+  - CARAVAN_USE_PSEUDO_FIBER=1
 install:
   - pip install fibers
-  - ./caravan_scheduler/travis/buildx10.sh
+  - env NPROC=4 ./caravan_scheduler/travis/buildx10.sh
 before_script:
   - export PATH=$PWD/x10/x10.dist/bin:$PATH
   - cd caravan_scheduler && ./build.sh && cd ..
