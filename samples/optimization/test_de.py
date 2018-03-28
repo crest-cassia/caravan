@@ -4,7 +4,10 @@ from caravan.server import Server
 from caravan.parameter_set import ParameterSet
 
 
-class Domain():
+def eprint(*x):
+    print(*x, file=sys.stderr, flush=True)
+
+class Domain:
     def __init__(self, minimum, maximum):
         self.min = minimum
         self.max = maximum
@@ -17,7 +20,7 @@ class Domain():
         return r * (self.max - self.min) + self.min
 
 
-class DE_Optimizer():
+class DE_Optimizer:
     def __init__(self, map_func, domains, n=None, f=0.8, cr=0.9, rand_seed=None):
         self.n = (n or len(domains) * 10)
         self.f = f
@@ -101,15 +104,12 @@ def run_optimization(n, f, cr, tmax):
         (-1000, 1000)
     ]
 
-    def _find_or_create_ps_from_point(point):
-        ps = ParameterSet.create(point)
-        ps.create_runs_upto(1)
-        return ps
-
     def map_agents(agents):
-        parameter_sets = [_find_or_create_ps_from_point(point) for point in agents]
+        parameter_sets = [ParameterSet.find_or_create(*point) for point in agents]
+        for ps in parameter_sets:
+            ps.create_runs_upto(1)
         Server.await_all_ps(parameter_sets)
-        results = [ps.averaged_result()[0] for ps in parameter_sets]
+        results = [ps.average_results()[0] for ps in parameter_sets]
         return results
 
     de = DE_Optimizer(map_agents, domains, n=n, f=f, cr=cr, rand_seed=1234)
@@ -120,18 +120,17 @@ def run_optimization(n, f, cr, tmax):
             de.proceed()
             fout.write("%d %s %f %f\n" % (de.t, repr(de.best_point), de.best_f, de.average_f()))
 
-
-def map_point_to_cmd(point, seed):
-    v = (point[0] - 1.0) ** 2 + (point[1] - 2.0) ** 2
+def map_point_to_cmd(params, seed):
+    v = (params[0] - 1.0) ** 2 + (params[1] - 2.0) ** 2
     cmd = "bash -c 'echo %f > _results.txt'" % v
     return cmd
 
+ParameterSet.set_command_func(map_point_to_cmd)
 
-n = int(sys.argv[1])
-f = float(sys.argv[2])
-cr = float(sys.argv[3])
-tmax = int(sys.argv[4])
-sys.stderr.write("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n, f, cr, tmax))
-
-Server.async(lambda: run_optimization(n, f, cr, tmax))
-Server.loop(map_point_to_cmd)
+with Server.start():
+    n = int(sys.argv[1])
+    f = float(sys.argv[2])
+    cr = float(sys.argv[3])
+    tmax = int(sys.argv[4])
+    eprint("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n, f, cr, tmax))
+    run_optimization(n, f, cr, tmax)
