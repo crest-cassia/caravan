@@ -15,7 +15,6 @@
 
 import array
 import random
-import json
 import sys
 
 import numpy
@@ -31,7 +30,6 @@ from deap import tools
 
 from caravan.server import Server
 from caravan.parameter_set import ParameterSet
-from caravan.server_stub import ServerStub
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))
 creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMin)
@@ -73,7 +71,7 @@ toolbox.register("select", tools.selNSGA2)
 
 def evaluate_population(population):
     def get_ps(ind):
-        return ParameterSet.create(ind)
+        return ParameterSet.find_or_create(*ind)
 
     ps_ary = [get_ps(ind) for ind in population]
     for ps in ps_ary:
@@ -157,28 +155,13 @@ if __name__ == "__main__":
     pop = None
     stats = None
 
-
-    def _main():
-        global pop, stats
+    def map_params_to_cmd(params, seed):
+        y1, y2 = benchmarks.zdt1(params)
+        cmd = "bash -c 'echo %f %f > _results.txt'" % (y1, y2)
+        return cmd
+    ParameterSet.set_command_func(map_params_to_cmd)
+    with Server.start():
         pop, stats = main(ngen, pop_size, cxpb, seed)
-
-
-    Server.async(_main)
-    use_scheduler = True
-    if use_scheduler:
-        def map_params_to_cmd(params, seed):
-            y1, y2 = benchmarks.zdt1(params)
-            cmd = "bash -c 'echo %f %f > _results.txt'" % (y1, y2)
-            return cmd
-
-
-        Server.loop(map_params_to_cmd)
-    else:
-        def map_params_to_result(params, seed):
-            return benchmarks.zdt1(params)
-
-
-        ServerStub.loop(map_params_to_result, lambda params, seed: 1.0)
 
     eprint(stats)
     pop.sort(key=lambda x: x.fitness.values)
