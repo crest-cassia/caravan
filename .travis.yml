@@ -1,7 +1,6 @@
 language: python
 python:
   - "3.5"
-  - "3.6"
 env:
   - CARAVAN_USE_PSEUDO_FIBER=0
   - CARAVAN_USE_PSEUDO_FIBER=1
@@ -12,7 +11,7 @@ before_script:
   - export PATH=$PWD/x10/x10.dist/bin:$PATH
   - cd caravan_scheduler && ./build.sh && cd ..
 script:
-  - python -m unittest discover test
+  - env CARAVAN_LOG_LEVEL=1 python -m unittest discover test
 cache:
   directories:
   - x10/x10.dist
