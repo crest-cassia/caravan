@@ -57,8 +57,9 @@ class TutorialSamplesTest(unittest.TestCase):
             # assert task scheduling
             tasks = load_binary(dump_path)
             self.assertEqual(len(tasks), 40)
-            dt = tasks[39]["finish_at"] - tasks[0]["start_at"]
-            self.assertLessEqual(dt / 1000, 8)
+            tmax = max([t["finish_at"] for t in tasks.values()])
+            tmin = min([t["start_at"] for t in tasks.values()])
+            self.assertLessEqual((tmax-tmin)/1000, 16)
 
     def test_03(self):
         script = self.caravan_dir + "/samples/tutorial/03_defining_callbacks/run.sh"
@@ -69,7 +70,7 @@ class TutorialSamplesTest(unittest.TestCase):
             # assert callbacks are executed
             tasks = load_binary(dump_path)
             self.assertEqual(len(tasks), 20)
-            # tasks 10 - 13 are executed during t=1~2
+            # tasks 10 - 13 are executed t=[1,2]
             for i in range(10, 14):
                 t = tasks[i]
                 self.assert_task_period(t, 1, 2)

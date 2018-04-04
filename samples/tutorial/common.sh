@@ -1,8 +1,8 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 SCRIPTDIR=$(cd $(dirname $BASH_SOURCE); pwd)
 
-export X10_NPLACES=${X10_NPLACES:-16}
+export X10_NPLACES=${X10_NPLACES:-8}
 CARAVAN_DIR=$SCRIPTDIR/../..
 SCHEDULER=$CARAVAN_DIR/caravan_scheduler/scheduler
 export PYTHONPATH=$CARAVAN_DIR/caravan_search_engine:$PYTHONPATH
