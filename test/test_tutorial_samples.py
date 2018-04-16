@@ -69,17 +69,17 @@ class TutorialSamplesTest(unittest.TestCase):
             self.assertTrue(os.path.exists(dump_path))
             # assert callbacks are executed
             tasks = load_binary(dump_path)
-            self.assertEqual(len(tasks), 20)
-            # tasks 10 - 13 are executed t=[1,2]
-            for i in range(10, 14):
+            self.assertEqual(len(tasks), 12)
+            # tasks 6 - 7 are executed t=[1,2]
+            for i in range(6, 8):
                 t = tasks[i]
                 self.assert_task_period(t, 1, 2)
-            # tasks 14 - 16 are executed t=[2,4]
-            for i in range(14, 17):
+            # tasks 8 - 9 are executed t=[2,4]
+            for i in range(8, 10):
                 t = tasks[i]
                 self.assert_task_period(t, 2, 4)
-            # tasks 17 - 19 are executed t=[4,7]
-            for i in range(17, 20):
+            # tasks 10 - 11 are executed t=[4,7]
+            for i in range(10, 12):
                 t = tasks[i]
                 self.assert_task_period(t, 3, 6)
 
