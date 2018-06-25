@@ -56,7 +56,7 @@ Another limitation of CARAVAN is that a simulator must be a serial program or mu
 First of all, clone the source code. As it contains git submodules, do not forget `--recursive` option.
 
 ```console
-$ git clone --recursive git@github.com:crest-cassia/caravan
+$ git clone --recursive https://github.com/crest-cassia/caravan
 ```
 
 Then, run the following shell script which builds the scheduler using an X10 compiler.
@@ -80,7 +80,7 @@ To run a sample code, make a temporary directory and run the shell script in the
 ```console
 $ mkdir -p temp
 $ cd temp
-$ {CARAVAN_DIR}/samples/benchmark/run_bench.sh
+$ {CARAVAN_DIR}/samples/benchmark/run_bench1.sh
 ```
 
 or, for MPI-backed program,
@@ -88,7 +88,7 @@ or, for MPI-backed program,
 ```console
 $ mkdir -p temp
 $ cd temp
-$ env IS_MPI=1 {CARAVAN_DIR}/samples/benchmark/run_bench.sh
+$ env IS_MPI=1 {CARAVAN_DIR}/samples/benchmark/run_bench1.sh
 ```
 
 The environment variable `X10_NPLACES` specifies the number of places (i.e. processes), whose default value is 16. See the shell script.
