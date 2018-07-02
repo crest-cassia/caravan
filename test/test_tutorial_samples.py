@@ -139,3 +139,26 @@ class TutorialSamplesTest(unittest.TestCase):
             self.assertEqual(len(tasks), 4)
             for i in range(4):
                 self.assertEqual(tasks[i]["results"][0], float(i))
+
+    def test_06(self):
+        script = self.caravan_dir + "/samples/tutorial/06_ps_run/run.sh"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
+            dump_path = tmpdir + "/tasks.bin"
+            self.assertTrue(os.path.exists(dump_path))
+
+    def test_07(self):
+        script = self.caravan_dir + "/samples/tutorial/07_testing_with_a_stub/run.sh"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
+            dump_path = tmpdir + "/tasks.bin"
+            self.assertTrue(os.path.exists(dump_path))
+
+    def test_08(self):
+        script = self.caravan_dir + "/samples/tutorial/08_serialize/run.sh"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
+            dump_path = tmpdir + "/tasks.bin"
+            self.assertTrue(os.path.exists(dump_path))
+            table_path = tmpdir + "/my_dump"
+            self.assertTrue(os.path.exists(dump_path))
