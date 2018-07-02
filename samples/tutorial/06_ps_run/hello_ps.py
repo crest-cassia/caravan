@@ -1,4 +1,4 @@
-import sys
+import sys,os
 from caravan.server import Server
 from caravan.parameter_set import ParameterSet
 
@@ -6,7 +6,8 @@ from caravan.parameter_set import ParameterSet
 # define a function which receives a tuple of parameters and a random-number seed, and returns the command to be executed
 def make_cmd(params, seed):
     args = " ".join([str(x) for x in params])
-    return "python ../../mc_simulator.py %s %d > _results.txt" % (args, seed)
+    this_dir = os.path.abspath(os.path.dirname(__file__))
+    return "python %s/mc_simulator.py %s %d > _results.txt" % (this_dir, args, seed)
 
 
 ParameterSet.set_command_func(

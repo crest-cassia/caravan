@@ -1,11 +1,12 @@
-import sys
+import sys,os
 from caravan.server import Server
 from caravan.parameter_set import ParameterSet
 
 
 def make_cmd(params, seed):
     args = " ".join([str(x) for x in params])
-    return "python ../../mc_simulator.py %s %d > _results.txt" % (args, seed)
+    this_dir = os.path.abspath(os.path.dirname(__file__))
+    return "python %s/mc_simulator.py %s %d > _results.txt" % (this_dir, args, seed)
 
 
 ParameterSet.set_command_func(make_cmd)
@@ -40,3 +41,8 @@ with Server.start():
     for p1 in [1.0, 1.5, 2.0, 2.5]:
         for p2 in [2.0, 3.0]:
             Server.async(lambda _param=(p1, p2): do_until_convergence(_param))
+
+for ps in ParameterSet.all():
+    assert( converged(ps) )
+    eprint("ps %s converged." % str(ps.params))
+
