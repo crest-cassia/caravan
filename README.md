@@ -150,6 +150,8 @@ The work directories remains even after the whole CARAVAN process finished. If n
 
 ## Preparation of a search engine: A step-by-step tutorial
 
+These samples are in `samples/tutorial` directory. See this directory for the complete samples.
+
 ### A minimal code
 
 Search engine is responsible for generating the command to be executed by the scheduler.
@@ -252,7 +254,7 @@ with Server.start():
 Run this program with the scheduler and visualize it using caravan_viz.
 You'll find that 10 tasks are created and 10 tasks are created after each of the initial tasks finished.
 
-Please note that `ii=i` in the last line is a technique to bind the variable `i`.
+Please note that `ii=i` in the last line is a Python technique to bind the variable `i`.
 `ii` is an argument of the lambda, whose default value is `i` evaluated when the lambda is defined.
 If you refer to `i` directly from inside of the lambda, all the lambda refers to the same value of `i`, which is 9 in this case.
 
@@ -286,7 +288,7 @@ with Server.start():
         Server.async( lambda n=n: run_sequential_tasks(n) )
 ```
 
-Finally, we show how to define a callback function which is executed when all of the given set of tasks finished.
+Finally, we show how to use `Server.await_all_tasks` function, which waits until all of the given set of tasks finished.
 
 ```hello_await_all.py
 with Server.start():
@@ -379,13 +381,26 @@ The following are the method of `ParameterSet` and `Runs`.
         - Runs are created under the PS. Runs are repeatedly created until the number of runs becomes `num_runs`.
     - `#average_results()`
         - returns results averaged over the Runs. Element-wise averaging is conducted assuming the length of the results are same.
+    - `#runs()`
+        - returns list of its Runs.
+    - `#finished_runs()`
+        - returns list of its Runs that are finished.
+    - `#is_finished()`
+        - returns True if all of its Runs are finished.
+    - `#params`
+        - a tuple of the parameters.
 - `Run` class
     - `#parameter_set()`
         - returns its ParameterSet object.
+    - `#seed`
+        - its random number seed.
 
-Here, we show another example that incrementally increase number of Runs when the sample average does not converge enough. (The first half of the code is omitted since it is same as the previous one.)
+Here, we show another example that incrementally increases the number of Runs when the sample average does not converge enough. (The first half of the code is omitted since it is same as the previous one.)
 
 ```hello_ps_convergence.py
+def eprint(str):
+    print(str, file=sys.stderr, flush=True)
+
 def converged(ps):
     runs = ps.runs()
     r1 = [r.results for r in runs]
@@ -441,9 +456,11 @@ def stub_sim(task):
     return results, elapsed
 ```
 
-Then, replace `Server.start()` with `ServerStub.start(dummy_simulator)` as follows.
+Then, replace `Server.start()` with `start_stub(stub_sim)` as follows.
 
 ```diff
++import caravan.server_stub import start_stub
+
 -with Server.start():
 +with start_stub(stub_sim, num_proc=4):
 ```
@@ -457,14 +474,55 @@ $ python my_search_engine.py
 Then, your search engine is executed for a pre-defined dummy simulator without invoking actual tasks.
 A file "tasks.bin" is created, with which you may visualize the task scheduling.
 
+The `start_stub` method also works for Runs. After you implemented a search engine, modify your code as follows, which lets you test your code.
+
+```diff
++from caravan.server_stub import start_stub
++import random
++
++def stub_sim(run):                                 # define a stub code that returns expected results and elapsed time
++    params = run.parameter_set().params
++    results = (random.normalvariate(params[0], params[1]),)
++    return results, 1.0
++
+-with Server.start():
++with start_stub(stub_sim):
+```
 
 ### Serializing Tasks, ParameterSets, and Runs
 
 When each job takes long durations, you probably want to serialize your status of Tasks, Runs and ParameterSets before finishing the whole process.
-To serialize these, call `Table`
-After 
+To serialize these, call `Table.dump( filename )`.
+The following is a small example.
 
-## Available options
+```py
+import sys
+from caravan.server import Server
+from caravan.task import Task
+from caravan.tables import Tables
+
+def eprint(s):
+    print(s, file=sys.stderr, flush=True)
+
+with Server.start():
+    tasks = []
+    for i in range(10):
+        t = Task.create("sleep %d; echo %d > out" % (i%3,i))
+        tasks.append(t)
+        eprint("task %i is created." % i)
+    Server.await_all_tasks(tasks)         # await all tasks
+    Tables.dump('my_dump')                # dump the results to a file
+```
+
+The dumped data can be loaded in another program. For instance, open Python REPL and run the following.
+
+```py
+from caravan.tables import Tables
+from caravan.task import Task
+Tables.load("my_dump")         # data are loaded
+for t in Task.all():
+    print(t.id)                # ids of Tasks are printed
+```
 
 ## License
 
