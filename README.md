@@ -505,13 +505,10 @@ def eprint(s):
     print(s, file=sys.stderr, flush=True)
 
 with Server.start():
-    tasks = []
     for i in range(10):
         t = Task.create("sleep %d; echo %d > out" % (i%3,i))
-        tasks.append(t)
         eprint("task %i is created." % i)
-    Server.await_all_tasks(tasks)         # await all tasks
-    Tables.dump('my_dump')                # dump the results to a file
+Tables.dump('my_dump')                # dump the results to a file
 ```
 
 The dumped data can be loaded in another program. For instance, open Python REPL and run the following.
@@ -521,7 +518,7 @@ from caravan.tables import Tables
 from caravan.task import Task
 Tables.load("my_dump")         # data are loaded
 for t in Task.all():
-    print(t.id)                # ids of Tasks are printed
+    print(t.to_dict())         # print Tasks
 ```
 
 ## License
