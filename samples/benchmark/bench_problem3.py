@@ -36,16 +36,24 @@ class PowerLawSleep:
 if len(sys.argv) != 5 and len(sys.argv) != 6:
     sys.stderr.write(str(sys.argv))
     sys.stderr.write("invalid number of argument\n")
-    args = ["num_jobs", "alpha", "min", "max", "[table.dump]"]
+    args = ["num_jobs", "alpha", "min", "max", "[num_stub_cpus]"]
     sys.stderr.write("Usage: python %s %s\n" % (__file__, " ".join(args)))
     raise RuntimeError("invalid number of arguments")
 
-with Server.start():
-    se = PowerLawSleep(int(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
-    if len(sys.argv) == 5:
+
+if len(sys.argv) == 5:
+    with Server.start():
+        se = PowerLawSleep(int(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
         se.create_initial_runs()
-    else:
-        Tables.load(sys.argv[5])
+else:
+    from caravan.server_stub import start_stub
+    def stub_sim(t):
+        t = float(t.command.split()[1])
+        results = (1.0,)
+        return results, t
+    with start_stub(stub_sim, num_proc=int(sys.argv[5])):
+        se = PowerLawSleep(int(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
+        se.create_initial_runs()
 
 if all([t.is_finished() for t in Task.all()]):
     sys.stderr.write("DONE\n")
