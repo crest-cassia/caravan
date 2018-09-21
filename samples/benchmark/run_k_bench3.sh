@@ -1,9 +1,9 @@
 #!/bin/sh
 #============ pjsub Options ============
-#PJM --rsc-list "node=1032"
-#PJM --rsc-list "elapse=00:10:00"
+#PJM --rsc-list "node=1024"
+#PJM --rsc-list "elapse=01:00:00"
 #PJM --rsc-list "rscgrp=large"
-#PJM --mpi "proc=8256"
+#PJM --mpi "proc=8192"
 #PJM --stg-transfiles all
 #PJM --mpi "use-rankdir"
 #PJM --stgin "rank=* ../../caravan_scheduler/scheduler %r:./"
@@ -30,5 +30,5 @@ tar xf caravan_search_engine.tar
 export PYTHONPATH=caravan_search_engine:$PYTHONPATH
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-1}
 
-mpiexec  -ofout-proc stdout.txt -oferr-proc stderr.txt ./scheduler python ./bench_problem3.py 165120 2 1.0 20.0
+mpiexec -ofout-proc stdout.txt -oferr-proc stderr.txt ./scheduler python ./bench_problem3.py 819200 2 5.0 100.0
 
