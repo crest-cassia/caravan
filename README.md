@@ -521,6 +521,14 @@ for t in Task.all():
     print(t.to_dict())         # print Tasks
 ```
 
+## How to run tests
+
+Unit tests are in `tests` directory. Run the unit tests by the following command.
+
+```
+env CARAVAN_LOG_LEVEL=1 python -m unittest discover test
+```
+
 ## License
 
 See [LICENSE](LICENSE).
