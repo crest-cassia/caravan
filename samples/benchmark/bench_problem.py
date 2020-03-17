@@ -18,7 +18,7 @@ class BenchSearcher:
 
     def _create_one(self):
         t = random.uniform(self.sleep_range[0], self.sleep_range[1])
-        task = Task.create("sleep {t}".format(t=t))
+        task = Task.create("sleep {t}; echo '{{\"t\": {t}}}' > _output.json".format(t=t))
         self.ps_count += 1
         self.num_running += 1
         self.num_todo -= 1

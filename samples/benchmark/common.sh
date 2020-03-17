@@ -12,5 +12,5 @@ export export CARAVAN_SEARCH_ENGINE_LOGLEVEL=${CARAVAN_SEARCH_ENGINE_LOGLEVEL:-I
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-1}
 
 CMD="${SCHEDULER} ${SE}"
-mpiexec -np ${N_PROCS} ${CMD}
+mpiexec -np ${N_PROCS} --oversubscribe ${CMD}
 
