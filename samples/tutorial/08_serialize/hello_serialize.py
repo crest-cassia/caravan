@@ -3,12 +3,9 @@ from caravan.server import Server
 from caravan.task import Task
 from caravan.tables import Tables
 
-def eprint(s):
-    print(s, file=sys.stderr, flush=True)
-
 with Server.start():
     for i in range(10):
-        t = Task.create("sleep %d; echo %d > out" % (i%3,i))
-        eprint("task %i is created." % i)
-Tables.dump('my_dump')
+        t = Task.create(f"sleep {1+i%3}; echo {i} > _output.json")
+        print(f"task {i} is created.")
+Tables.dump('dump.msgpack')
 

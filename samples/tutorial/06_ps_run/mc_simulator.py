@@ -1,6 +1,8 @@
-import sys, random
+import sys,random,json
 
-mu = float(sys.argv[1])
-sigma = float(sys.argv[2])
-random.seed(int(sys.argv[3]))
-print(random.normalvariate(mu, sigma))
+with open('_input.json') as f:
+    param = json.load(f)
+    mu = param['mu']
+    sigma = param['sigma']
+    random.seed(param['_seed'])
+    print(random.normalvariate(mu,sigma))
