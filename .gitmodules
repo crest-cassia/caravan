@@ -1,3 +1,6 @@
 [submodule "caravan_viz"]
 	path = caravan_viz
 	url = https://github.com/crest-cassia/caravan_viz.git
+[submodule "caravan_scheduler/json"]
+	path = caravan_scheduler/json
+	url = git@github.com:nlohmann/json.git
