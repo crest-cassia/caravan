@@ -48,7 +48,7 @@ class Task:
         return copy.deepcopy(self._output)
 
     def is_finished(self):
-        return self._rc is not None
+        return self._rank is not None and self._rank >= 0  # negative rank means a cancelled task
 
     def store_result(self, output, rc, rank, start_at, finish_at):
         self._output = copy.deepcopy(output)

@@ -1,7 +1,7 @@
 # CARAVAN
 
 A framework for large scale parameter-space exploration.
-Using CARAVAN, you can easily run your simulation programs with a bunch of different parameters in parallel using HPCs.
+Using CARAVAN, you can easily run your simulation programs or other computational jobs with a bunch of different parameters in parallel using HPCs.
 Possible applications include
 
 - embarrassingly parallel problem
@@ -20,7 +20,7 @@ CARAVAN consists of three parts: **search engine**, **scheduler**, and **simulat
 
 **Simulator** is an executable program which you want to execute in parallel. Since it is executed as an external process, it must be prepared as an executable program beforehand, i.e., it must be compiled in advance. You can implement a simulator in any language.
 
-**Scheduler** is a part which is responsible for parallelization. It receives the commands to execute simulators from **search engine**, distributes them to available nodes, and executes the **simulator** in parallel. This part is implemented in X10, and users are not supposed to edit it by themselves. If a system administrator provides a binary executable, users do not even have to compile it.
+**Scheduler** is a part which is responsible for parallelization. It receives the commands to execute simulators from **search engine**, distributes them to available nodes, and executes the **simulator** in parallel. This part is implemented in C++ using MPI, and users are not supposed to edit it by themselves. If a system administrator provides a binary executable, users do not even have to compile it.
 
 **Search engine** is a part which determines the policy on how parameter-space is explored. More specifically, it generates a series of commands to be executed in parallel, send them to **scheduler**. It also receives the results from the scheduler when these tasks are done. Based on the received results, **search engine** can generate other sets of tasks repeatedly as many as you want.
 
@@ -36,20 +36,18 @@ CARAVAN is designed so as to scale up well to tens of thousands of MPI processes
 
 Another difference from Map-Reduce like frameworks is that it is possible to define callback functions which are invoked when each task is finished. This is necessary for various parameter-space exploration including optimization and Markov chain Monte Carlo parameter-space sampling. With these callbacks, we can determine the parameter-space to explore based on the existing simulation results.
 
-Another limitation of CARAVAN is that a simulator must be a serial program or multi-thread program. It must not be an MPI-parallel program. This is because CARAVAN launches the command as an external process, not as an MPI process invoked by MPI_Comm_Spawn function. In such cases, you may use another framework such as `concurrent.futures` module of mpi4py. If you have a serial or OpenMP program, on the other hand, it is easy to integrate your simulator into CARAVAN.
+Another limitation of CARAVAN is that a simulator must be a serial program or multi-thread program. It must not be an MPI-parallel program. This is because CARAVAN launches the command as an external process, not as an MPI process invoked by `MPI_Comm_Spawn` function. In such cases, you may use another framework such as `concurrent.futures` module of mpi4py. If you have a serial or OpenMP program, on the other hand, it is easy to integrate your simulator into CARAVAN.
 
 ## Installation
 
 ### Prerequisites
 
-- x10 2.5.4 or later
-    - x10 is a parallel programming language. See [official page](http://x10-lang.org/) for installation.
-    - tested against native x10 2.5.4 with MPI backend
-    - managed x10 is not available since it uses C++ code as well
-- Python 3.6 or later
-- (Optional) python-fibers
+- (for scheduler) C++17 with MPI
+- (for search engine) msgpack-python
+    - `pip install msgpack-python`
+- (for search engine) python-fibers (optional)
     - `pip install fibers`
-    - This module supports x86, x86-64, ARM, MIPS64, PPC64 and s390x. Although you may skip the installation of this module, a limitation is imposed in that case.
+    - This module supports x86, x86-64, ARM, MIPS64, PPC64 and s390x. Although you may skip the installation of this module, installation is recommended for a program using async-await pattern extensively.
 
 ### Building the scheduler
 
@@ -59,19 +57,12 @@ First of all, clone the source code. As it contains git submodules, do not forge
 $ git clone --recursive https://github.com/crest-cassia/caravan
 ```
 
-Then, run the following shell script which builds the scheduler using an X10 compiler.
+Then, run the following shell script to build the scheduler.
 
 ```console
-$ ./caravan_scheduler/build.sh
+$ cd caravan_scheduler
+$ mpicxx -o scheduler -O3 main.cpp
 ```
-
-By default, "Socket" is selected as X10RT. If you are going to build an MPI-backed program, set environment variable "IS\_MPI" to "1" when building it.
-
-```console
-$ env IS_MPI=1 ./caravan_scheduler/build.sh
-```
-
-The executables are built in the `build/` directory.
 
 ### Running a sample project
 
@@ -83,20 +74,11 @@ $ cd temp
 $ {CARAVAN_DIR}/samples/benchmark/run_bench1.sh
 ```
 
-or, for MPI-backed program,
+The shell script is written like the following.
+The number of MPI processes must be larger than or equal to 3 because CARAVAN uses at least 3 processes for task scheduling.
 
-```console
-$ mkdir -p temp
-$ cd temp
-$ env IS_MPI=1 {CARAVAN_DIR}/samples/benchmark/run_bench1.sh
-```
-
-The environment variable `X10_NPLACES` specifies the number of places (i.e. processes), whose default value is 16. See the shell script.
-The number of places must be larger than or equal to 3 because CARAVAN uses at least 3 processes for task scheduling.
-
-After running the command, you'll find `tasks.bin` file, which contains information of task scheduling.
+After running the command, you'll find `tasks.msgpack` file, which contains information of task scheduling.
 You can visualize it using [caravan_viz](https://github.com/crest-cassia/caravan_viz).
-(For the file format of the dump file, see [dump_format.md](dump_format.md).)
 
 ## Samples
 

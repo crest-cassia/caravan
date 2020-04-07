@@ -1,4 +1,4 @@
-import sys, random
+import sys,random
 from caravan.server import Server
 from caravan.task import Task
 from caravan.tables import Tables
@@ -18,7 +18,7 @@ class BenchSearcher:
 
     def _create_one(self):
         t = random.uniform(self.sleep_range[0], self.sleep_range[1])
-        task = Task.create("sleep {t}; echo '{{\"t\": {t}}}' > _output.json".format(t=t))
+        task = Task.create("sleep {t}; echo '{{\"t\": {t}}}' > _output.json".format(t=t), {"foo": "test", "bar":123} )
         self.ps_count += 1
         self.num_running += 1
         self.num_todo -= 1
@@ -29,6 +29,7 @@ class BenchSearcher:
             self._create_one()
 
     def restart(self):
+        Task.reset_cancelled()
         unfinished = [t for t in Task.all() if not t.is_finished()]
         self.ps_count = len(Task.all())
         self.num_running = len(unfinished)
@@ -36,7 +37,7 @@ class BenchSearcher:
         for t in unfinished:
             t.add_callback(self._on_task_finished)
 
-    def _on_task_finished(self, task):
+    def _on_task_finished(self):
         self.num_running -= 1
         if random.random() < self.job_gen_prob or self.num_running == 0:
             num_tasks = self.num_jobs_per_gen if self.num_jobs_per_gen < self.num_todo else self.num_todo
@@ -59,18 +60,18 @@ num_jobs_per_gen = int(sys.argv[4])
 sleep_mu = float(sys.argv[5])
 sleep_sigma = float(sys.argv[6])
 
-with Server.start(redirect_stdout=True):
+with Server.start():
     se = BenchSearcher(num_static_jobs, num_dynamic_jobs, job_gen_prob, num_jobs_per_gen, sleep_mu, sleep_sigma)
     if len(sys.argv) == 7:
-        print("starting", file=sys.stderr, flush=True)
+        print("starting")
         se.create_initial_runs()
     else:
-        print("restarting", file=sys.stderr, flush=True)
+        print("restarting")
         Tables.load(sys.argv[7])
         se.restart()
 
 if all([t.is_finished() for t in Task.all()]):
-    sys.stderr.write("DONE\n")
+    print("DONE\n")
 else:
-    sys.stderr.write("There are unfinished tasks. Writing data to table.pickle\n")
+    print("There are unfinished tasks. Writing data to table.pickle\n")
     Tables.dump("table.pickle")
