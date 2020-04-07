@@ -1,6 +1,3 @@
-[submodule "caravan_search_engine"]
-	path = caravan_search_engine
-	url = https://github.com/crest-cassia/caravan_search_engine.git
 [submodule "caravan_viz"]
 	path = caravan_viz
 	url = https://github.com/crest-cassia/caravan_viz.git
