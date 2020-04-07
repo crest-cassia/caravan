@@ -3,7 +3,7 @@ from caravan.server import Server
 from caravan.tables import Tables
 from caravan.task import Task
 
-Tables.load("dump.msgpack")         # data are loaded
+Tables.load("dump.pickle")         # data are loaded
 Task.reset_cancelled()
 
 for t in Task.all():
