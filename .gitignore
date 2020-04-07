@@ -1,3 +1,4 @@
 *.msgpack
 *.pickle
 w[0-9]*
+Pipfile.lock
