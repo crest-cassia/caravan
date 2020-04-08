@@ -2,25 +2,16 @@
 
 This is a sample of multi-objective optimization using NSGA-II algorithm.
 The code depends on [deap](https://github.com/DEAP/deap) library.
-
-```
-pip install deap
-```
-
 You also need `numpy` and `matplotlib` to run this sample.
 
-Make a temporary directory, cd to it, and run the script as follows.
-
 ```
-mkdir -p temp
-cd temp
-../run.sh
+pip install deap numpy matplotlib
 ```
 
-If you have an MPI-backend program, set `IS_MPI=1`.
+Run the script as follows.
 
 ```
-env IS_MPI=1 ../run_opt.sh
+./run.sh
 ```
 
 # What we changed from the original sample

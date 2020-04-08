@@ -13,10 +13,7 @@
 #    You should have received a copy of the GNU Lesser General Public
 #    License along with DEAP. If not, see <http://www.gnu.org/licenses/>.
 
-import array
-import random
-import sys
-
+import array,random,sys,os
 import numpy
 
 from math import sqrt
@@ -29,7 +26,7 @@ from deap import creator
 from deap import tools
 
 from caravan.server import Server
-from caravan.parameter_set import ParameterSet
+from caravan.simulator import Simulator
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))
 creator.create("Individual", array.array, typecode='d', fitness=creator.FitnessMin)
@@ -54,11 +51,6 @@ def uniform(low, up, size=None):
         return [random.uniform(a, b) for a, b in zip([low] * size, [up] * size)]
 
 
-def eprint(*msgs):
-    for s in msgs:
-        sys.stderr.write(str(s) + "\n")
-
-
 toolbox.register("attr_float", uniform, BOUND_LOW, BOUND_UP, NDIM)
 toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.attr_float)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -69,19 +61,19 @@ toolbox.register("mutate", tools.mutPolynomialBounded, low=BOUND_LOW, up=BOUND_U
 toolbox.register("select", tools.selNSGA2)
 
 
-def evaluate_population(population):
+def evaluate_population(sim, population):
     def get_ps(ind):
-        return ParameterSet.find_or_create(*ind)
+        return sim.find_or_create_parameter_set({"x":ind.tolist()})
 
     ps_ary = [get_ps(ind) for ind in population]
     for ps in ps_ary:
         ps.create_runs_upto(1)
     Server.await_all_ps(ps_ary)
-    return [ps.runs()[0].results for ps in ps_ary]
+    return [[v for k,v in ps.outputs()[0].items()] for ps in ps_ary]
 
 
-def main(NGEN, PSIZE, CXPB, seed):
-    # eprint(NGEN,PSIZE,CXPB,seed)
+def main(sim, NGEN, PSIZE, CXPB, seed):
+    # print(NGEN,PSIZE,CXPB,seed)
     random.seed(seed)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -97,7 +89,7 @@ def main(NGEN, PSIZE, CXPB, seed):
 
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in pop if not ind.fitness.valid]
-    fitnesses = evaluate_population(invalid_ind)
+    fitnesses = evaluate_population(sim, invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
 
@@ -107,7 +99,7 @@ def main(NGEN, PSIZE, CXPB, seed):
 
     record = stats.compile(pop)
     logbook.record(gen=0, evals=len(invalid_ind), **record)
-    eprint(logbook.stream)
+    print(logbook.stream)
 
     # Begin the generational process
     for gen in range(1, NGEN):
@@ -125,7 +117,7 @@ def main(NGEN, PSIZE, CXPB, seed):
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = evaluate_population(invalid_ind)
+        fitnesses = evaluate_population(sim, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
 
@@ -133,9 +125,9 @@ def main(NGEN, PSIZE, CXPB, seed):
         pop = toolbox.select(pop + offspring, PSIZE)
         record = stats.compile(pop)
         logbook.record(gen=gen, evals=len(invalid_ind), **record)
-        eprint(logbook.stream)
+        print(logbook.stream)
 
-    eprint("Final population hypervolume is %f" % hypervolume(pop, [11.0, 11.0]))
+    print("Final population hypervolume is %f" % hypervolume(pop, [11.0, 11.0]))
 
     return pop, logbook
 
@@ -155,15 +147,11 @@ if __name__ == "__main__":
     pop = None
     stats = None
 
-    def map_params_to_cmd(params, seed):
-        y1, y2 = benchmarks.zdt1(params)
-        cmd = "bash -c 'echo %f %f > _results.txt'" % (y1, y2)
-        return cmd
-    ParameterSet.set_command_func(map_params_to_cmd)
+    sim = Simulator.create(f"python {os.path.dirname(__file__)}/my_sim.py")
     with Server.start():
-        pop, stats = main(ngen, pop_size, cxpb, seed)
+        pop, stats = main(sim, ngen, pop_size, cxpb, seed)
 
-    eprint(stats)
+    print(stats)
     pop.sort(key=lambda x: x.fitness.values)
     fitnesses = [ind.fitness.values for ind in pop]
     numpy.savetxt("fitness.txt", fitnesses)
