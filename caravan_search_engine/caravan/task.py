@@ -101,7 +101,7 @@ class Task:
         with open(path, 'wb') as f:
             def _task_to_obj(t):
                 return {"id": t._id, "rc": t._rc, "rank": t._rank, "start_at": t._start_at, "finish_at": t._finish_at, "output": t._output}
-            task_results = { t._id:_task_to_obj(t) for t in cls.all() if t.rc() == 0 }
+            task_results = [ (t._id,_task_to_obj(t)) for t in cls.all() if t.rc() == 0 ]
             b = msgpack.packb( task_results )
             f.write(b)
             f.flush()

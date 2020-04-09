@@ -13,7 +13,7 @@ def work_dir_path(tid, base_dir="."):
 def load_binary(path):
     with open(path, 'rb') as f:
         b = f.read()
-        unpacked = msgpack.unpackb(b, use_list=False, raw=False)
+        unpacked = msgpack.unpackb(b, raw=False)
         return {t[0]:t[1] for t in unpacked}
 
 
@@ -28,12 +28,22 @@ class TutorialSamplesTest(unittest.TestCase):
         if expected_finish_at is not None:
             self.assertAlmostEqual(task["finish_at"] / 1000, expected_finish_at, delta=delta)
 
+    def assert_complete(self, tasks):
+        comp = all( [t['rc']==0 for tid,t in tasks.items()] )
+        self.assertTrue(comp)
+
+    def run_sample_and_assert_completion(self, script):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
+            tasks = load_binary(tmpdir + "/tasks.msgpack")
+            self.assert_complete(tasks)
+            return tasks
+
     def test_01(self):
         script = self.caravan_dir + "/samples/tutorial/01_minimal_code/run.sh"
         with tempfile.TemporaryDirectory() as tmpdir:
             subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
             self.assertTrue(os.path.exists(tmpdir + "/tasks.msgpack"))
-            # assert output files exist
             for i in range(10):
                 d = work_dir_path(i, base_dir=tmpdir)
                 self.assertTrue(os.path.exists(d))
@@ -41,146 +51,83 @@ class TutorialSamplesTest(unittest.TestCase):
 
     def test_02(self):
         script = self.caravan_dir + "/samples/tutorial/02_visualizing_tasks/run.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            # assert task scheduling
-            tasks = load_binary(dump_path)
-            self.assertEqual(len(tasks), 20)
-            tmax = max([t["finish_at"] for t in tasks.values()])
-            tmin = min([t["start_at"] for t in tasks.values()])
-            self.assertLessEqual((tmax-tmin)/1000, 16)
+        tasks = self.run_sample_and_assert_completion(script)
+        self.assertEqual(len(tasks), 20)
+        tmax = max([t["finish_at"] for t in tasks.values()])
+        tmin = min([t["start_at"] for t in tasks.values()])
+        self.assertLessEqual((tmax-tmin)/1000, 16)
 
     def test_03(self):
         script = self.caravan_dir + "/samples/tutorial/03_defining_callbacks/run.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            # assert callbacks are executed
-            tasks = load_binary(dump_path)
-            self.assertEqual(len(tasks), 12)
-            # tasks 6 - 7 are executed t=[1,2]
-            for i in range(6, 8):
-                t = tasks[i]
-                self.assert_task_period(t, 1, 2)
-            # tasks 8 - 9 are executed t=[2,4]
-            for i in range(8, 10):
-                t = tasks[i]
-                self.assert_task_period(t, 2, 4)
-            # tasks 10 - 11 are executed t=[4,7]
-            for i in range(10, 12):
-                t = tasks[i]
-                self.assert_task_period(t, 3, 6)
+        tasks = self.run_sample_and_assert_completion(script)
+        self.assertEqual(len(tasks), 12)
+        # tasks 6 - 7 are executed t=[1,2]
+        for i in range(6, 8):
+            t = tasks[i]
+            self.assert_task_period(t, 1, 2)
+        # tasks 8 - 9 are executed t=[2,4]
+        for i in range(8, 10):
+            t = tasks[i]
+            self.assert_task_period(t, 2, 4)
+        # tasks 10 - 11 are executed t=[4,7]
+        for i in range(10, 12):
+            t = tasks[i]
+            self.assert_task_period(t, 3, 6)
 
     def test_04_1(self):
         script = self.caravan_dir + "/samples/tutorial/04_async_await/run1.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            # assert awaited tasks
-            tasks = load_binary(dump_path)
-            self.assert_task_period(tasks[0], 0, 1)
-            self.assert_task_period(tasks[1], 1, 3)
-            self.assert_task_period(tasks[2], 3, 6)
+        tasks = self.run_sample_and_assert_completion(script)
+        self.assert_task_period(tasks[0], 0, 1)
+        self.assert_task_period(tasks[1], 1, 3)
+        self.assert_task_period(tasks[2], 3, 6)
 
     def test_04_2(self):
         script = self.caravan_dir + "/samples/tutorial/04_async_await/run2.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            # assert awaited tasks
-            tasks = load_binary(dump_path)
-            for i in range(0, 5):
-                self.assert_task_period(tasks[i], 0, None)
+        tasks = self.run_sample_and_assert_completion(script)
+        self.assertEqual(5, len(tasks))
 
     def test_04_3(self):
         script = self.caravan_dir + "/samples/tutorial/04_async_await/run3.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            tasks = load_binary(dump_path)
-            f = [t["finish_at"] for t in tasks.values()]
-            self.assertAlmostEqual(max(f) / 1000, 7, delta=0.4)
+        tasks = self.run_sample_and_assert_completion(script)
+        f = [t["finish_at"] for t in tasks.values()]
+        self.assertAlmostEqual(max(f) / 1000, 7, delta=0.4)
 
     def test_05_1(self):
         script = self.caravan_dir + "/samples/tutorial/05_getting_results/run1.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            # assert results
-            tasks = load_binary(dump_path)
-            self.assertEqual(tasks[0]["output"], (1.0, 2.0, 3.0))
+        tasks = self.run_sample_and_assert_completion(script)
+        self.assertEqual(tuple(tasks[0]["output"]), (1.0, 2.0, 3.0))
 
     def test_05_2(self):
         script = self.caravan_dir + "/samples/tutorial/05_getting_results/run2.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            # assert results
-            tasks = load_binary(dump_path)
-            self.assertEqual(len(tasks), 4)
-            print(tasks)
-            for i in range(4):
-                self.assertEqual(tasks[i]["output"], i)
+        tasks = self.run_sample_and_assert_completion(script)
+        for i in range(4):
+            self.assertEqual(tasks[i]["output"], i)
 
     def test_06_1(self):
         script = self.caravan_dir + "/samples/tutorial/06_ps_run/run1.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            tasks = load_binary(dump_path)
-            self.assertEqual(len(tasks), 10)
+        tasks = self.run_sample_and_assert_completion(script)
+        self.assertEqual(len(tasks), 10)
 
     def test_06_2(self):
         script = self.caravan_dir + "/samples/tutorial/06_ps_run/run2.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
+        tasks = self.run_sample_and_assert_completion(script)
 
     def test_06_3(self):
         script = self.caravan_dir + "/samples/tutorial/06_ps_run/run3.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
+        tasks = self.run_sample_and_assert_completion(script)
 
     def test_07_1(self):
         script = self.caravan_dir + "/samples/tutorial/07_testing_with_a_stub/run1.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
+        tasks = self.run_sample_and_assert_completion(script)
 
     def test_07_2(self):
         script = self.caravan_dir + "/samples/tutorial/07_testing_with_a_stub/run2.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
+        tasks = self.run_sample_and_assert_completion(script)
 
     def test_08_1(self):
         script = self.caravan_dir + "/samples/tutorial/08_serialize/run1.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            table_path = tmpdir + "/dump.pickle"
-            self.assertTrue(os.path.exists(table_path))
+        tasks = self.run_sample_and_assert_completion(script)
 
     def test_08_2(self):
         script = self.caravan_dir + "/samples/tutorial/08_serialize/run2.sh"
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run([script], check=True, cwd=tmpdir, timeout=self.dt)
-            dump_path = tmpdir + "/tasks.msgpack"
-            self.assertTrue(os.path.exists(dump_path))
-            table_path = tmpdir + "/dump.pickle"
-            self.assertTrue(os.path.exists(table_path))
+        tasks = self.run_sample_and_assert_completion(script)
