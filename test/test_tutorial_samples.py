@@ -1,14 +1,8 @@
 import unittest,os,sys,struct,tempfile,subprocess
 import msgpack
 
-
-def eprint(*s):
-    print(*s, file=sys.stderr, flush=True)
-
-
 def work_dir_path(tid, base_dir="."):
     return "{base_dir}/w{d1:04d}/w{d2:07d}".format(base_dir=base_dir, d1=int(tid / 1000), d2=tid)
-
 
 def load_binary(path):
     with open(path, 'rb') as f:

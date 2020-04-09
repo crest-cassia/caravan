@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
 HERE=$(cd $(dirname $BASH_SOURCE); pwd)
-SE="python $HERE/bench_problem.py 10 90 0.25 4 3.0 0.8"
-export CARAVAN_TIMEOUT=15
+SE="python $HERE/bench_problem.py 5 45 0.25 4 1.0 0.4"
+export CARAVAN_TIMEOUT=5
 
 source ${HERE}/common.sh
 
