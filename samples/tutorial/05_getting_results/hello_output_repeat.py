@@ -1,6 +1,4 @@
-import sys
-from caravan.server import Server
-from caravan.task import Task
+from caravan import Server,Task
 
 with Server.start():
     i = 0

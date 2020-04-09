@@ -1,5 +1,4 @@
-from caravan.tables import Tables
-from caravan.task import Task
+from caravan import Tables,Task
 
 Tables.load("dump.pickle")         # data are loaded
 for t in Task.all():

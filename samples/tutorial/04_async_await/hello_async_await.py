@@ -1,6 +1,5 @@
-import sys,functools
-from caravan.server import Server
-from caravan.task import Task
+import functools
+from caravan import Server,Task
 
 def run_sequential_tasks(n):
     for i in range(4):

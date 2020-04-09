@@ -1,7 +1,5 @@
-import sys,os,math
-from caravan.server import Server
-from caravan.simulator import Simulator
-from caravan.stub_server import StubServer
+import os,math
+from caravan import Server,Simulator,StubServer
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
 sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")

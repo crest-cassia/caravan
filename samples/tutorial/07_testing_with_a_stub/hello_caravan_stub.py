@@ -1,6 +1,4 @@
-from caravan.task import Task
-from caravan.stub_server import StubServer
-
+from caravan import Task,StubServer
 
 def stub_sim(task):
     results = (task.id()+3, task.id()+10)

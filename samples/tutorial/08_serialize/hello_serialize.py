@@ -1,7 +1,4 @@
-import sys
-from caravan.server import Server
-from caravan.task import Task
-from caravan.tables import Tables
+from caravan import Server,Task,Tables
 
 with Server.start():
     for i in range(10):

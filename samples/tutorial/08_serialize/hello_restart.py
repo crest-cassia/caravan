@@ -1,7 +1,4 @@
-import sys
-from caravan.server import Server
-from caravan.tables import Tables
-from caravan.task import Task
+from caravan import Server,Tables,Task
 
 Tables.load("dump.pickle")         # data are loaded
 Task.reset_cancelled()

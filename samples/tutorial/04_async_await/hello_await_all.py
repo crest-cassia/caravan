@@ -1,6 +1,4 @@
-import sys
-from caravan.server import Server
-from caravan.task import Task
+from caravan import Server,Task
 
 with Server.start():
     tasks1 = [Task.create(f"sleep {1+i%3}") for i in range(5)]
