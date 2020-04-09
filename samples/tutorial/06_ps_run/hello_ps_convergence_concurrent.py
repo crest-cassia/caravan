@@ -27,6 +27,6 @@ def do_until_convergence(params):
 
 with Server.start():
     for p1 in [1.0, 1.5, 2.0, 2.5]:
-        for p2 in [2.0, 3.0]:
+        for p2 in [0.5, 1.0]:
             Server.do_async(lambda param={'mu':p1,'sigma':p2}: do_until_convergence(param))
 
