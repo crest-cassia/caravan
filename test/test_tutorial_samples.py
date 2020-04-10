@@ -97,6 +97,11 @@ class TutorialSamplesTest(unittest.TestCase):
         for i in range(4):
             self.assertEqual(tasks[i]["output"], i)
 
+    def test_05_3(self):
+        script = self.caravan_dir + "/samples/tutorial/05_getting_results/run3.sh"
+        tasks = self.run_sample_and_assert_completion(script)
+        self.assertEqual(tasks[0]['output'], {"foo":1,"bar":2,"baz":3})
+
     def test_06_1(self):
         script = self.caravan_dir + "/samples/tutorial/06_ps_run/run1.sh"
         tasks = self.run_sample_and_assert_completion(script)
