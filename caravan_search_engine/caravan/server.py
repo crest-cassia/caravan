@@ -18,12 +18,18 @@ class Server(object):
     _instance = None
 
     @classmethod
-    def get(cls):
+    def _get(cls):
         if cls._instance is None:
             raise Exception("use Server.start() method")
         return cls._instance
 
     def __init__(self, logger=None):
+        """
+        Note
+        ---
+        Do not call the constructor directory.
+        Instead, use `Server.start` to launch a server.
+        """
         self.observed_ps = defaultdict(list)
         self.observed_all_ps = defaultdict(list)
         self.observed_task = defaultdict(list)
@@ -36,6 +42,14 @@ class Server(object):
 
     @classmethod
     def start(cls, logger=None):
+        """
+        start a scheduling of tasks.
+
+        Examples
+        ---
+        >>> wtih Server.start():
+            ....
+        """
         cls._instance = cls(logger)
         return cls._instance
 
@@ -58,28 +72,72 @@ class Server(object):
 
     @classmethod
     def watch_ps(cls, ps, callback):
-        cls.get().observed_ps[ps.id()].append(callback)
+        """
+        add a callback function when ps gets completed.
+
+        Parameters
+        ---
+        ps : ParameterSet
+        callback : callable
+        """
+        cls._get().observed_ps[ps.id()].append(callback)
 
     @classmethod
     def watch_all_ps(cls, ps_set, callback):
+        """
+        add a callback function when a set of ParameterSets is completed.
+
+        Parameters
+        ---
+        ps_set : list of ParameterSet
+        callback : callable
+        """
         ids = [ps.id() for ps in ps_set]
         key = tuple(ids)
-        cls.get().observed_all_ps[key].append(callback)
+        cls._get().observed_all_ps[key].append(callback)
 
     @classmethod
     def watch_task(cls, task, callback):
-        cls.get().observed_task[task.id()].append(callback)
+        """
+        add a callback function when a Task is completed.
+
+        Parameters
+        ---
+        task : Task
+        callback : callable
+        """
+        cls._get().observed_task[task.id()].append(callback)
 
     @classmethod
     def watch_all_tasks(cls, tasks, callback):
+        """
+        add a callback function when a set of Tasks is completed.
+
+        Parameters
+        ---
+        tasks : list of Task
+        callback : callable
+        """
         key = tuple([t.id() for t in tasks])
         for t in tasks:
             pair = (key, callback)
-            cls.get().observed_all_tasks[t.id()].append(pair)
+            cls._get().observed_all_tasks[t.id()].append(pair)
 
     @classmethod
     def do_async(cls, func, *args, **kwargs):
-        self = cls.get()
+        """
+        do coroutine asynchronously.
+
+        Examples
+        ---
+        Server.do_async( lambda : Task.create(...) )
+
+        Parameters
+        ---
+        tasks : list of Task
+        callback : callable
+        """
+        self = cls._get()
 
         def _f():
             func(*args, **kwargs)
@@ -90,7 +148,15 @@ class Server(object):
 
     @classmethod
     def await_ps(cls, ps):
-        self = cls.get()
+        """
+        wait until parameterSet is complete.
+        During waiting, other co-routines are concurrently executed.
+
+        Parameters
+        ---
+        ps : ParameterSet
+        """
+        self = cls._get()
         fb = Fiber.current()
 
         def _callback():
@@ -101,7 +167,15 @@ class Server(object):
 
     @classmethod
     def await_all_ps(cls, ps_set):
-        self = cls.get()
+        """
+        wait until a set of ParameterSets is complete.
+        While waiting, other co-routines are concurrently executed.
+
+        Parameters
+        ---
+        ps_set : list of ParameterSet
+        """
+        self = cls._get()
         fb = Fiber.current()
 
         def _callback():
@@ -112,7 +186,14 @@ class Server(object):
 
     @classmethod
     def await_task(cls, task):
-        self = cls.get()
+        """
+        wait until a Task is complete.
+
+        Parameters
+        ---
+        task : Task
+        """
+        self = cls._get()
         fb = Fiber.current()
 
         def _callback():
@@ -123,7 +204,14 @@ class Server(object):
 
     @classmethod
     def await_all_tasks(cls, tasks):
-        self = cls.get()
+        """
+        wait until a set of Tasks is complete.
+
+        Parameters
+        ---
+        tasks : list of Task
+        """
+        self = cls._get()
         fb = Fiber.current()
 
         def _callback():
@@ -287,7 +375,7 @@ class Server(object):
         finish_at = unpacked["finish_at"]
         output = unpacked["output"]
         t = Task.find(tid)
-        t.store_result(output, rc, rank, start_at, finish_at)
+        t._store_result(output, rc, rank, start_at, finish_at)
         self._logger.debug("stored result of Task %d" % tid)
         return t
 

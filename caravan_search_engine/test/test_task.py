@@ -13,7 +13,7 @@ class TestRun(unittest.TestCase):
         self.assertEqual(t.id(), 1234)
         self.assertEqual(t.is_finished(), False)
         self.assertEqual(t.command(), "echo hello world")
-        t.store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
+        t._store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
         self.assertTrue(t.is_finished())
         self.assertEqual(t.rc(), 0)
         self.assertEqual(t.rank(), 3)

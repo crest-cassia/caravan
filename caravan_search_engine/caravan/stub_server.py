@@ -47,6 +47,12 @@ class EventQueue:
 class StubServer(Server):
 
     def __init__(self, stub_simulator, num_proc, logger, dump_path):
+        """
+        Note
+        ---
+        Do not call the constructor directory.
+        Instead, use `StubServer.start` to launch a server.
+        """
         super().__init__(logger)
         self._stub_simulator = stub_simulator
         self._num_proc = num_proc
@@ -55,6 +61,23 @@ class StubServer(Server):
 
     @classmethod
     def start(cls, stub_simulator, num_proc, logger=None, dump_path='tasks.msgpack'):
+        """
+        Start a scheduling of tasks with stub simulator.
+        This is provided for testing search engines without actually running the simulations.
+        Instead of actually conducting simulations, it mimics the event using a dummy simulator `stub_simulator`.
+
+        `stub_simulator` is a function which receives a Task as its argument and returns a tuple of (output, dt).
+        Here, `output` is a json-like object and `dt` is a duration of simulation in seconds.
+
+        It simulates the task scheduling assuming that the tasks are parallely executed by `num_proc` processes.
+
+        Examples
+        ---
+        >>> def stub_sim(task):
+                return ({"res1":1.0, "res2":2.0}, 100)
+        >>> wtih StubServer.start(stub_sim, 8):
+            ....
+        """
         Server._instance = cls(stub_simulator, num_proc, logger, dump_path)
         return Server._instance
 
@@ -81,5 +104,5 @@ class StubServer(Server):
             return False  # re-raise exception
         if self._loop_fiber.is_alive():
             self._loop_fiber.switch()
-        Task.dump_binary(self._dump_path)
+        Task._dump_binary(self._dump_path)
 

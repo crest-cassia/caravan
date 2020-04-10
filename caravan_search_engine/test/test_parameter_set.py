@@ -49,10 +49,10 @@ class ParameterSetTest(unittest.TestCase):
         ps.create_runs_upto(2)
         self.assertEqual(ps.is_finished(), False)
         self.assertEqual(ps.finished_runs(), [])
-        ps.runs()[0].store_result({"o1":1}, 0, 1, 1000, 2000)
+        ps.runs()[0]._store_result({"o1":1}, 0, 1, 1000, 2000)
         self.assertEqual(ps.is_finished(), False)
         self.assertEqual([r.id() for r in ps.finished_runs()], [0])
-        ps.runs()[1].store_result({"o1":1}, 0, 2, 1000, 2000)
+        ps.runs()[1]._store_result({"o1":1}, 0, 2, 1000, 2000)
         self.assertEqual(ps.is_finished(), True)
         self.assertEqual([r.id() for r in ps.finished_runs()], [0,1])
 
@@ -61,7 +61,7 @@ class ParameterSetTest(unittest.TestCase):
         ps.create_runs_upto(2)
         self.assertEqual(ps.outputs(), [])
         for (i,r) in enumerate(ps.runs()):
-            r.store_result( {"i":i}, 0, i, 0, 10)
+            r._store_result( {"i":i}, 0, i, 0, 10)
         self.assertEqual(len(ps.finished_runs()), 2)
         self.assertEqual(ps.outputs(), [{"i":0}, {"i":1}])
 

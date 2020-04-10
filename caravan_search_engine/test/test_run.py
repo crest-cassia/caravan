@@ -17,7 +17,7 @@ class TestRun(unittest.TestCase):
         self.assertEqual(r.parameter_set(), self.ps)
         self.assertEqual(r.seed(), 0)
         self.assertEqual(r.is_finished(), False)
-        r.store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
+        r._store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
         self.assertTrue(r.is_finished())
         self.assertEqual(r.rc(), 0)
         self.assertEqual(r.rank(), 3)

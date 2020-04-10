@@ -23,15 +23,32 @@ class Tables:
 
     @classmethod
     def dump(cls, path):
+        """
+        serialize all Task,Simulator,ParameterSet,Run into a single file with pickle.
+
+        Parameters
+        ---
+        path : string
+        """
         with open(path, 'wb') as f:
             pickle.dump(cls._instance, f)
 
     @classmethod
     def load(cls, path):
+        """
+        load serialized file made by `Tables.dump` method
+
+        Parameters
+        ---
+        path : string
+        """
         with open(path, 'rb') as f:
             cls._instance = pickle.load(f)
 
     def dumps(self):
+        """
+        serialize all Task,Simulator,ParameterSet,Run into a string. Useful for debugging.
+        """
         ps_str = ",\n".join([ps.dumps() for ps in self.ps_table])
         task_str = ",\n".join([task.dumps() for task in self.tasks_table])
         return "PS: [\n%s\n],\nTasks: [\n%s\n]\n" % (ps_str, task_str)
