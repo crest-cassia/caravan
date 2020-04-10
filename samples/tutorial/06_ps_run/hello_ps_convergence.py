@@ -1,39 +1,27 @@
-import sys,os
-from caravan.server import Server
-from caravan.parameter_set import ParameterSet
+import os,math
+from caravan import Server,Simulator
 
+this_dir = os.path.abspath(os.path.dirname(__file__))
+sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")
 
-def make_cmd(params, seed):
-    args = " ".join([str(x) for x in params])
-    this_dir = os.path.abspath(os.path.dirname(__file__))
-    return "python %s/mc_simulator.py %s %d > _results.txt" % (this_dir, args, seed)
-
-
-ParameterSet.set_command_func(make_cmd)
-
-import math
-import numpy as np
-
-
-def eprint(s):
-    print(s, file=sys.stderr, flush=True)
-
-
-def converged(ps):
+def err(ps):
     runs = ps.runs()
-    r1 = [r.results for r in runs]
-    errs = np.std(r1, axis=0, ddof=1) / math.sqrt(len(runs))
-    eprint(errs)
-    return np.all(errs < 0.2)
-
+    r1 = [r.output() for r in runs]
+    n = len(runs)
+    avg = sum(r1) / n
+    err = math.sqrt( sum([(r-avg)**2 for r in r1]) / ((n-1)*n) )
+    return err
 
 with Server.start():
-    ps = ParameterSet.find_or_create(1.0, 2.0)
+    ps = sim.find_or_create_parameter_set({'mu':1.0,'sigma':2.0})
     ps.create_runs_upto(4)
-    eprint("awaiting")
+    print("awaiting")
     Server.await_ps(ps)
-    while not converged(ps):
+    e = err(ps)
+    while e > 0.2:
+        print(f"error = {e}")
         ps.create_runs_upto(len(ps.runs()) + 4)  # add four runs
-        eprint("awaiting")
+        print("awaiting")
         Server.await_ps(ps)
-    print(ps.average_results(), file=sys.stderr)
+        e = err(ps)
+    print(f"error = {e}")

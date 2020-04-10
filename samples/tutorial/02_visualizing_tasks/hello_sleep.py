@@ -1,7 +1,5 @@
-import sys
-from caravan.server import Server
-from caravan.task import Task
+from caravan import Server,Task
 
 with Server.start():
-    for i in range(40):
-        Task.create("echo %d && sleep %d" % (i, i % 3 + 1))
+    for i in range(20):
+        Task.create(f"sleep {1+i%3}")

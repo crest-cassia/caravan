@@ -1,11 +1,7 @@
-import sys
-import random
+import sys,random,os
 from caravan.server import Server
-from caravan.parameter_set import ParameterSet
+from caravan.simulator import Simulator
 
-
-def eprint(*x):
-    print(*x, file=sys.stderr, flush=True)
 
 class Domain:
     def __init__(self, minimum, maximum):
@@ -98,18 +94,18 @@ if len(sys.argv) != 5:
     raise Exception("invalid number of arguments")
 
 
-def run_optimization(n, f, cr, tmax):
+def run_optimization(sim, n, f, cr, tmax):
     domains = [
         (-1000, 1000),
         (-1000, 1000)
     ]
 
     def map_agents(agents):
-        parameter_sets = [ParameterSet.find_or_create(*point) for point in agents]
+        parameter_sets = [sim.find_or_create_parameter_set({'x':point[0],'y':point[1]}) for point in agents]
         for ps in parameter_sets:
             ps.create_runs_upto(1)
         Server.await_all_ps(parameter_sets)
-        results = [ps.average_results()[0] for ps in parameter_sets]
+        results = [ps.outputs()[0]['f'] for ps in parameter_sets]
         return results
 
     de = DE_Optimizer(map_agents, domains, n=n, f=f, cr=cr, rand_seed=1234)
@@ -120,17 +116,12 @@ def run_optimization(n, f, cr, tmax):
             de.proceed()
             fout.write("%d %s %f %f\n" % (de.t, repr(de.best_point), de.best_f, de.average_f()))
 
-def map_point_to_cmd(params, seed):
-    v = (params[0] - 1.0) ** 2 + (params[1] - 2.0) ** 2
-    cmd = "bash -c 'echo %f > _results.txt'" % v
-    return cmd
-
-ParameterSet.set_command_func(map_point_to_cmd)
+sim = Simulator.create(f"python {os.path.dirname(__file__)}/my_sim.py")
 
 with Server.start():
     n = int(sys.argv[1])
     f = float(sys.argv[2])
     cr = float(sys.argv[3])
     tmax = int(sys.argv[4])
-    eprint("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n, f, cr, tmax))
-    run_optimization(n, f, cr, tmax)
+    print("optimization parameters are n=%d, f=%f, cr=%f, tmax=%d\n" % (n, f, cr, tmax))
+    run_optimization(sim, n, f, cr, tmax)

@@ -1,8 +1,10 @@
-import sys, os, json
+import sys,os,json
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy
 
-fname = os.path.dirname(__file__) + "/pareto_front/zdt1_front.json"
+fname = os.path.join(os.path.dirname(__file__),"pareto_front/zdt1_front.json")
 with open(fname) as optimal_front_data:
     optimal_front = json.load(optimal_front_data)
 
@@ -19,4 +21,4 @@ optimal_front = numpy.array(optimal_front)
 plt.scatter(optimal_front[:, 0], optimal_front[:, 1], c="r")
 plt.scatter(front[:, 0], front[:, 1], c="b")
 plt.axis("tight")
-plt.show()
+plt.savefig('pareto.png')

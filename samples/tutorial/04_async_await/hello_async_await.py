@@ -1,15 +1,12 @@
-import sys
-from caravan.server import Server
-from caravan.task import Task
-
+import functools
+from caravan import Server,Task
 
 def run_sequential_tasks(n):
-    for t in range(5):
-        task = Task.create("sleep %d" % ((t + n) % 3 + 1))
-        Server.await_task(task)  # this method blocks until the task is finished.
-        print("step %d of %d finished" % (t, n), file=sys.stderr)  # show the progress to stderr
-
+    for i in range(4):
+        task = Task.create(f"sleep {1+i%3}")
+        Server.await_task(task)  # this method blocks until the task is complete.
+        print(f"step {i} of {n} finished")  # show the progress
 
 with Server.start():
     for n in range(3):
-        Server.async(lambda _n=n: run_sequential_tasks(_n))
+        Server.do_async( functools.partial(run_sequential_tasks,n) )

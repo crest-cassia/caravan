@@ -35,7 +35,7 @@ class BenchSearcher2:
         for i in range(self.num_max_job):
             self._create_one()
 
-    def _on_ps_finished(self, task):
+    def _on_ps_finished(self):
         self.num_running -= 1
         if self.num_running == self.num_min_job and self.iteration > 0:
             for i in range(self.num_jobs_per_gen):

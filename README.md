@@ -1,7 +1,7 @@
 # CARAVAN
 
 A framework for large scale parameter-space exploration.
-Using CARAVAN, you can easily run your simulation programs with a bunch of different parameters in parallel using HPCs.
+Using CARAVAN, you can easily run your simulation programs or other computational jobs with a bunch of different parameters in parallel using HPCs.
 Possible applications include
 
 - embarrassingly parallel problem
@@ -20,7 +20,7 @@ CARAVAN consists of three parts: **search engine**, **scheduler**, and **simulat
 
 **Simulator** is an executable program which you want to execute in parallel. Since it is executed as an external process, it must be prepared as an executable program beforehand, i.e., it must be compiled in advance. You can implement a simulator in any language.
 
-**Scheduler** is a part which is responsible for parallelization. It receives the commands to execute simulators from **search engine**, distributes them to available nodes, and executes the **simulator** in parallel. This part is implemented in X10, and users are not supposed to edit it by themselves. If a system administrator provides a binary executable, users do not even have to compile it.
+**Scheduler** is a part which is responsible for parallelization. It receives the commands to execute simulators from **search engine**, distributes them to available nodes, and executes the **simulator** in parallel. This part is implemented in C++ using MPI, and users are not supposed to edit it by themselves. If a system administrator provides a binary executable, users do not even have to compile it.
 
 **Search engine** is a part which determines the policy on how parameter-space is explored. More specifically, it generates a series of commands to be executed in parallel, send them to **scheduler**. It also receives the results from the scheduler when these tasks are done. Based on the received results, **search engine** can generate other sets of tasks repeatedly as many as you want.
 
@@ -36,20 +36,18 @@ CARAVAN is designed so as to scale up well to tens of thousands of MPI processes
 
 Another difference from Map-Reduce like frameworks is that it is possible to define callback functions which are invoked when each task is finished. This is necessary for various parameter-space exploration including optimization and Markov chain Monte Carlo parameter-space sampling. With these callbacks, we can determine the parameter-space to explore based on the existing simulation results.
 
-Another limitation of CARAVAN is that a simulator must be a serial program or multi-thread program. It must not be an MPI-parallel program. This is because CARAVAN launches the command as an external process, not as an MPI process invoked by MPI_Comm_Spawn function. In such cases, you may use another framework such as `concurrent.futures` module of mpi4py. If you have a serial or OpenMP program, on the other hand, it is easy to integrate your simulator into CARAVAN.
+Another limitation of CARAVAN is that a simulator must be a serial program or multi-thread program. It must not be an MPI-parallel program. This is because CARAVAN launches the command as an external process, not as an MPI process invoked by `MPI_Comm_Spawn` function. In such cases, you may use another framework such as `concurrent.futures` module of mpi4py. If you have a serial or OpenMP program, on the other hand, it is easy to integrate your simulator into CARAVAN.
 
 ## Installation
 
 ### Prerequisites
 
-- x10 2.5.4 or later
-    - x10 is a parallel programming language. See [official page](http://x10-lang.org/) for installation.
-    - tested against native x10 2.5.4 with MPI backend
-    - managed x10 is not available since it uses C++ code as well
-- Python 3.6 or later
-- (Optional) python-fibers
+- (for scheduler) C++17 with MPI
+- (for search engine) msgpack-python
+    - `pip install msgpack-python`
+- (for search engine) python-fibers (optional)
     - `pip install fibers`
-    - This module supports x86, x86-64, ARM, MIPS64, PPC64 and s390x. Although you may skip the installation of this module, a limitation is imposed in that case.
+    - This module supports x86, x86-64, ARM, MIPS64, PPC64 and s390x. Although you may skip the installation of this module, installation is recommended for a program using async-await pattern extensively.
 
 ### Building the scheduler
 
@@ -59,19 +57,12 @@ First of all, clone the source code. As it contains git submodules, do not forge
 $ git clone --recursive https://github.com/crest-cassia/caravan
 ```
 
-Then, run the following shell script which builds the scheduler using an X10 compiler.
+Then, run the following shell script to build the scheduler.
 
 ```console
-$ ./caravan_scheduler/build.sh
+$ cd caravan_scheduler
+$ mpicxx -o scheduler -O3 main.cpp
 ```
-
-By default, "Socket" is selected as X10RT. If you are going to build an MPI-backed program, set environment variable "IS\_MPI" to "1" when building it.
-
-```console
-$ env IS_MPI=1 ./caravan_scheduler/build.sh
-```
-
-The executables are built in the `build/` directory.
 
 ### Running a sample project
 
@@ -83,20 +74,11 @@ $ cd temp
 $ {CARAVAN_DIR}/samples/benchmark/run_bench1.sh
 ```
 
-or, for MPI-backed program,
+The shell script is written like the following.
+The number of MPI processes must be larger than or equal to 3 because CARAVAN uses at least 3 processes for task scheduling.
 
-```console
-$ mkdir -p temp
-$ cd temp
-$ env IS_MPI=1 {CARAVAN_DIR}/samples/benchmark/run_bench1.sh
-```
-
-The environment variable `X10_NPLACES` specifies the number of places (i.e. processes), whose default value is 16. See the shell script.
-The number of places must be larger than or equal to 3 because CARAVAN uses at least 3 processes for task scheduling.
-
-After running the command, you'll find `tasks.bin` file, which contains information of task scheduling.
+After running the command, you'll find `tasks.msgpack` file, which contains information of task scheduling.
 You can visualize it using [caravan_viz](https://github.com/crest-cassia/caravan_viz).
-(For the file format of the dump file, see [dump_format.md](dump_format.md).)
 
 ## Samples
 
@@ -110,41 +92,24 @@ See the README in each directory for the usage.
 
 ## Preparation of your simulator
 
-A simulator must satisfy the following requirements to let the scheduler execute.
+A simulator may be any executable program. However, simulators that satisfying the following conditions are easy to integrate.
 
-1. accept parameters for simulations as command line arguments
 1. generate outputs in the current directory
-1. (optional) write results to `_results.txt` file
+1. accept parameters for simulations from `_input.json` file
+1. write results to `_output.json` file
 
-Prepare a simulator such that it accepts the parameters as command line arguments like the following.
-This is because the scheduler receives the command lines from a search engine and just executes them.
-You may use a shell script (or other kinds of scripts) as your simulator which converts command line arguments in a proper way to conform to the original simulation program.
+Prepare a simulator such that it reads its parameters from json file `_input.json`.
+This is because a Task is created by specifying a command line string (e.g. `~/path/to/your_simulator`) and an associative array (a dictionary in Python) such as `{"param1":0.5, "param2":1.5}`.
+To conform to the input format given by CARAVAN, you might want to use a shell script (or other kinds of scripts) as your simulator to convert the format of input parameters.
 
-```console
-$ /path/to/your_simulator.out <param1> <param2> <param3> ....
-```
-
-A simulator is supposed to generate its output files or directories in the current directory.
+A simulator is supposed to generate its output files in the current directory.
 The scheduler makes a directory, called **work directory** hereafter, for each task and executes the simulator after it changed the current directory to this directory.
 The path of the work directory is made as `sprintf("w%04d/w%07d", task_id/1000, task_id)`, where **task_id** is a unique integer number given to each simulation task from the search engine.
 If the ID of a task is "12345", for instance, the temporary directory for this task is "w0012/w0012345".
 
-If your simulator writes a file `_results.txt`, it is parsed by the scheduler and is sent back to the search engine.
+If your simulator writes a file `_output.json`, it is parsed by the scheduler and is sent back to the search engine.
 This is useful when your search engine determines the next parameters according to the simulation results.
-For instance, if you would like to optimize a certain value of the simulation results, write a value which you want to minimize (or maximize) to `_results.txt` file.
-You can write only floating point values which are separated by white spaces or line breaks like the followings.
-
-```
-1.23 2.34 3.45
-```
-
-or
-
-```
-1.23
-2.34
-3.45
-```
+For instance, if you would like to optimize a certain value of the simulation results, write a value which you want to minimize (or maximize) to `_output.json` file.
 
 The work directories remains even after the whole CARAVAN process finished. If necessary, you may further investigate these files later by yourself in order to get more information.
 
@@ -159,66 +124,32 @@ Search engine is responsible for generating the command to be executed by the sc
 A simple "hello world" program of the search engine is as follows.
 
 ```hello_caravan.py
-import sys
-from caravan.server import Server
-from caravan.task import Task
+from caravan import Server,Task
 
 with Server.start():
     for i in range(10):
-        Task.create("echo %d" % i)
+        Task.create("echo %d > out" % i)
 ```
 
-This sample creates a list of tasks, each of which runs "echo 'hello caravan #{task_id}'".
-To test this program, let us run this python script independently.
+This sample creates a list of tasks, each of which runs "echo {task_id}".
+Let us run this search engine with the scheduler.
+To execute the program, you need to set `PYTHONPATH` to import `caravan` package. Then, `mpiexec` the scheduler giving the command to execute search engine.
 
 ```console
-$ export PYTHONPATH=$(pwd)/caravan_search_engine:$PYTHONPATH  # you need to set PYTHONPATH so that it can load search_engine modules
-$ python hello_caravan.py
-```
-
-You'll see a list of commands together with task ids printed on standard output.
-(The communication between the search engine process and the scheduler process is done through Unix pipes connected to standard output and input. This is why it shows the command in the standard output when executed stand alone.)
-After the python process prints the commands, it waits to receive results of the tasks from stdin. For now, kill the process by typing "Ctrl-C".
-
-Let us run this search engine with the scheduler. To run it with the scheduler, execute the scheduler giving the previous command as arguments.
-You must also set "X10_NPLACES" environment variable to specify the number of processes running in parallel. Here, let us use 8 processes.
-
-```console
-$ export X10_NPLACES=8
-$ ./caravan_scheduler/scheduler python hello_caravan.py
+$ CARAVAN_DIR=$(pwd)
+$ export PYTHONPATH=$(pwd)/caravan_search_engine:$PYTHONPATH
+$ mpiexec -n 8 caravan_scheduler/scheduler python hello_caravan.py
 ```
 
 You'll see the outputs of the commands executed in parallel in the console.
 
 You also see that the work directories are created under the current directory as shown in the following. Each task is executed in each work directory.
-To verify this, let us modify "hello_caravan.py" as follows.
-
-```diff
-with Server.start():
-    for i in range(10):
--        Task.create("echo %d" % i)
-+        Task.create("echo %d > out" % i)
-```
-
-Run again this program together with the scheduler.
-
-```console
-$ ./caravan_scheduler/scheduler python hello_caravan.py
-```
-
-Now you'll see files named "out" is created in each work directory. Verify that the task IDs are written to the "out" files.
+You'll see files named "out" is created in each work directory. Verify that the task IDs are written to the "out" files in each work directory.
 
 Since two-level directories are created as work directories, we need to take care of the simulator path when we specify the command by a relative path. For instance, your simulator is located at the directory where CARAVAN is launched, the path of the simulator must be specified as the "parent of parent" of the current directory like `../../simulator.out`.
 A good practice to avoid this complexity is to specify the command by the absolute path, such as `$HOME/simulator.out`.
 
-In the following samples, `import` statements are omitted unless explicitly stated. Add the following statements on top of the samples when you run the code.
-
-```py
-import sys
-from caravan.server import Server
-from caravan.task import Task
-```
-
+In the following samples, `import` statements are omitted unless explicitly stated. You can find an executable scripts in `samples/` directory.
 
 ### Visualizing how tasks are executed in parallel
 
@@ -226,37 +157,36 @@ Let us visualize the timeseries of task execution and see how tasks are executed
 We generate 10 tasks which sleeps 1~3 seconds as follows.
 
 ```hello_sleep.py
+from caravan import Server,Task
+
 with Server.start():
-    for i in range(40):
-        Task.create("echo %d && sleep %d" % (i,i%3+1) )
+    for i in range(20):
+        Task.create(f"sleep {1+i%3}")
 ```
 
-```console
-$ export X10_NPLACES=8
-$ ./caravan_scheduler/scheduler python hello_sleep.py
-```
-
-After the execution, you'll find a binary file "tasks.bin". This file is generated by the scheduler. It has the logs of each tasks such as the executed time, duration, and the process number.
+After the execution, you'll find a binary file "tasks.msgpack". This file is generated by the scheduler.
+It has the logs of each tasks such as the executed time, duration, and the process number.
 Refer to the [README of CARAVAN_viz](caravan_viz/README), which is a tool to visualize the logs.
-With this tool, you'll intuitively see how tasks are executed.
+With this tool, you'll intuitively see how tasks are executed concurrently.
 
 ### Defining callback functions
 
 In many applications such as optimization, new tasks must be generated based on the results of finished tasks. It is possible to define callback functions for that purpose.
 
 ```hello_callback.py
+from caravan import Server,Task
+
 with Server.start():
-    for i in range(10):
-        task = Task.create("sleep %d" % (i%3+1))
-        task.add_callback(lambda t, ii=i: Task.create("sleep %d" % (ii%3+1)))
+    for i in range(6):
+        task = Task.create(f"sleep {1+i%3}")
+        task.add_callback(lambda i=i: Task.create(f"sleep {1+i%3}"))
 ```
 
 Run this program with the scheduler and visualize it using caravan_viz.
 You'll find that 10 tasks are created and 10 tasks are created after each of the initial tasks finished.
 
-Please note that `ii=i` in the last line is a Python technique to bind the variable `i`.
-`ii` is an argument of the lambda, whose default value is `i` evaluated when the lambda is defined.
-If you refer to `i` directly from inside of the lambda, all the lambda refers to the same value of `i`, which is 9 in this case.
+Please note that `i=i` in the last line is an idiom of Python to bind the variable `i` to the value when lambda is defined.
+If you refer to `i` directly from inside of the lambda, all the lambda refers to the same value of `i`, which is 5 in this case.
 
 ### Async/Await
 
@@ -264,182 +194,204 @@ Although callbacks work fine, the code easily become too complicated if you add 
 One of the best practices to avoid the "callback hell" is "async/await" pattern. Let us see an example.
 
 ```hello_await.py
+from caravan import Server,Task
+
 with Server.start():
-    for t in range(5):
-        task = Task.create( "sleep %d" % (t%3+1) )
-        Server.await_task( task )                         # this method blocks until the task is finished.
-        print("step %d finished" % t, file=sys.stderr)    # show the progress to stderr
+    for i in range(5):
+        task = Task.create(f"sleep {1+i%3}")
+        Server.await_task(task)  # this method blocks until the task is finished.
+        print(f"step {i} finished. rc: {task.rc()}, rank: {task.rank()}, {task.start_at()}-{task.finish_at()}") # show info of completed task
 ```
 
-This program executes 5 tasks sequentially. A new task is created after the previous task finished.
+This program executes 5 tasks sequentially. A new task is created after the previous task completed.
 
 Next, let us run three set of the above sequential tasks in parallel. To define asynchronous function, use `Server.async` method.
 If you visualize the results of the following program, you will see three concurrent lines of sequential tasks of length five.
 
 ```hello_async_await.py
+import functools
+from caravan import Server,Task
+
 def run_sequential_tasks(n):
-    for t in range(5):
-        task = Task.create("sleep %d" % ((t+n)%3+1))
-        Server.await_task(task)                     # this method blocks until the task is finished.
-        print("step %d of %d finished" % (t,n), file=sys.stderr)    # show the progress to stderr
+    for i in range(4):
+        task = Task.create(f"sleep {1+i%3}")
+        Server.await_task(task)  # this method blocks until the task is complete.
+        print(f"step {i} of {n} finished")  # show the progress
 
 with Server.start():
     for n in range(3):
-        Server.async( lambda n=n: run_sequential_tasks(n) )
+        Server.do_async( functools.partial(run_sequential_tasks,n) )
 ```
 
 Finally, we show how to use `Server.await_all_tasks` function, which waits until all of the given set of tasks finished.
 
 ```hello_await_all.py
+from caravan import Server,Task
+
 with Server.start():
-    tasks = [ Task.create( "sleep %d" % (t%3+1) ) for t in range(5) ]
-    Server.await_all_tasks( tasks )                   # this method blocks until all the tasks are finished
-    print("all running tasks finished", file=sys.stderr)
-    tasks = [ Task.create( "sleep %d" % (t%3+1) ) for t in range(5) ]  # append 5 tasks
+    tasks1 = [Task.create(f"sleep {1+i%3}") for i in range(5)]
+    Server.await_all_tasks(tasks1)  # this method blocks until all the tasks are finished
+    print("all running tasks are complete!")
+    for t in tasks1:
+        print(f"task ID:{t.id()}, rc:{t.rc()}, rank:{t.rank()}, {t.start_at()}-{t.finish_at()}")
 ```
 
-### Getting the results of simulators
+### Getting the output of a task
 
-If a simulator writes "_results.txt" file, its contents is parsed by the scheduler and is passed to the search engine.
+If a simulator writes "_output.json" file, its contents is parsed by the scheduler and is passed to the search engine.
 The results are obtained as lists of float values. The length of the results for each task may vary.
 
-```hello_results.py
+```hello_output.py
+from caravan import Server,Task
+
 with Server.start():
-    t = Task.create("echo 1.0 2.0 3.0 > _results.txt")
+    t = Task.create("echo '[1.0,2.0,3.0]' > _output.json")
     Server.await_task(t)
-    print(t.results, file=sys.stderr)
+    print(t.output())
 ```
 
 Note that you have to await task to obtain the results. Otherwise, you'll get `None`.
 
 Here is another sample, which creates tasks depending on the results of finished tasks.
 
-```hello_results_repeat.py
+```hello_output_repeat.py
+from caravan import Server,Task
+
 with Server.start():
     i = 0
-    t = Task.create("echo %d > _results.txt" % i)
+    t = Task.create(f"echo {i} > _output.json")
     while True:
-        print("awaiting Task(%d)" % i, file=sys.stderr, flush=True)
+        print(f"awaiting Task({i})")
         Server.await_task(t)
-        if t.results[0] < 3:
+        if t.output() < 3:
             i += 1
-            t = Task.create("echo %d > _results.txt" % i)
+            t = Task.create(f"echo {i} > _output.json")
         else:
             break
 ```
 
-### ParameterSet and Run
+### Setting input parametes of a task
+
+Similarly, one can set an input parameter of a task by giving an object as the second argument of `Task.create`.
+The input object is printed to `_input.json` format such that the command can read the parameter from the file.
+
+```hello_input.py
+from caravan import Server,Task
+
+with Server.start():
+    t = Task.create("cat _input.json > _output.json", {"foo":1, "bar":2, "baz":3})
+    Server.await_task(t)
+    print(t.output())
+```
+
+### Simulator, ParameterSet and Run
 
 Suppose that we have a simulator for a Monte Carlo simulation. In that case, each MC run corresponds to a task.
-To simplify the integration of MC simulators to CARAVAN, `ParameterSet` and `Run` classes are prepared.
-`ParameterSet` (PS) class corresponds to a set of parameters for the simulator while `Run` corresponds to a MC run. Thus, each PS may have multiple Runs.
-Run is a sub-class of Task class.
+To simplify the integration of MC simulators to CARAVAN, `Simulator`, `ParameterSet` and `Run` classes are prepared.
+A `Simulator` corresponds to an executable program.
+A `ParameterSet` (PS) corresponds to a set of parameters for the simulator while `Run` corresponds to a MC run having a distinct random number seed.
+Thus, each Simulator has multiple PSs whereas each PS may have multiple Runs. `Run` class is a sub-class of `Task` class.
 
-Here is an example. This sample simulator takes two parameters and one random-number seed. It prints one output values to "_results.txt" file.
+Here is an example. This sample simulator reads two parameters and one random-number seed from `_input.json` file.
+A random number seed value is set in `_seed` field, which is automatically assigned by the search engine.
 
 ```mc_simulator.py
-import sys,random
+import sys,random,json
 
-mu = float(sys.argv[1])
-sigma = float(sys.argv[2])
-random.seed(int(sys.argv[3]))
-print(random.normalvariate(mu, sigma))
+with open('_input.json') as f:
+    param = json.load(f)
+    mu = param['mu']
+    sigma = param['sigma']
+    random.seed(param['_seed'])
+    print(random.normalvariate(mu,sigma))
 ```
 
 To run this simulator, use the following search engine.
 
 ```hello_ps.py
-import sys
-from caravan.server import Server
-from caravan.parameter_set import ParameterSet
+import os
+from caravan import Server,Simulator
 
-# define a function which receives a tuple of parameters and a random-number seed, and returns the command to be executed
-def make_cmd( params, seed ):
-    args = " ".join( [str(x) for x in params] )
-    return "python ../../mc_simulator.py %s %d > _results.txt" % (args, seed)
-
-ParameterSet.set_command_func(make_cmd)             # set `make_cmd`. When runs are created, `make_cmd` is called when Runs are created.
+this_dir = os.path.abspath(os.path.dirname(__file__))
+sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")  # create a Simulator object
 
 with Server.start():
-    ps = ParameterSet.find_or_create(1.0, 2.0)      # create a ParameterSet whose parameters are (1.0,2.0).
-    ps.create_runs_upto(10)                         # create ten Runs. In the background, `make_cmd` is called to generate actual commands.
-    Server.await_ps(ps)                             # wait until all the Runs of this ParameterSet finishes
-    x = ps.average_results()                        # results are averaged over the Runs
-    print("average: %f" % x, file=sys.stderr, flush=True)
+    ps = sim.find_or_create_parameter_set({'mu':1.0,'sigma':2.0}) # create a ParameterSet whose parameters are (mu=1.0,sigma=2.0).
+    ps.create_runs_upto(10)      # create ten Runs. In the background, `make_cmd` is called to generate actual commands.
+    Server.await_ps(ps)          # wait until all the Runs of this ParameterSet finishes
+    avg = sum([r.output() for r in ps.runs()])/len(ps.runs())  # results are averaged over the Runs
+    print(f"average: {avg}")
     for r in ps.runs():
-        print(r.results, file=sys.stderr, flush=True)           # showing results of each Run
+        print(f"id: {r.id()}, output: {r.output()}")  # showing results of each Run
 ```
 
 This sample creates one PS and 10 Runs. The results of Runs as well as their average are shown.
 
-The following are the method of `ParameterSet` and `Runs`.
-
-- `ParameterSet` class
-    - `.find_or_create(params)`
-        - Creates a new PS of the parameters `parmas`. `params` is a tuple of parameter values. If a PS having the same parameters already exists, the existing PS is returned instead of making a new one.
-    - `#create_runs_upto(num_runs)`
-        - Runs are created under the PS. Runs are repeatedly created until the number of runs becomes `num_runs`.
-    - `#average_results()`
-        - returns results averaged over the Runs. Element-wise averaging is conducted assuming the length of the results are same.
-    - `#runs()`
-        - returns list of its Runs.
-    - `#finished_runs()`
-        - returns list of its Runs that are finished.
-    - `#is_finished()`
-        - returns True if all of its Runs are finished.
-    - `#params`
-        - a tuple of the parameters.
-- `Run` class
-    - `#parameter_set()`
-        - returns its ParameterSet object.
-    - `#seed`
-        - its random number seed.
-
 Here, we show another example that incrementally increases the number of Runs when the sample average does not converge enough. (The first half of the code is omitted since it is same as the previous one.)
 
 ```hello_ps_convergence.py
-def eprint(str):
-    print(str, file=sys.stderr, flush=True)
+import os,math
+from caravan import Server,Simulator
 
-def converged(ps):
+this_dir = os.path.abspath(os.path.dirname(__file__))
+sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")
+
+def err(ps):
     runs = ps.runs()
-    r1 = [r.results for r in runs]
-    errs = np.std(r1, axis=0, ddof=1) / math.sqrt(len(runs))
-    eprint(errs)
-    return np.all(errs < 0.2)
-
+    r1 = [r.output() for r in runs]
+    n = len(runs)
+    avg = sum(r1) / n
+    err = math.sqrt( sum([(r-avg)**2 for r in r1]) / ((n-1)*n) )
+    return err
 
 with Server.start():
-    ps = ParameterSet.find_or_create(1.0, 2.0)
+    ps = sim.find_or_create_parameter_set({'mu':1.0,'sigma':2.0})
     ps.create_runs_upto(4)
-    eprint("awaiting")
+    print("awaiting")
     Server.await_ps(ps)
-    while not converged(ps):
+    e = err(ps)
+    while e > 0.2:
+        print(f"error = {e}")
         ps.create_runs_upto(len(ps.runs()) + 4)  # add four runs
-        eprint("awaiting")
+        print("awaiting")
         Server.await_ps(ps)
-    print(ps.average_results(), file=sys.stderr)
+        e = err(ps)
+    print(f"error = {e}")
 ```
 
 It is also possible to do the same thing for other parameters concurrently using `Server.async` method.
 
-
 ```hello_ps_convergence_concurrent.py
+import os,math
+from caravan import Server,Simulator
+
+this_dir = os.path.abspath(os.path.dirname(__file__))
+sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")
+
+def err(ps):
+    runs = ps.runs()
+    r1 = [r.output() for r in runs]
+    n = len(runs)
+    avg = sum(r1) / n
+    err = math.sqrt( sum([(r-avg)**2 for r in r1]) / ((n-1)*n) )
+    return err
+
 def do_until_convergence(params):
-    ps = ParameterSet.find_or_create(params)
+    ps = sim.find_or_create_parameter_set(params)
     ps.create_runs_upto(4)
     Server.await_ps(ps)
-    while not converged(ps):
-        eprint("results for {params} is not converged".format(**locals()))
-        ps.create_runs_upto(len(ps.runs())+4)     # add four runs
+    e = err(ps)
+    while e > 0.2:
+        print(f"results for {params} is not converged")
+        ps.create_runs_upto(len(ps.runs()) + 4)  # add four runs
         Server.await_ps(ps)
-    eprint("converged results : {0}, params {1}".format(ps.average_results(), params))
-
+        e = err(ps)
+    print(f"converged results for {params}, error = {e}")
 
 with Server.start():
     for p1 in [1.0, 1.5, 2.0, 2.5]:
-        for p2 in [2.0, 3.0]:
-            Server.async(lambda _param=(p1, p2): do_until_convergence(_param))
+        for p2 in [0.5, 1.0]:
+            Server.do_async(lambda param={'mu':p1,'sigma':p2}: do_until_convergence(param))
 ```
 
 ### Testing your search engine using ServerStub
@@ -451,18 +403,18 @@ First define a function that receives a task instance and returns a tuple of exp
 
 ```py
 def stub_sim(task):
-    results = (task.id + 3, task.id + 10)
+    results = (task.id()+3, task.id()+10)
     elapsed = 1
     return results, elapsed
 ```
 
-Then, replace `Server.start()` with `start_stub(stub_sim)` as follows.
+Then, replace `Server.start()` with `StubServer.start(stub_sim)` as follows.
 
 ```diff
-+import caravan.server_stub import start_stub
++from caravan import StubServer
 
 -with Server.start():
-+with start_stub(stub_sim, num_proc=4):
++with StubServer.start(stub_sim, num_proc=4):
 ```
 
 Run this search engine as a stand-alone python program.
@@ -472,51 +424,47 @@ $ python my_search_engine.py
 ```
 
 Then, your search engine is executed for a pre-defined dummy simulator without invoking actual tasks.
-A file "tasks.bin" is created, with which you may visualize the task scheduling.
+A file "tasks.msgpack" is created, with which you may visualize the task scheduling.
 
-The `start_stub` method also works for Runs. After you implemented a search engine, modify your code as follows, which lets you test your code.
+The `StubServer.start` method also works for Runs.
+After you implemented a search engine, modify your code as follows, which lets you test your code.
 
 ```diff
-+from caravan.server_stub import start_stub
++from caravan import StubServer
 +import random
 +
-+def stub_sim(run):                                 # define a stub code that returns expected results and elapsed time
-+    params = run.parameter_set().params
-+    results = (random.normalvariate(params[0], params[1]),)
-+    return results, 1.0
++def stub_sim(task):
++    params = run.parameter_set().v()
++    output = random.normalvariate(params[0], params[1])
++    return output, 1.0
 +
 -with Server.start():
-+with start_stub(stub_sim):
++with StubServer.start(stub_sim, num_proc=4):
 ```
 
 ### Serializing Tasks, ParameterSets, and Runs
 
 When each job takes long durations, you probably want to serialize your status of Tasks, Runs and ParameterSets before finishing the whole process.
-To serialize these, call `Table.dump( filename )`.
+To serialize these, call `Tables.dump(filename)`.
 The following is a small example.
 
 ```py
-import sys
-from caravan.server import Server
-from caravan.task import Task
-from caravan.tables import Tables
-
-def eprint(s):
-    print(s, file=sys.stderr, flush=True)
+from caravan import Server,Task,Tables
 
 with Server.start():
     for i in range(10):
-        t = Task.create("sleep %d; echo %d > out" % (i%3,i))
-        eprint("task %i is created." % i)
-Tables.dump('my_dump')                # dump the results to a file
+        t = Task.create(f"sleep {1+i%3}; echo {i} > _output.json")
+        print(f"task {i} is created.")
+Tables.dump('dump.pickle')
 ```
 
-The dumped data can be loaded in another program. For instance, open Python REPL and run the following.
+The dumped data are useful when resuming your program.
+For instance, the following code will print the contents of the serialized data.
 
 ```py
-from caravan.tables import Tables
-from caravan.task import Task
-Tables.load("my_dump")         # data are loaded
+from caravan import Tables,Task
+
+Tables.load("dump.pickle")         # data are loaded
 for t in Task.all():
     print(t.to_dict())         # print Tasks
 ```
@@ -526,7 +474,7 @@ for t in Task.all():
 Unit tests are in `tests` directory. Run the unit tests by the following command.
 
 ```
-env CARAVAN_LOG_LEVEL=1 python -m unittest discover test
+python -m unittest discover test
 ```
 
 ## License
