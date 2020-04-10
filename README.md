@@ -236,9 +236,9 @@ with Server.start():
         print(f"task ID:{t.id()}, rc:{t.rc()}, rank:{t.rank()}, {t.start_at()}-{t.finish_at()}")
 ```
 
-### Getting the results of simulators
+### Getting the output of a task
 
-If a simulator writes "_results.txt" file, its contents is parsed by the scheduler and is passed to the search engine.
+If a simulator writes "_output.json" file, its contents is parsed by the scheduler and is passed to the search engine.
 The results are obtained as lists of float values. The length of the results for each task may vary.
 
 ```hello_output.py
@@ -270,118 +270,128 @@ with Server.start():
             break
 ```
 
-### ParameterSet and Run
+### Setting input parametes of a task
+
+Similarly, one can set an input parameter of a task by giving an object as the second argument of `Task.create`.
+The input object is printed to `_input.json` format such that the command can read the parameter from the file.
+
+```hello_input.py
+from caravan import Server,Task
+
+with Server.start():
+    t = Task.create("cat _input.json > _output.json", {"foo":1, "bar":2, "baz":3})
+    Server.await_task(t)
+    print(t.output())
+```
+
+### Simulator, ParameterSet and Run
 
 Suppose that we have a simulator for a Monte Carlo simulation. In that case, each MC run corresponds to a task.
-To simplify the integration of MC simulators to CARAVAN, `ParameterSet` and `Run` classes are prepared.
-`ParameterSet` (PS) class corresponds to a set of parameters for the simulator while `Run` corresponds to a MC run. Thus, each PS may have multiple Runs.
-Run is a sub-class of Task class.
+To simplify the integration of MC simulators to CARAVAN, `Simulator`, `ParameterSet` and `Run` classes are prepared.
+A `Simulator` corresponds to an executable program.
+A `ParameterSet` (PS) corresponds to a set of parameters for the simulator while `Run` corresponds to a MC run having a distinct random number seed.
+Thus, each Simulator has multiple PSs whereas each PS may have multiple Runs. `Run` class is a sub-class of `Task` class.
 
-Here is an example. This sample simulator takes two parameters and one random-number seed. It prints one output values to "_results.txt" file.
+Here is an example. This sample simulator reads two parameters and one random-number seed from `_input.json` file.
+A random number seed value is set in `_seed` field, which is automatically assigned by the search engine.
 
 ```mc_simulator.py
-import sys,random
+import sys,random,json
 
-mu = float(sys.argv[1])
-sigma = float(sys.argv[2])
-random.seed(int(sys.argv[3]))
-print(random.normalvariate(mu, sigma))
+with open('_input.json') as f:
+    param = json.load(f)
+    mu = param['mu']
+    sigma = param['sigma']
+    random.seed(param['_seed'])
+    print(random.normalvariate(mu,sigma))
 ```
 
 To run this simulator, use the following search engine.
 
 ```hello_ps.py
-import sys
-from caravan.server import Server
-from caravan.parameter_set import ParameterSet
+import os
+from caravan import Server,Simulator
 
-# define a function which receives a tuple of parameters and a random-number seed, and returns the command to be executed
-def make_cmd( params, seed ):
-    args = " ".join( [str(x) for x in params] )
-    return "python ../../mc_simulator.py %s %d > _results.txt" % (args, seed)
-
-ParameterSet.set_command_func(make_cmd)             # set `make_cmd`. When runs are created, `make_cmd` is called when Runs are created.
+this_dir = os.path.abspath(os.path.dirname(__file__))
+sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")  # create a Simulator object
 
 with Server.start():
-    ps = ParameterSet.find_or_create(1.0, 2.0)      # create a ParameterSet whose parameters are (1.0,2.0).
-    ps.create_runs_upto(10)                         # create ten Runs. In the background, `make_cmd` is called to generate actual commands.
-    Server.await_ps(ps)                             # wait until all the Runs of this ParameterSet finishes
-    x = ps.average_results()                        # results are averaged over the Runs
-    print("average: %f" % x, file=sys.stderr, flush=True)
+    ps = sim.find_or_create_parameter_set({'mu':1.0,'sigma':2.0}) # create a ParameterSet whose parameters are (mu=1.0,sigma=2.0).
+    ps.create_runs_upto(10)      # create ten Runs. In the background, `make_cmd` is called to generate actual commands.
+    Server.await_ps(ps)          # wait until all the Runs of this ParameterSet finishes
+    avg = sum([r.output() for r in ps.runs()])/len(ps.runs())  # results are averaged over the Runs
+    print(f"average: {avg}")
     for r in ps.runs():
-        print(r.results, file=sys.stderr, flush=True)           # showing results of each Run
+        print(f"id: {r.id()}, output: {r.output()}")  # showing results of each Run
 ```
 
 This sample creates one PS and 10 Runs. The results of Runs as well as their average are shown.
 
-The following are the method of `ParameterSet` and `Runs`.
-
-- `ParameterSet` class
-    - `.find_or_create(params)`
-        - Creates a new PS of the parameters `parmas`. `params` is a tuple of parameter values. If a PS having the same parameters already exists, the existing PS is returned instead of making a new one.
-    - `#create_runs_upto(num_runs)`
-        - Runs are created under the PS. Runs are repeatedly created until the number of runs becomes `num_runs`.
-    - `#average_results()`
-        - returns results averaged over the Runs. Element-wise averaging is conducted assuming the length of the results are same.
-    - `#runs()`
-        - returns list of its Runs.
-    - `#finished_runs()`
-        - returns list of its Runs that are finished.
-    - `#is_finished()`
-        - returns True if all of its Runs are finished.
-    - `#params`
-        - a tuple of the parameters.
-- `Run` class
-    - `#parameter_set()`
-        - returns its ParameterSet object.
-    - `#seed`
-        - its random number seed.
-
 Here, we show another example that incrementally increases the number of Runs when the sample average does not converge enough. (The first half of the code is omitted since it is same as the previous one.)
 
 ```hello_ps_convergence.py
-def eprint(str):
-    print(str, file=sys.stderr, flush=True)
+import os,math
+from caravan import Server,Simulator
 
-def converged(ps):
+this_dir = os.path.abspath(os.path.dirname(__file__))
+sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")
+
+def err(ps):
     runs = ps.runs()
-    r1 = [r.results for r in runs]
-    errs = np.std(r1, axis=0, ddof=1) / math.sqrt(len(runs))
-    eprint(errs)
-    return np.all(errs < 0.2)
-
+    r1 = [r.output() for r in runs]
+    n = len(runs)
+    avg = sum(r1) / n
+    err = math.sqrt( sum([(r-avg)**2 for r in r1]) / ((n-1)*n) )
+    return err
 
 with Server.start():
-    ps = ParameterSet.find_or_create(1.0, 2.0)
+    ps = sim.find_or_create_parameter_set({'mu':1.0,'sigma':2.0})
     ps.create_runs_upto(4)
-    eprint("awaiting")
+    print("awaiting")
     Server.await_ps(ps)
-    while not converged(ps):
+    e = err(ps)
+    while e > 0.2:
+        print(f"error = {e}")
         ps.create_runs_upto(len(ps.runs()) + 4)  # add four runs
-        eprint("awaiting")
+        print("awaiting")
         Server.await_ps(ps)
-    print(ps.average_results(), file=sys.stderr)
+        e = err(ps)
+    print(f"error = {e}")
 ```
 
 It is also possible to do the same thing for other parameters concurrently using `Server.async` method.
 
-
 ```hello_ps_convergence_concurrent.py
+import os,math
+from caravan import Server,Simulator
+
+this_dir = os.path.abspath(os.path.dirname(__file__))
+sim = Simulator.create(f"python {this_dir}/mc_simulator.py > _output.json")
+
+def err(ps):
+    runs = ps.runs()
+    r1 = [r.output() for r in runs]
+    n = len(runs)
+    avg = sum(r1) / n
+    err = math.sqrt( sum([(r-avg)**2 for r in r1]) / ((n-1)*n) )
+    return err
+
 def do_until_convergence(params):
-    ps = ParameterSet.find_or_create(params)
+    ps = sim.find_or_create_parameter_set(params)
     ps.create_runs_upto(4)
     Server.await_ps(ps)
-    while not converged(ps):
-        eprint("results for {params} is not converged".format(**locals()))
-        ps.create_runs_upto(len(ps.runs())+4)     # add four runs
+    e = err(ps)
+    while e > 0.2:
+        print(f"results for {params} is not converged")
+        ps.create_runs_upto(len(ps.runs()) + 4)  # add four runs
         Server.await_ps(ps)
-    eprint("converged results : {0}, params {1}".format(ps.average_results(), params))
-
+        e = err(ps)
+    print(f"converged results for {params}, error = {e}")
 
 with Server.start():
     for p1 in [1.0, 1.5, 2.0, 2.5]:
-        for p2 in [2.0, 3.0]:
-            Server.async(lambda _param=(p1, p2): do_until_convergence(_param))
+        for p2 in [0.5, 1.0]:
+            Server.do_async(lambda param={'mu':p1,'sigma':p2}: do_until_convergence(param))
 ```
 
 ### Testing your search engine using ServerStub
@@ -393,18 +403,18 @@ First define a function that receives a task instance and returns a tuple of exp
 
 ```py
 def stub_sim(task):
-    results = (task.id + 3, task.id + 10)
+    results = (task.id()+3, task.id()+10)
     elapsed = 1
     return results, elapsed
 ```
 
-Then, replace `Server.start()` with `start_stub(stub_sim)` as follows.
+Then, replace `Server.start()` with `StubServer.start(stub_sim)` as follows.
 
 ```diff
-+import caravan.server_stub import start_stub
++from caravan import StubServer
 
 -with Server.start():
-+with start_stub(stub_sim, num_proc=4):
++with StubServer.start(stub_sim, num_proc=4):
 ```
 
 Run this search engine as a stand-alone python program.
@@ -414,51 +424,47 @@ $ python my_search_engine.py
 ```
 
 Then, your search engine is executed for a pre-defined dummy simulator without invoking actual tasks.
-A file "tasks.bin" is created, with which you may visualize the task scheduling.
+A file "tasks.msgpack" is created, with which you may visualize the task scheduling.
 
-The `start_stub` method also works for Runs. After you implemented a search engine, modify your code as follows, which lets you test your code.
+The `StubServer.start` method also works for Runs.
+After you implemented a search engine, modify your code as follows, which lets you test your code.
 
 ```diff
-+from caravan.server_stub import start_stub
++from caravan import StubServer
 +import random
 +
-+def stub_sim(run):                                 # define a stub code that returns expected results and elapsed time
-+    params = run.parameter_set().params
-+    results = (random.normalvariate(params[0], params[1]),)
-+    return results, 1.0
++def stub_sim(task):
++    params = run.parameter_set().v()
++    output = random.normalvariate(params[0], params[1])
++    return output, 1.0
 +
 -with Server.start():
-+with start_stub(stub_sim):
++with StubServer.start(stub_sim, num_proc=4):
 ```
 
 ### Serializing Tasks, ParameterSets, and Runs
 
 When each job takes long durations, you probably want to serialize your status of Tasks, Runs and ParameterSets before finishing the whole process.
-To serialize these, call `Table.dump( filename )`.
+To serialize these, call `Tables.dump(filename)`.
 The following is a small example.
 
 ```py
-import sys
-from caravan.server import Server
-from caravan.task import Task
-from caravan.tables import Tables
-
-def eprint(s):
-    print(s, file=sys.stderr, flush=True)
+from caravan import Server,Task,Tables
 
 with Server.start():
     for i in range(10):
-        t = Task.create("sleep %d; echo %d > out" % (i%3,i))
-        eprint("task %i is created." % i)
-Tables.dump('my_dump')                # dump the results to a file
+        t = Task.create(f"sleep {1+i%3}; echo {i} > _output.json")
+        print(f"task {i} is created.")
+Tables.dump('dump.pickle')
 ```
 
-The dumped data can be loaded in another program. For instance, open Python REPL and run the following.
+The dumped data are useful when resuming your program.
+For instance, the following code will print the contents of the serialized data.
 
 ```py
-from caravan.tables import Tables
-from caravan.task import Task
-Tables.load("my_dump")         # data are loaded
+from caravan import Tables,Task
+
+Tables.load("dump.pickle")         # data are loaded
 for t in Task.all():
     print(t.to_dict())         # print Tasks
 ```
@@ -468,7 +474,7 @@ for t in Task.all():
 Unit tests are in `tests` directory. Run the unit tests by the following command.
 
 ```
-env CARAVAN_LOG_LEVEL=1 python -m unittest discover test
+python -m unittest discover test
 ```
 
 ## License
