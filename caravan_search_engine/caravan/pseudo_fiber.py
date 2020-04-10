@@ -65,7 +65,7 @@ class Fiber:
 
     def switch(self):
         if not self._th.is_alive():
-            raise error('Fiber has ended')
+            raise Exception('Fiber has ended')
 
         curr = current()
         self._q.put(0)
