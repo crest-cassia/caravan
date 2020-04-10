@@ -9,7 +9,7 @@ class TestRun(unittest.TestCase):
         self.t = Tables.get()
         self.t.clear()
         self.sim = Simulator.create("~/my_simulator")
-        self.ps = self.sim.find_or_create_parameter_set({"p1":1})
+        self.ps = self.sim.find_or_create_parameter_set({"p1": 1})
 
     def test_run(self):
         r = self.ps.create_runs_upto(1)[0]
@@ -28,8 +28,8 @@ class TestRun(unittest.TestCase):
     def test_all_find(self):
         runs = self.ps.create_runs_upto(3)
         self.assertEqual(Run.all(), runs)
-        ps2 = self.sim.find_or_create_parameter_set({"p1":2})
-        runs2 = ps2.create_runs_upto(3)
+        ps2 = self.sim.find_or_create_parameter_set({"p1": 2})
+        _ = ps2.create_runs_upto(3)
         self.assertEqual(len(Run.all()), 6)
         self.assertEqual(Run.find(1), runs[1])
         self.assertEqual(Run.find(4).id(), 4)

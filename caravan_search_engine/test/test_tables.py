@@ -30,10 +30,10 @@ class TestTables(unittest.TestCase):
 
     def test_dump(self):
         sim = Simulator.create("~/my_simulator")
-        ps = sim.find_or_create_parameter_set({"p1":0, "p2":1})
+        ps = sim.find_or_create_parameter_set({"p1": 0, "p2": 1})
         runs = ps.create_runs_upto(3)
         runs[0]._store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
-        ps2 = sim.find_or_create_parameter_set({"p1":2, "p2":3})
+        ps2 = sim.find_or_create_parameter_set({"p1": 2, "p2": 3})
         self.assertEqual(len(ParameterSet.all()), 2)
         runs = ps2.create_runs_upto(3)
         runs[2]._store_result([1.0, 2.0, 3.0], 0, 3, 111, 222)
