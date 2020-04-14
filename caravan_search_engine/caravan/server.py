@@ -366,7 +366,7 @@ class Server(object):
         if size == 0: return None
         data_b = self._receive_bytes(size)
         self._logger.debug("received: %s bytes" % size)
-        unpacked = msgpack.unpackb(data_b, raw=False)
+        unpacked = msgpack.unpackb(data_b)
         self._logger.debug("received: %s" % str(unpacked))
         tid = unpacked["id"]
         rc = unpacked["rc"]
