@@ -13,12 +13,23 @@
 #include <vector>
 #include <unistd.h>
 #include <cassert>
+// #define USE_BOOST_FS
+#ifndef USE_BOOST_FS
 #include <filesystem>
+#else
+#include <boost/filesystem.hpp>
+#endif
 #include <nlohmann/json.hpp>
 #include "Logger.hpp"
 #include "TaskResult.hpp"
 
 using json = nlohmann::json;
+#ifndef USE_BOOST_FS
+namespace fs = std::filesystem;
+#else
+namespace fs = boost::filesystem;
+#endif
+
 
 class Task {
   public:
@@ -28,17 +39,17 @@ class Task {
   std::string command;
   json input;
   TaskResult Run(Logger& logger, const std::chrono::system_clock::time_point& ref_time, const std::string& work_base_dir, long timeout) const {
-    const std::filesystem::path cwd = std::filesystem::current_path();
+    const fs::path cwd = fs::current_path();
 
-    const std::filesystem::path work_dir = WorkDirPath(work_base_dir);
+    const fs::path work_dir = WorkDirPath(work_base_dir);
 
-    std::filesystem::create_directories(work_dir);
+    fs::create_directories(work_dir);
     if(!input.is_null()) {
-      std::ofstream fout(InputFilePath(work_base_dir));
+      std::ofstream fout(InputFilePath(work_base_dir).string());
       fout << input;
       fout.flush();  // explicitly flush fout
     }
-    std::filesystem::current_path(work_dir);
+    fs::current_path(work_dir);
 
     auto start_at = std::chrono::system_clock::now();
     long s_at = std::chrono::duration_cast<std::chrono::milliseconds>(start_at - ref_time).count();
@@ -48,19 +59,19 @@ class Task {
     auto finish_at = std::chrono::system_clock::now();
     long f_at = std::chrono::duration_cast<std::chrono::milliseconds>(finish_at - ref_time).count();
     logger.d("Completed task %d", task_id);
-    std::filesystem::current_path(cwd);
+    fs::current_path(cwd);
 
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     TaskResult res(task_id, rc, my_rank, s_at, f_at);
 
-    const std::filesystem::path res_path = OutputFilePath(work_base_dir);
+    const fs::path res_path = OutputFilePath(work_base_dir);
     logger.d("Output file %s", res_path.c_str());
-    if( std::filesystem::exists(res_path) ) {
-      size_t res_size = std::filesystem::file_size(res_path);
+    if( fs::exists(res_path) ) {
+      size_t res_size = fs::file_size(res_path);
       logger.d("Output file is found for task %d (%d bytes)", task_id, res_size);
       json j;
-      std::ifstream fin(res_path);
+      std::ifstream fin(res_path.string());
       fin >> j;
       res.output = j;
       logger.d("Output: %s", res.output.dump().c_str() );
@@ -68,18 +79,18 @@ class Task {
 
     return res;
   }
-  std::filesystem::path WorkDirPath(const std::string& work_base_dir) const {
+  fs::path WorkDirPath(const std::string& work_base_dir) const {
     char buf[256];
     int n = std::snprintf(buf, sizeof(buf), "%s/w%04ld/w%07ld", work_base_dir.c_str(), task_id/1000, task_id);
     assert(n >= 0 && n < 256);
-    return std::filesystem::path(buf);
+    return fs::path(buf);
   }
-  std::filesystem::path InputFilePath(const std::string& work_base_dir) const {
+  fs::path InputFilePath(const std::string& work_base_dir) const {
     auto p = WorkDirPath(work_base_dir);
     p.append("_input.json");
     return p;
   }
-  std::filesystem::path OutputFilePath(const std::string& work_base_dir) const {
+  fs::path OutputFilePath(const std::string& work_base_dir) const {
     auto p = WorkDirPath(work_base_dir);
     p.append("_output.json");
     return p;
