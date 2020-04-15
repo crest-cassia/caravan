@@ -44,7 +44,7 @@ Another limitation of CARAVAN is that a simulator must be a serial program or mu
 
 - (for scheduler) C++17 with MPI
 - (for search engine) msgpack-python
-    - `pip install msgpack-python`
+    - `pip install msgpack`
 - (for search engine) python-fibers (optional)
     - `pip install fibers`
     - This module supports x86, x86-64, ARM, MIPS64, PPC64 and s390x. Although you may skip the installation of this module, installation is recommended for a program using async-await pattern extensively.
