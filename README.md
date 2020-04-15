@@ -61,7 +61,7 @@ Then, run the following shell script to build the scheduler.
 
 ```console
 $ cd caravan_scheduler
-$ mpicxx -o scheduler -O3 main.cpp
+$ mpicxx -Ijson/include -std=c++17 -o scheduler -O3 main.cpp
 ```
 
 ### Running a sample project
