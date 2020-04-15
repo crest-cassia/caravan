@@ -43,6 +43,7 @@ Another limitation of CARAVAN is that a simulator must be a serial program or mu
 ### Prerequisites
 
 - (for scheduler) C++17 with MPI
+    - If C++17 is not available, you may use boost & C++11 instead.
 - (for search engine) msgpack-python
     - `pip install msgpack`
 - (for search engine) python-fibers (optional)
@@ -62,6 +63,9 @@ Then, run the following shell script to build the scheduler.
 ```console
 $ cd caravan_scheduler
 $ mpicxx -Ijson/include -std=c++17 -o scheduler -O3 main.cpp
+
+(if std::filesystem defined in c++17 is not available, use boost::filesystem instead as follows)
+$ mpicxx -Ijson/include -std=c++11 -DUSE_BOOST_FS -lboost_filesystem -o scheduler -O3 main.cpp
 ```
 
 ### Running a sample project
