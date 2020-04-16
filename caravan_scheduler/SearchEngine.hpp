@@ -75,7 +75,7 @@ public:
       if( sock < 0 ) { throw std::runtime_error("failed to create a socket"); }
       int err = connect(sock, (struct sockaddr *)&server, sizeof(server));
       if(err == 0) break;
-      std::cerr << "waiting for connection. retrying..." << std::endl;
+      std::cerr << "waiting for connection. at " << port << " retrying..." << std::endl;
       close(sock);
       int dead = waitpid(pid, nullptr, WNOHANG); // child process is dead
       if(dead) { throw std::runtime_error("server process is dead"); }
