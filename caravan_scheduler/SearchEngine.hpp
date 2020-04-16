@@ -31,9 +31,9 @@ public:
   int pid;
   int sock;
 
-  long LaunchSearcher( const std::vector<std::string>& argvs ) {
+  long LaunchSearcher( const std::vector<std::string>& argvs, int port) {
     long rc = ForkExec(argvs);
-    WaitServerIsReady();
+    WaitServerIsReady(port);
     return rc;
   }
 
@@ -63,10 +63,10 @@ public:
     return 0;
   }
 
-  void WaitServerIsReady() {
+  void WaitServerIsReady(int port) {
     struct sockaddr_in server;
     server.sin_family = AF_INET;
-    server.sin_port = htons(50007);
+    server.sin_port = htons(port);
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     while(true) {

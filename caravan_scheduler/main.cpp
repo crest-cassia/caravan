@@ -13,6 +13,7 @@ json GetOptions() {
   json OPTIONS = {
       {"CARAVAN_NUM_PROC_PER_BUF", 384 },  // # of consumer processes for each buffer proc
       {"CARAVAN_TIMEOUT", 86400 }, // timeout duration in sec
+      {"CARAVAN_SOCKET_PORT", 50007 }, // port used for communication between producer and search engine
       // {"CARAVAN_SEND_RESULT_INTERVAL", 3 }, // interval to send results in sec
       {"CARAVAN_WORK_BASE_DIR", "."}, // the directory under which work directories are created
       {"CARAVAN_LOG_LEVEL", 1} // log level (int)

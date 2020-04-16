@@ -39,7 +39,8 @@ class Producer {
   const json OPTIONS;
 
   void LaunchSearcher(const std::vector<std::string>& argvs) {
-    int rc = se.LaunchSearcher(argvs);
+    int port = OPTIONS["CARAVAN_SOCKET_PORT"];
+    int rc = se.LaunchSearcher(argvs, port);
     logger.d("launched searcher");
     assert( rc == 0 );
   }

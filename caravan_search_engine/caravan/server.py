@@ -57,7 +57,10 @@ class Server(object):
         self._loop_fiber = Fiber(target=self._loop)
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._sock.bind( ('127.0.0.1',50007) )
+        port = 50007
+        if 'CARAVAN_SOCKET_PORT' in os.environ:
+            port = int(os.environ['CARAVAN_SOCKET_PORT'])
+        self._sock.bind( ('127.0.0.1', port) )
         self._sock.listen(1)
         self._conn,_ = self._sock.accept()
         self._logger.debug("accepted")
