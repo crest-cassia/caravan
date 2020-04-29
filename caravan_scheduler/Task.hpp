@@ -13,6 +13,8 @@
 #include <vector>
 #include <unistd.h>
 #include <cassert>
+#include <thread>
+#include <chrono>
 // #define USE_BOOST_FS
 #ifndef USE_BOOST_FS
 #include <filesystem>
@@ -55,7 +57,12 @@ class Task {
     long s_at = std::chrono::duration_cast<std::chrono::milliseconds>(start_at - ref_time).count();
     logger.d("Starting task %d at %s, timeout %d sec", task_id, work_dir.c_str(), timeout);
     setenv("CARAVAN_TASK_TIMEOUT", std::to_string(timeout).c_str(), 1);
-    int rc = std::system(command.c_str());
+    // instead of running external commands, sleep
+    // int rc = std::system(command.c_str());
+    int rc = 0;
+    double s = input["sleep"];
+    std::this_thread::sleep_for( std::chrono::milliseconds(static_cast<long>(s*1000)) );
+
     auto finish_at = std::chrono::system_clock::now();
     long f_at = std::chrono::duration_cast<std::chrono::milliseconds>(finish_at - ref_time).count();
     logger.d("Completed task %d", task_id);

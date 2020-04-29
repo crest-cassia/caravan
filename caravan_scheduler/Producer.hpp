@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <chrono>
+#include <random>
 #include "mpi.h"
 #include "Task.hpp"
 #include "TaskResult.hpp"
@@ -40,13 +41,23 @@ class Producer {
 
   void LaunchSearcher(const std::vector<std::string>& argvs) {
     int port = OPTIONS["CARAVAN_SOCKET_PORT"];
-    int rc = se.LaunchSearcher(argvs, port);
+    // int rc = se.LaunchSearcher(argvs, port);
+    int rc = 0;
     logger.d("launched searcher");
     assert( rc == 0 );
   }
   void EnqueueInitialTasks() {
     logger.d("creating initial tasks");
-    auto created = se.CreateInitialTasks();
+    // auto created = se.CreateInitialTasks();
+    const size_t n_task = 20;
+    std::vector<Task> created;
+    std::mt19937 engine(1234);
+    std::uniform_real_distribution<> uni(3.0, 5.0);
+    for(size_t i = 0; i < n_task; i++) {
+      double d = uni(engine);
+      json j = { {"sleep", d} };
+      created.emplace_back(i, "sleep", j);
+    }
     logger.d("created initial tasks");
     for(const auto& t: created) { tasks.push(t); }
   }
@@ -121,8 +132,8 @@ class Producer {
       TerminateWorker(req_w.first);
     }
     logger.d("SE terminating");
-    se.SendEmptyLine();
-    se.WaitSearcher();
+    // se.SendEmptyLine();
+    // se.WaitSearcher();
     logger.d("producer terminated");
   }
 
@@ -175,7 +186,8 @@ class Producer {
     logger.d("sending results %d to search engine", task_id);
     const auto& res = task_results.find(task_id);
     assert(res != task_results.end());
-    auto ts = se.SendResult( json::to_msgpack(res->second) );
+    // auto ts = se.SendResult( json::to_msgpack(res->second) );
+    auto ts = std::vector<Task>();
     logger.d("%d new tasks are created", ts.size());
     for(const auto& t: ts) {
       tasks.push(t);

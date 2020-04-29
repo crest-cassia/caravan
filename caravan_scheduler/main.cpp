@@ -91,10 +91,12 @@ std::tuple<int,int,std::vector<int>> GetRole(int rank, int procs, int num_proc_p
 
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
+  /*
   if( argc < 2 ) {
     std::cerr << "Usage: mpiexec -np ${PROCS} " << argv[0] << " ${CMD TO SEARCH PS}" << std::endl;
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
+   */
 
   int rank, procs;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
