@@ -130,9 +130,9 @@ int main(int argc, char* argv[]) {
     logger.i("Elapsed time: %f [s]", total);
     double eff = total / (elapsed * (procs - 1));
     logger.i("Parallel Efficiency : %f ", eff);
-    logger.i("Task list (Command : Elapsed time)");
+    logger.d("Task list (Command : Elapsed time)");
     for(const auto& it : prod.task_results ) {
-      logger.i("%d : %f [s] : %s", it.second.task_id, it.second.ElapsedTime(), it.second.output.dump().c_str() );
+      logger.d("%d : %f [s] : %s", it.second.task_id, it.second.ElapsedTime(), it.second.output.dump().c_str() );
     }
 
     // dump results
