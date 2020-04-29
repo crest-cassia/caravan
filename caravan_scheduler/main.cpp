@@ -91,12 +91,13 @@ std::tuple<int,int,std::vector<int>> GetRole(int rank, int procs, int num_proc_p
 
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
-  /*
-  if( argc < 2 ) {
-    std::cerr << "Usage: mpiexec -np ${PROCS} " << argv[0] << " ${CMD TO SEARCH PS}" << std::endl;
+  if( argc != 4 ) {
+    std::cerr << "Usage: mpiexec -np ${PROCS} " << argv[0] << " n_tasks t_min t_max" << std::endl;
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
-   */
+  const size_t n_tasks = std::stoi(std::string(argv[1]) );
+  const double t_min = std::stod(std::string(argv[2]));
+  const double t_max = std::stod(std::string(argv[3]));
 
   int rank, procs;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> argvs;
     for(int i=1; i<argc; i++) { argvs.emplace_back(argv[i]); }
     prod.LaunchSearcher( argvs );
-    prod.EnqueueInitialTasks();
+    prod.EnqueueInitialTasks(n_tasks, t_min, t_max);
 
     prod.Run(std::get<2>(role));
 

@@ -46,13 +46,12 @@ class Producer {
     logger.d("launched searcher");
     assert( rc == 0 );
   }
-  void EnqueueInitialTasks() {
+  void EnqueueInitialTasks(const size_t n_task, double t_min = 3.0, double t_max = 5.0) {
     logger.d("creating initial tasks");
     // auto created = se.CreateInitialTasks();
-    const size_t n_task = 20;
     std::vector<Task> created;
     std::mt19937 engine(1234);
-    std::uniform_real_distribution<> uni(3.0, 5.0);
+    std::uniform_real_distribution<> uni(t_min, t_max);
     for(size_t i = 0; i < n_task; i++) {
       double d = uni(engine);
       json j = { {"sleep", d} };
