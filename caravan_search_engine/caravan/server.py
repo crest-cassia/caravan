@@ -12,6 +12,7 @@ else:
 from .task import Task
 from .run import Run
 from .parameter_set import ParameterSet
+from mpi4py import MPI
 
 
 class Server(object):
@@ -37,8 +38,7 @@ class Server(object):
         self.max_submitted_task_id = 0
         self._logger = logger or self._default_logger()
         self._fibers = []
-        self._sock = None
-        self._conn = None
+        self._comm = None
 
     @classmethod
     def start(cls, logger=None):
@@ -47,7 +47,7 @@ class Server(object):
 
         Examples
         ---
-        >>> wtih Server.start():
+        >>> with Server.start():
             ....
         """
         cls._instance = cls(logger)
@@ -55,14 +55,7 @@ class Server(object):
 
     def __enter__(self):
         self._loop_fiber = Fiber(target=self._loop)
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        port = 50007
-        if 'CARAVAN_SOCKET_PORT' in os.environ:
-            port = int(os.environ['CARAVAN_SOCKET_PORT'])
-        self._sock.bind( ('127.0.0.1', port) )
-        self._sock.listen(1)
-        self._conn,_ = self._sock.accept()
+        self._comm = MPI.Comm.Get_parent()
         self._logger.debug("accepted")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -70,8 +63,7 @@ class Server(object):
             return False  # re-raise exception
         if self._loop_fiber.is_alive():
             self._loop_fiber.switch()
-        self._conn.close()
-        self._sock.close()
+        self._comm.Disconnect()
 
     @classmethod
     def watch_ps(cls, ps, callback):
@@ -274,10 +266,7 @@ class Server(object):
     def _print_tasks(self, tasks):
         b_tasks = [ {"id": t.id(), "cmd": t.command(), "input": t.input()} for t in tasks ]
         packed = msgpack.packb(b_tasks)
-        size_b = struct.pack('>q', len(packed))
-        self._conn.sendall(size_b)
-        self._logger.debug(f"sent size {len(packed)}")
-        self._conn.sendall(packed)
+        self._comm.Send([bytearray(packed),MPI.CHAR], dest=0, tag=0)
         self._logger.debug(f"sent packed")
 
     def _launch_all_fibers(self):
@@ -352,23 +341,18 @@ class Server(object):
             self.observed_all_tasks.pop(task.id())
         return executed
 
-    def _receive_bytes(self, n):
-        chunks = []
-        bytes_recd = 0
-        while bytes_recd < n:
-            chunk = self._conn.recv( min(n-bytes_recd, 4096) )
-            if chunk == b'':
-                raise RuntimeError('socket connection broken')
-            chunks.append(chunk)
-            bytes_recd += len(chunk)
-        return b''.join(chunks)
+    def _receive_bytes(self):
+        s = MPI.Status()
+        self._comm.Probe(status=s)
+        if s.count == 0: assert s.tag == 1
+        recvbuf = bytearray(s.count)
+        self._comm.Recv([recvbuf, s.count, MPI.CHAR], source=s.source, tag=s.tag)
+        return recvbuf
 
     def _receive_result(self):
-        size_b = self._receive_bytes(8)
-        size = struct.unpack('>q', size_b)[0]
-        if size == 0: return None
-        data_b = self._receive_bytes(size)
-        self._logger.debug("received: %s bytes" % size)
+        data_b = self._receive_bytes()
+        if len(data_b) == 0: return None
+        self._logger.debug("received: %s bytes" % len(data_b))
         unpacked = msgpack.unpackb(data_b)
         self._logger.debug("received: %s" % str(unpacked))
         tid = unpacked["id"]

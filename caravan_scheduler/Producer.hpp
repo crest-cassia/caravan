@@ -39,8 +39,7 @@ class Producer {
   const json OPTIONS;
 
   void LaunchSearcher(const std::vector<std::string>& argvs) {
-    int port = OPTIONS["CARAVAN_SOCKET_PORT"];
-    int rc = se.LaunchSearcher(argvs, port);
+    int rc = se.LaunchSearcher(argvs);
     logger.d("launched searcher");
     assert( rc == 0 );
   }
@@ -121,8 +120,7 @@ class Producer {
       TerminateWorker(req_w.first);
     }
     logger.d("SE terminating");
-    se.SendEmptyLine();
-    se.WaitSearcher();
+    se.SendTerminateSignal();
     logger.d("producer terminated");
   }
 
