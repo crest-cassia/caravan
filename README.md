@@ -36,7 +36,7 @@ CARAVAN is designed so as to scale up well to tens of thousands of MPI processes
 
 Another difference from Map-Reduce like frameworks is that it is possible to define callback functions which are invoked when each task is finished. This is necessary for various parameter-space exploration including optimization and Markov chain Monte Carlo parameter-space sampling. With these callbacks, we can determine the parameter-space to explore based on the existing simulation results.
 
-Another limitation of CARAVAN is that a simulator must be a serial program or multi-thread program. It must not be an MPI-parallel program. This is because CARAVAN launches the command as an external process, not as an MPI process invoked by `MPI_Comm_Spawn` function. In such cases, you may use another framework such as `concurrent.futures` module of mpi4py. If you have a serial or OpenMP program, on the other hand, it is easy to integrate your simulator into CARAVAN.
+Another limitation of CARAVAN is that a simulator must be a serial program or multi-thread program. It must not be an MPI-parallel program. This is because CARAVAN launches the command as an external process, not as an MPI process invoked by `MPI_Comm_spawn` function. In such cases, you may use another framework such as `concurrent.futures` module of mpi4py. If you have a serial or OpenMP program, on the other hand, it is easy to integrate your simulator into CARAVAN.
 
 ## Installation
 
@@ -44,8 +44,8 @@ Another limitation of CARAVAN is that a simulator must be a serial program or mu
 
 - (for scheduler) C++17 with MPI
     - If C++17 is not available, you may use boost & C++11 instead.
-- (for search engine) msgpack-python
-    - `pip install msgpack`
+- (for search engine) msgpack-python and mpi4py
+    - `pip install msgpack mpi4py`
 - (for search engine) python-fibers (optional)
     - `pip install fibers`
     - This module supports x86, x86-64, ARM, MIPS64, PPC64 and s390x. Although you may skip the installation of this module, installation is recommended for a program using async-await pattern extensively.
@@ -64,7 +64,7 @@ Then, run the following shell script to build the scheduler.
 $ cd caravan_scheduler
 $ mpicxx -Ijson/include -std=c++17 -o scheduler -O3 main.cpp
 
-(if std::filesystem defined in c++17 is not available, use boost::filesystem instead as follows)
+(if std::filesystem defined in c++17 is not available, use boost::filesystem with `-DUSE_BOOST_FS` option as follows)
 $ mpicxx -Ijson/include -std=c++11 -DUSE_BOOST_FS -lboost_filesystem -o scheduler -O3 main.cpp
 ```
 
