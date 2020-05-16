@@ -14,15 +14,17 @@
 #include "Task.hpp"
 #include "TaskResult.hpp"
 #include "Producer.hpp"
+#include "SpawnerHandler.hpp"
 
 class Consumer {
   public:
-  Consumer(int _parent, Logger& _logger, std::chrono::system_clock::time_point _ref_time, const json& _OPTIONS)
-    : parent(_parent), logger(_logger), ref_time(_ref_time), OPTIONS(_OPTIONS) {};
+  Consumer(int _parent, SpawnerHandler & _sh, Logger& _logger, std::chrono::system_clock::time_point _ref_time, const json& _OPTIONS)
+    : parent(_parent), sh(_sh), logger(_logger), ref_time(_ref_time), OPTIONS(_OPTIONS) {};
   const int parent;
   Logger& logger;
   const json& OPTIONS;
   const std::chrono::system_clock::time_point ref_time;
+  SpawnerHandler& sh;
   void Run() {
     while (true) {
       SendRequest();
@@ -37,7 +39,8 @@ class Consumer {
       auto now = std::chrono::system_clock::now();
       long dt = OPTIONS["CARAVAN_TIMEOUT"].get<long>() - std::chrono::duration_cast<std::chrono::seconds>(now - ref_time).count();
       if(dt > 0) {
-        TaskResult res = t.Run(logger, ref_time, OPTIONS["CARAVAN_WORK_BASE_DIR"], dt);
+        logger.d("running %d", t.task_id);
+        TaskResult res = t.Run(logger, sh, ref_time, OPTIONS["CARAVAN_WORK_BASE_DIR"], dt);
         SendResult(res);
       }
       else {

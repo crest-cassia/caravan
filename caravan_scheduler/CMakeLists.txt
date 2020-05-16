@@ -4,7 +4,7 @@ project(CARAVAN_SCHEDULER)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 
-set(SOURCE_FILES main.cpp Producer.hpp Task.hpp TaskResult.hpp Consumer.hpp Logger.hpp SearchEngine.hpp Buffer.hpp)
+set(SOURCE_FILES main.cpp Producer.hpp Task.hpp TaskResult.hpp Consumer.hpp Logger.hpp SearchEngine.hpp Buffer.hpp SpawnerHandler.hpp Spawner.hpp)
 find_package(MPI)
 find_package(Boost COMPONENTS filesystem REQUIRED)
 

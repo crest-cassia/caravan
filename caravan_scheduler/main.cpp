@@ -7,6 +7,8 @@
 #include "Producer.hpp"
 #include "Buffer.hpp"
 #include "Consumer.hpp"
+#include "SpawnerHandler.hpp"
+#include "Spawner.hpp"
 
 
 json GetOptions() {
@@ -88,7 +90,36 @@ std::tuple<int,int,std::vector<int>> GetRole(int rank, int procs, int num_proc_p
   return std::make_tuple(role, parent, children);
 }
 
+SpawnerHandler LaunchSpawner() {
+  int pipe_c2p[2],pipe_p2c[2]; // child->parent, parent->child: 0=>R, 1=>W
+  if (pipe(pipe_c2p) < 0) { throw std::runtime_error("failed to open pipe c2p"); }
+  if (pipe(pipe_p2c) < 0) { throw std::runtime_error("failed to open pipe p2d"); }
+  int pid = fork();
+  if( pid < 0){
+    close(pipe_c2p[0]);
+    close(pipe_c2p[1]);
+    close(pipe_p2c[0]);
+    close(pipe_p2c[1]);
+    throw std::runtime_error("failed to fork");
+  }
+
+  if (pid == 0) { // child
+    close(pipe_p2c[1]);
+    close(pipe_c2p[0]);
+    Spawner spawner(pipe_p2c[0], pipe_c2p[1]);
+    spawner.Run();
+    std::exit(0);
+  }
+
+  // parent
+  close(pipe_p2c[0]);
+  close(pipe_c2p[1]);
+  return std::move( SpawnerHandler(pipe_c2p[0], pipe_p2c[1], pid) );
+}
+
 int main(int argc, char* argv[]) {
+  SpawnerHandler SH = LaunchSpawner();  // must be called before MPI_Init
+
   MPI_Init(&argc, &argv);
   if( argc < 2 ) {
     std::cerr << "Usage: mpiexec -np ${PROCS} " << argv[0] << " ${CMD TO SEARCH PS}" << std::endl;
@@ -111,6 +142,7 @@ int main(int argc, char* argv[]) {
 
   Logger logger(start, OPTIONS["CARAVAN_LOG_LEVEL"]);
   if( std::get<0>(role) == 0 ) {
+    SH.Terminate();
     Producer prod(logger, OPTIONS);
     std::vector<Task> tasks;
     std::vector<std::string> argvs;
@@ -140,13 +172,15 @@ int main(int argc, char* argv[]) {
     binout.close();
   }
   else if( std::get<0>(role) == 1 ) {
+    SH.Terminate();
     Buffer buf(std::get<1>(role), logger, start, OPTIONS);
     buf.Run(std::get<2>(role));
   }
   else {
     assert( std::get<0>(role) == 2 );
-    Consumer cons(std::get<1>(role), logger, start, OPTIONS);
+    Consumer cons(std::get<1>(role), SH, logger, start, OPTIONS);
     cons.Run();
+    SH.Terminate();
   }
   MPI_Finalize();
   return 0;

@@ -22,6 +22,7 @@
 #include <nlohmann/json.hpp>
 #include "Logger.hpp"
 #include "TaskResult.hpp"
+#include "SpawnerHandler.hpp"
 
 using json = nlohmann::json;
 #ifndef USE_BOOST_FS
@@ -38,9 +39,7 @@ class Task {
   long task_id;
   std::string command;
   json input;
-  TaskResult Run(Logger& logger, const std::chrono::system_clock::time_point& ref_time, const std::string& work_base_dir, long timeout) const {
-    const fs::path cwd = fs::current_path();
-
+  TaskResult Run(Logger& logger, SpawnerHandler& sh, const std::chrono::system_clock::time_point& ref_time, const std::string& work_base_dir, long timeout) const {
     const fs::path work_dir = WorkDirPath(work_base_dir);
 
     fs::create_directories(work_dir);
@@ -49,17 +48,14 @@ class Task {
       fout << input;
       fout.flush();  // explicitly flush fout
     }
-    fs::current_path(work_dir);
 
     auto start_at = std::chrono::system_clock::now();
     long s_at = std::chrono::duration_cast<std::chrono::milliseconds>(start_at - ref_time).count();
     logger.d("Starting task %d at %s, timeout %d sec", task_id, work_dir.c_str(), timeout);
-    setenv("CARAVAN_TASK_TIMEOUT", std::to_string(timeout).c_str(), 1);
-    int rc = std::system(command.c_str());
+    int rc = sh.System(command, work_dir, {{"CARAVAN_TASK_TIMEOUT", std::to_string(timeout)}});
     auto finish_at = std::chrono::system_clock::now();
     long f_at = std::chrono::duration_cast<std::chrono::milliseconds>(finish_at - ref_time).count();
     logger.d("Completed task %d", task_id);
-    fs::current_path(cwd);
 
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
