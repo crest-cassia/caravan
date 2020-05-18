@@ -41,7 +41,7 @@ class Producer {
   void LaunchSearcher(const std::vector<std::string> &argvs) {
     int rc = se.LaunchSearcher(argvs);
     logger.d("launched searcher");
-    assert(rc == 0);
+    if (rc != 0) { throw std::runtime_error("failed to spawn search engine"); }
   }
   void EnqueueInitialTasks() {
     logger.d("creating initial tasks");
