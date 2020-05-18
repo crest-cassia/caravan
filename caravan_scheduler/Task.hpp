@@ -46,7 +46,7 @@ class Task {
     if (!input.is_null()) {
       std::ofstream fout(InputFilePath(work_base_dir).string());
       fout << input;
-      fout.flush();  // explicitly flush fout
+      fout.flush();  // explicitly flush fout to make sure that subprocess can read the file
     }
 
     auto start_at = std::chrono::system_clock::now();
