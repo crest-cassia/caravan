@@ -27,13 +27,11 @@ class SpawnerHandler {
   SpawnerHandler(int read_fd, int write_fd, int child_pid)
       : r_fd(read_fd), w_fd(write_fd), pid(child_pid), terminated(false) {};
   ~SpawnerHandler() {
-    std::cerr << "Handler destructor" << std::endl;
     if (!terminated) { Terminate(); }
   }
-  SpawnerHandler(SpawnerHandler&&) = default;
+  SpawnerHandler(SpawnerHandler &&) = default;
   int System(const std::string &cmd, const fs::path &work_dir = fs::current_path(),
              const env_t &envs = {}) {
-    std::cerr << "System is called at Handler: " << cmd << std::endl;
     json j = {
         {"command", cmd},
         {"work_dir", work_dir.string()},
@@ -41,7 +39,6 @@ class SpawnerHandler {
     };
     SendBytes(json::to_msgpack(j));
     int rc = ReceiveInt();
-    std::cerr << "System done: " << rc << std::endl;
     return rc;
   }
   void Terminate() {
