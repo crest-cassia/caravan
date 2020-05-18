@@ -90,7 +90,7 @@ std::tuple<int,int,std::vector<int>> GetRole(int rank, int procs, int num_proc_p
   return std::make_tuple(role, parent, children);
 }
 
-SpawnerHandler LaunchSpawner() {
+std::array<int,3> LaunchSpawner() {
   int pipe_c2p[2],pipe_p2c[2]; // child->parent, parent->child: 0=>R, 1=>W
   if (pipe(pipe_c2p) < 0) { throw std::runtime_error("failed to open pipe c2p"); }
   if (pipe(pipe_p2c) < 0) { throw std::runtime_error("failed to open pipe p2d"); }
@@ -114,11 +114,12 @@ SpawnerHandler LaunchSpawner() {
   // parent
   close(pipe_p2c[0]);
   close(pipe_c2p[1]);
-  return std::move( SpawnerHandler(pipe_c2p[0], pipe_p2c[1], pid) );
+  return {pipe_c2p[0], pipe_p2c[1], pid};
 }
 
 int main(int argc, char* argv[]) {
-  SpawnerHandler SH = LaunchSpawner();  // must be called before MPI_Init
+  const auto fd_pid = LaunchSpawner();  // must be called before MPI_Init
+  SpawnerHandler SH(fd_pid[0], fd_pid[1], fd_pid[2]);
 
   MPI_Init(&argc, &argv);
   if( argc < 2 ) {
