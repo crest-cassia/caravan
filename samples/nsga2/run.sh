@@ -10,7 +10,7 @@ export PYTHONPATH="${CARAVAN_DIR}/caravan_search_engine":$PYTHONPATH
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-1}
 export CARAVAN_SEARCH_ENGINE_LOGLEVEL=${CARAVAN_SEARCH_ENGINE_LOGLEVEL:-INFO}
 
-mpiexec -np ${N_PROCS} --oversubscribe "${SCHEDULER}" python "${SCRIPTDIR}/nsga2.py" 200 40 0.9 1234
+mpiexec ${MPIEXEC_OPT} -n ${N_PROCS} "${SCHEDULER}" python3 "${SCRIPTDIR}/nsga2.py" 200 40 0.9 1234
 
-python "${SCRIPTDIR}/make_plot.py"
+python3 "${SCRIPTDIR}/make_plot.py"
 

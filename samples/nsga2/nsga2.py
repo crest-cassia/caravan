@@ -147,7 +147,7 @@ if __name__ == "__main__":
     pop = None
     stats = None
 
-    sim = Simulator.create(f"python {os.path.dirname(__file__)}/my_sim.py")
+    sim = Simulator.create(f"python3 {os.path.dirname(__file__)}/my_sim.py")
     with Server.start():
         pop, stats = main(sim, ngen, pop_size, cxpb, seed)
 

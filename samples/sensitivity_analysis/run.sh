@@ -10,5 +10,5 @@ export PYTHONPATH="${CARAVAN_DIR}/caravan_search_engine":$PYTHONPATH
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-1}
 export CARAVAN_SEARCH_ENGINE_LOGLEVEL=${CARAVAN_SEARCH_ENGINE_LOGLEVEL:-INFO}
 
-mpiexec -np ${N_PROCS} --oversubscribe "${SCHEDULER}" python "${SCRIPTDIR}/salib_sample.py"
+mpiexec ${MPIEXEC_OPT} -n ${N_PROCS} "${SCHEDULER}" python3 "${SCRIPTDIR}/salib_sample.py"
 

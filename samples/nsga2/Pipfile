@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 msgpack = "*"
 fibers = "*"
+mpi4py = "*"
 deap = "*"
 numpy = "*"
 matplotlib = "*"

@@ -9,5 +9,5 @@ export PYTHONPATH=$CARAVAN_DIR/caravan_search_engine:$PYTHONPATH
 export CARAVAN_SEARCH_ENGINE_LOGLEVEL=${CARAVAN_SEARCH_ENGINE_LOGLEVEL:-INFO}
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-1}
 
-mpiexec --oversubscribe -n ${MPI_PROCS} "${SCHEDULER}" python ${SE}
+mpiexec ${MPIEXEC_OPT} -n ${MPI_PROCS} "${SCHEDULER}" python3 ${SE}
 

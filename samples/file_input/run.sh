@@ -9,5 +9,5 @@ export PYTHONPATH=$CARAVAN_DIR/caravan_search_engine:$PYTHONPATH
 export CARAVAN_LOG_LEVEL=${CARAVAN_LOG_LEVEL:-1}
 #export CARAVAN_TIMEOUT=20
 
-mpiexec -n $N_PROCS --oversubscribe $SCHEDULER python -u "$SCRIPTDIR/main.py" $1
+mpiexec ${MPIEXEC_OPT} -n $N_PROCS $SCHEDULER python3 "$SCRIPTDIR/main.py" $1
 
