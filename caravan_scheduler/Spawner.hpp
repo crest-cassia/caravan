@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include <vector>
+#include <utility>
+#include <cstdlib>
 #include <unistd.h>
 #include <nlohmann/json.hpp>
 
@@ -59,16 +61,36 @@ class Spawner {
 
   typedef std::vector<std::vector<std::string>> env_t;
   int System(const std::string &cmd, const fs::path &work_dir, const env_t &envs) {
-    // [TODO] implement envs
+    std::vector<std::pair<std::string,std::string> > org_envs;
+    for (const auto& keyval : envs) {
+      const std::string key = keyval[0];
+      const char * org_val = std::getenv(key.c_str());
+      if (org_val != nullptr) {
+        org_envs.emplace_back(std::make_pair(key, org_val));
+      }
+      else {
+        org_envs.emplace_back(std::make_pair(key, ""));
+      }
+
+      setenv(key.c_str(), keyval[1].c_str(), 1);
+    }
+
     const fs::path cwd = fs::current_path();
     fs::current_path(work_dir);
     int rc = std::system(cmd.c_str());
     fs::current_path(cwd);
+
+    for (const auto& keyval : org_envs) {
+      if (keyval.second.empty()) {
+        unsetenv(keyval.first.c_str());
+      }
+      else {
+        setenv(keyval.first.c_str(), keyval.second.c_str(), 1);
+      }
+    }
+
     return rc;
   }
-
-
-
 };
 
 #endif //CARAVAN_SCHEDULER__SPAWNER_HPP_
