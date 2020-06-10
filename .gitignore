@@ -1,3 +1,4 @@
+__pycache__/
 *.msgpack
 *.pickle
 w[0-9]*
