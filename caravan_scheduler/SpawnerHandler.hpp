@@ -8,6 +8,8 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
