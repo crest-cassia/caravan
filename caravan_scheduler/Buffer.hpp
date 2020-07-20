@@ -74,7 +74,7 @@ class Buffer {
           if (received) break;
           MPI_Test(&send_req, &sent, MPI_STATUS_IGNORE); // MPI_Test on MPI_REQUEST_NULL returns true
           if (sent) break;
-          usleep(10000);
+          usleep(1000);
         }
       } else if (has_something_to_receive) {
         my_MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
