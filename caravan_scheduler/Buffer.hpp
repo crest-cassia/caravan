@@ -33,7 +33,7 @@ class Buffer {
     SendRequest(n_consumers, &req, buf);
     MPI_Wait(&req, MPI_STATUS_IGNORE);
     MPI_Status st;
-    MPI_Probe(MPI_ANY_SOURCE, MsgTag::PROD_BUF_SEND_TASKS, MPI_COMM_WORLD, &st);
+    my_MPI_Probe(MPI_ANY_SOURCE, MsgTag::PROD_BUF_SEND_TASKS, MPI_COMM_WORLD, &st);
     ReceiveTasks(st);
     logger.d("created initial tasks");
   }
@@ -74,10 +74,10 @@ class Buffer {
           if (received) break;
           MPI_Test(&send_req, &sent, MPI_STATUS_IGNORE); // MPI_Test on MPI_REQUEST_NULL returns true
           if (sent) break;
-          usleep(1000);
+          usleep(10000);
         }
       } else if (has_something_to_receive) {
-        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
+        my_MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
         received = 1;
       } else if (has_something_to_send) {
         MPI_Wait(&send_req, MPI_STATUS_IGNORE);

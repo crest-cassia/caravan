@@ -28,6 +28,16 @@ enum MsgTag {
   CONS_BUF_SEND_RESULT
 };
 
+int my_MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status) {
+  int received = 0, ret = 0;
+  while(true) {
+    ret = MPI_Iprobe(source, tag, comm, &received, status);
+    if (received) break;
+    usleep(10000);
+  }
+  return ret;
+}
+
 class Producer {
  public:
   Producer(Logger &_logger, const json &_OPTIONS) : logger(_logger), OPTIONS(_OPTIONS) {};
@@ -73,10 +83,10 @@ class Producer {
           if (received) break;
           MPI_Test(&send_req, &sent, MPI_STATUS_IGNORE); // MPI_Test on MPI_REQUEST_NULL returns true
           if (sent) break;
-          usleep(1000);
+          usleep(10000);
         }
       } else if (has_something_to_receive) {
-        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
+        my_MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
         received = 1;
       } else if (has_something_to_send) {
         MPI_Wait(&send_req, MPI_STATUS_IGNORE);

@@ -63,7 +63,7 @@ class Consumer {
     int task_len = 0;
     MPI_Status st;
     // receive the length of a command
-    MPI_Probe(parent, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
+    my_MPI_Probe(parent, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
     if (st.MPI_TAG == MsgTag::BUF_CONS_TERMINATE_REQUEST) {
       char buf;
       MPI_Recv(&buf, 0, MPI_CHAR, parent, st.MPI_TAG, MPI_COMM_WORLD, &st);
