@@ -1,4 +1,4 @@
-import sys,logging,os,struct,socket
+import sys,logging,os,struct,socket,time
 import msgpack
 from collections import defaultdict
 
@@ -343,7 +343,9 @@ class Server(object):
 
     def _receive_bytes(self):
         s = MPI.Status()
-        self._comm.Probe(status=s)
+        # instead of `comm.Probe`, `Iprobe` is used to avoid a busy wait
+        while not self._comm.Iprobe(status=s):
+            time.sleep(0.01)
         if s.count == 0: assert s.tag == 1
         recvbuf = bytearray(s.count)
         self._comm.Recv([recvbuf, s.count, MPI.CHAR], source=s.source, tag=s.tag)
